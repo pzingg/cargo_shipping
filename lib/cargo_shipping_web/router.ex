@@ -20,10 +20,24 @@ defmodule CargoShippingWeb.Router do
     get "/", PageController, :index
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", CargoShippingWeb do
-  #   pipe_through :api
-  # end
+  scope "/tracking", CargoShippingWeb do
+    ## The following scopes are organized by application user
+    scope "/clerks" do
+      live "/cargoes/:tracking_id", CargoLive.Show, :show
+      # resources "/", ClerkController, only: [:index]
+    end
+
+    scope "/opsmanagers" do
+      live "/events", HandlingEventLive.Index, :index
+      live "/events/:id", HandlingEventLive.Show, :show
+      # resources "/", OpsManagerController, only: [:index]
+    end
+
+    ## This scope handles JSON requests and responses
+    scope "/api" do
+      pipe_through :api
+    end
+  end
 
   # Enables LiveDashboard only for development
   #

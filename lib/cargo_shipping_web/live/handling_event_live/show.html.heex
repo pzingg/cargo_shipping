@@ -1,0 +1,10 @@
+<h1>Handling Event</h1>
+
+<ul>
+  <li>
+    <strong>Name:</strong>
+    <%= @handling_event.name %>
+  </li>
+</ul>
+
+<span><%= live_redirect "Back", to: Routes.handling_event_index_path(@socket, :index) %></span>

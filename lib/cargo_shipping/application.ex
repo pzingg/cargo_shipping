@@ -15,9 +15,9 @@ defmodule CargoShipping.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: CargoShipping.PubSub},
       # Start the Endpoint (http/https)
-      CargoShippingWeb.Endpoint
+      CargoShippingWeb.Endpoint,
       # Start a worker by calling: CargoShipping.Worker.start_link(arg)
-      # {CargoShipping.Worker, arg}
+      CargoShipping.Locations.LocationService
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

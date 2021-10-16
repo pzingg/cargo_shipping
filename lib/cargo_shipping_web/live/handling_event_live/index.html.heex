@@ -1,0 +1,21 @@
+<h1>Handling Events</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody id="handling_events">
+    <%= for handling_event <- @handling_events do %>
+      <tr id={"handling_event-#{handling_event.id}"}>
+        <td><%= handling_event.name %></td>
+
+        <td>
+          <span><%= live_redirect "Show", to: Routes.handling_event_show_path(@socket, :show, handling_event) %></span>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

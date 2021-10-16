@@ -7,6 +7,11 @@
 # General application configuration
 import Config
 
+config :cargo_shipping, :generators,
+  migration: true,
+  binary_id: true,
+  sample_binary_id: "11111111-1111-1111-1111-111111111111"
+
 config :cargo_shipping,
   ecto_repos: [CargoShipping.Repo]
 
