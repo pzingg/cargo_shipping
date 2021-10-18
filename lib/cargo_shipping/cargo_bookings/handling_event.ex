@@ -31,16 +31,14 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
     field :voyage_id, Ecto.UUID
     field :location, :string
     field :completed_at, :utc_datetime
-    field :registered_at, :utc_datetime
 
     belongs_to :cargo, Cargo
 
-    timestamps()
+    timestamps(inserted_at: :registered_at)
   end
 
-
-  @cast_fields [:event_type, :voyage_id, :location, :completed_at, :registered_at]
-  @required_fields [:event_type, :location, :completed_at, :registered_at]
+  @cast_fields [:event_type, :voyage_id, :location, :completed_at]
+  @required_fields [:event_type, :location, :completed_at]
 
   @doc false
   def changeset(handling_event, attrs) do

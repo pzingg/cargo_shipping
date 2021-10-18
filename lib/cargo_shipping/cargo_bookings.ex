@@ -6,7 +6,7 @@ defmodule CargoShipping.CargoBookings do
   import Ecto.Query, warn: false
 
   alias CargoShipping.Repo
-  alias CargoShipping.CargoBookings.{Cargo, HandlingEvent}
+  alias CargoShipping.CargoBookings.{Cargo, Delivery, HandlingEvent}
 
   ## Cargo module
 
@@ -47,6 +47,7 @@ defmodule CargoShipping.CargoBookings do
     case query |> Repo.one() do
       nil ->
         raise Ecto.NoResultsError
+
       cargo ->
         cargo
     end
@@ -137,10 +138,47 @@ defmodule CargoShipping.CargoBookings do
       from he in HandlingEvent,
         join: c in Cargo,
         on: c.id == he.cargo_id,
-        where: c.tracking_id == ^tracking_id
+        where: c.tracking_id == ^tracking_id,
+        order_by: [desc: he.completed_at]
 
     query
     |> Repo.all()
+  end
+
+  @doc """
+  Updates all aspects of the `Cargo` aggregate status
+  based on the current route specification, itinerary and handling of the cargo.
+
+  When either of those three changes, i.e. when a new route is specified for the cargo,
+  the cargo is assigned to a route or when the cargo is handled, the status must be
+  re-calculated.
+
+  `RouteSpecification` and `Itinerary` are both inside the `Cargo`
+  aggregate, so changes to them cause the status to be updated synchronously,
+  but changes to the delivery history (when a cargo is handled) cause the status update
+  to happen asynchronously since `HandlingEvent` is in a different aggregate.
+  """
+  def derive_delivery_progress(%Cargo{} = cargo, handling_history) do
+    # TODO filter events on cargo (must be same as this cargo)
+
+    # `Delivery` is a value object, so we can simply discard the old one
+    # and replace it with a new
+    delivery = Delivery.derived_from(cargo.route_specification, cargo.itinerary, handling_history)
+    {:ok, updated_cargo} = update_cargo(cargo, %{delivery: delivery})
+    {:ok, updated_cargo}
+  end
+
+  def assign_cargo_to_route(cargo, itinerary) when is_map(itinerary) do
+    # Handling consistency within the Cargo aggregate synchronously
+    maybe_delivery = Map.get(cargo, :delivery, Map.get(cargo, "delivery"))
+
+    delivery =
+      maybe_delivery
+      |> Delivery.update_on_routing(cargo.route_specification, itinerary)
+
+    cargo
+    |> Map.put(:itinerary, itinerary)
+    |> Map.put(:delivery, delivery)
   end
 
   @doc """

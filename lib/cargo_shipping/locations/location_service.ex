@@ -7,19 +7,20 @@ defmodule CargoShipping.Locations.LocationService do
   alias CargoShipping.Locations.Location
 
   @locations [
-    {"Hongkong", "CHHKG"},
-    {"Melbourne", "AUMEL"},
-    {"Stockholm", "SESTO"},
-    {"Helsinki", "FIHEL"},
-    {"Chicago", "USCHI"},
-    {"Tokyo", "JPTKO"},
-    {"Hamburg", "DEHAM"},
-    {"Shanghai", "CNSHA"},
-    {"Rotterdam", "NLRTM"},
-    {"Goteborg", "SEGOT"},
-    {"Hangzhou", "CHHGH"},
-    {"New York", "USNYC"},
-    {"Dallas", "USDAL"}
+    {"_", "Unknown"},
+    {"CNHKG", "Hong Kong"},
+    {"AUMEL", "Melbourne"},
+    {"SESTO", "Stockholm"},
+    {"FIHEL", "Helsinki"},
+    {"USCHI", "Chicago"},
+    {"JPTOK", "Tokyo"},
+    {"DEHAM", "Hamburg"},
+    {"CNSHA", "Shanghai"},
+    {"NLRTM", "Rotterdam"},
+    {"SEGOT", "Goteborg"},
+    {"CNHGH", "Hangzhou"},
+    {"USNYC", "New York"},
+    {"USDAL", "Dallas"}
   ]
 
   def start_link(_) do
@@ -34,6 +35,7 @@ defmodule CargoShipping.Locations.LocationService do
     case Enum.find(all(), fn %Location{id: location_id} -> id == location_id end) do
       %Location{} = location ->
         location
+
       _ ->
         raise Ecto.NoResultsError
     end
@@ -48,8 +50,8 @@ defmodule CargoShipping.Locations.LocationService do
   end
 
   defp load_locations() do
-    Enum.map(@locations, fn {name, port_code} ->
-      %Location{id: UUID.uuid4(), name: name, port_code: port_code}
+    Enum.map(@locations, fn {port_code, name} ->
+      %Location{id: UUID.uuid4(), port_code: port_code, name: name}
     end)
   end
 end

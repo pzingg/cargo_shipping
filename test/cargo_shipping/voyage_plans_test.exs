@@ -14,8 +14,8 @@ defmodule CargoShipping.VoyagePlansTest do
       %{
         "departure_location" => "NLRTM",
         "arrival_location" => "CNSHA",
-        "departure_time" => "2016-01-23T23:50:07Z",
-        "arrival_time" =>"2016-02-23T23:50:07Z"
+        "departure_time" => ~U[2016-01-23 23:50:07Z],
+        "arrival_time" => ~U[2016-02-23 23:50:07Z]
       }
     ]
 

@@ -15,7 +15,7 @@ defmodule CargoShipping.VoyagePlans.Voyage do
   @foreign_key_type :binary_id
   @timestamps_opts [type: :utc_datetime]
   schema "voyages" do
-    field :voyage_number, :integer
+    field :voyage_number, :string
     embeds_many :schedule_items, CarrierMovement, on_replace: :delete
 
     timestamps()

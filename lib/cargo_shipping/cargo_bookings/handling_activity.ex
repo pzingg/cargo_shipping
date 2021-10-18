@@ -22,7 +22,7 @@ defmodule CargoShipping.CargoBookings.HandlingActivity do
   def changeset(handling_activity, attrs) do
     handling_activity
     |> cast(attrs, [:event_type, :location, :voyage_id])
-    |> validate_required([:event_type, :location, :voyage_id])
+    |> validate_required([:event_type, :location])
     |> validate_inclusion(:event_type, @event_type_values)
   end
 end

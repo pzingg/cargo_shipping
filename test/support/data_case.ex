@@ -30,6 +30,15 @@ defmodule CargoShipping.DataCase do
   setup tags do
     pid = Ecto.Adapters.SQL.Sandbox.start_owner!(CargoShipping.Repo, shared: not tags[:async])
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
+
+    if tags[:sample_data] do
+      :ok = CargoShipping.SampleDataGenerator.load_sample_data()
+    end
+
+    if tags[:hibernate_data] do
+      :ok = CargoShipping.SampleDataGenerator.generate()
+    end
+
     :ok
   end
 

@@ -49,7 +49,9 @@ defmodule CargoShipping.MixProject do
       {:gettext, "~> 0.18"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
-      {:uuid, "~> 1.1" },
+      {:gproc, "~> 0.5"},
+      {:timex, "~> 3.7"},
+      {:uuid, "~> 1.1"},
       {:typed_struct, "~> 0.2"},
       {:typed_struct_ecto_changeset, "~> 0.1"}
     ]

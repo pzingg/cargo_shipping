@@ -13,14 +13,13 @@ defmodule CargoShipping.CargoBookingsFixtures do
 
   def itinerary_fixture() do
     %{
-      "itinerary_number" => 101,
       "legs" => [
         %{
           "voyage_id" => @voyage_id,
           "load_location" => "DEHAM",
           "unload_location" => "CNSHA",
-          "load_time" => "2015-01-23T23:50:07Z",
-          "unload_time" => "2015-02-23T23:50:07Z"
+          "load_time" => ~U[2015-01-23 23:50:07Z],
+          "unload_time" => ~U[2015-02-23 23:50:07Z]
         }
       ]
     }
@@ -68,8 +67,7 @@ defmodule CargoShipping.CargoBookingsFixtures do
       |> Enum.into(%{
         "event_type" => "RECEIVE",
         "location" => "DEHAM",
-        "completed_at" => ~U[2021-10-14 20:32:00Z],
-        "registered_at" => ~U[2021-10-14 20:32:00Z]
+        "completed_at" => ~U[2021-10-14 20:32:00Z]
       })
       |> CargoShipping.CargoBookings.create_handling_event()
 

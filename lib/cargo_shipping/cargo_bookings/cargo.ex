@@ -60,10 +60,27 @@ defmodule CargoShipping.CargoBookings.Cargo do
   def changeset(cargo, attrs) do
     cargo
     |> cast(attrs, [:tracking_id, :origin])
-    |> validate_required([:tracking_id, :origin])
+    |> validate_required([:tracking_id])
     |> unique_constraint(:tracking_id)
     |> cast_embed(:route_specification, with: &RouteSpecification.changeset/2)
     |> cast_embed(:itinerary, with: &Itinerary.changeset/2)
     |> cast_embed(:delivery, with: &Delivery.changeset/2)
+    |> set_origin_from_route_specification()
+    |> validate_required([:origin])
+  end
+
+  def set_origin_from_route_specification(changeset) do
+    # Cargo origin never changes, even if the route specification changes.
+    # However, at creation, cargo origin can be derived from the initial route specification.
+    if is_nil(get_field(changeset, :origin)) do
+      origin =
+        changeset
+        |> get_change(:route_specification)
+        |> get_change(:origin)
+
+      put_change(changeset, :origin, origin)
+    else
+      changeset
+    end
   end
 end

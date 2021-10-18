@@ -17,7 +17,13 @@ defmodule CargoShipping.VoyagePlans.CarrierMovement do
   @doc false
   def changeset(carrier_movement, attrs) do
     carrier_movement
-    |> cast(attrs, [:departure_location, :arrival_location, :departure_time, :arrival_time, :delete])
+    |> cast(attrs, [
+      :departure_location,
+      :arrival_location,
+      :departure_time,
+      :arrival_time,
+      :delete
+    ])
     |> validate_required([:departure_location, :arrival_location, :departure_time, :arrival_time])
   end
 end

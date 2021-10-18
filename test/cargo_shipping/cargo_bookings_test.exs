@@ -39,6 +39,7 @@ defmodule CargoShipping.CargoBookingsTest do
 
     test "update_cargo/2 with valid data updates the cargo" do
       cargo = cargo_fixture()
+
       update_attrs = %{
         "tracking_id" => "some updated tracking_id",
         "origin" => "DEHAM",
@@ -74,7 +75,7 @@ defmodule CargoShipping.CargoBookingsTest do
 
     import CargoShipping.CargoBookingsFixtures
 
-    @invalid_attrs %{completed_at: nil, event_type: nil, registered_at: nil}
+    @invalid_attrs %{completed_at: nil, event_type: nil}
 
     test "list_handling_events/0 returns all handling_events" do
       handling_event = handling_event_fixture()
@@ -90,8 +91,7 @@ defmodule CargoShipping.CargoBookingsTest do
       valid_attrs = %{
         "event_type" => "RECEIVE",
         "location" => "DEHAM",
-        "completed_at" => ~U[2021-10-14 20:32:00Z],
-        "registered_at" => ~U[2021-10-14 20:32:00Z]
+        "completed_at" => ~U[2021-10-14 20:32:00Z]
       }
 
       assert {:ok, %HandlingEvent{} = handling_event} =
@@ -99,7 +99,6 @@ defmodule CargoShipping.CargoBookingsTest do
 
       assert handling_event.event_type == :RECEIVE
       assert handling_event.completed_at == ~U[2021-10-14 20:32:00Z]
-      assert handling_event.registered_at == ~U[2021-10-14 20:32:00Z]
     end
 
     test "create_handling_event/1 with invalid data returns error changeset" do
@@ -111,8 +110,7 @@ defmodule CargoShipping.CargoBookingsTest do
 
       update_attrs = %{
         "event_type" => "CUSTOMS",
-        "completed_at" => ~U[2021-10-15 20:32:00Z],
-        "registered_at" => ~U[2021-10-15 20:32:00Z]
+        "completed_at" => ~U[2021-10-15 20:32:00Z]
       }
 
       assert {:ok, %HandlingEvent{} = handling_event} =
@@ -120,7 +118,6 @@ defmodule CargoShipping.CargoBookingsTest do
 
       assert handling_event.completed_at == ~U[2021-10-15 20:32:00Z]
       assert handling_event.event_type == :CUSTOMS
-      assert handling_event.registered_at == ~U[2021-10-15 20:32:00Z]
     end
 
     test "update_handling_event/2 with invalid data returns error changeset" do
