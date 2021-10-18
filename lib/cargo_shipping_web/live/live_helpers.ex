@@ -1,6 +1,9 @@
 defmodule CargoShippingWeb.LiveHelpers do
   import Phoenix.LiveView.Helpers
 
+  alias CargoShipping.CargoBookings.Cargo
+  alias CargoShipping.Locations.LocationService
+
   @doc """
   Renders a component inside the `Example16Web.ModalComponent` component.
 
@@ -24,4 +27,18 @@ defmodule CargoShippingWeb.LiveHelpers do
   def default_assigns(socket) do
     socket
   end
+
+  def location_name(location) do
+    LocationService.get_by_port_code(location).name
+  end
+
+  def cargo_origin(cargo) do
+    cargo.origin |> location_name()
+  end
+
+  def cargo_final_destination(cargo) do
+    Cargo.final_destination(cargo) |> location_name()
+  end
+
+  def cargo_routed(cargo), do: Cargo.routed(cargo)
 end

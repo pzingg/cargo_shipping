@@ -263,7 +263,7 @@ defmodule CargoShipping.SampleDataGenerator do
     }
   end
 
-  def load_handling_event_data(voyages, cargoes) do
+  def load_handling_event_data(voyages, cargos) do
     [
       # XYZ (SESTO - FIHEL - DEHAM - CNHKG - JPTOK - AUMEL)
       {ts(0), ts(0), "RECEIVE", "SESTO", nil, :cargo_xyz},
@@ -307,7 +307,7 @@ defmodule CargoShipping.SampleDataGenerator do
     ]
     |> Enum.map(fn {completed_at, registered_at, event_type, location, voyage_name, cargo_name} ->
       %{
-        cargo: Map.fetch!(cargoes, cargo_name),
+        cargo: Map.fetch!(cargos, cargo_name),
         event_type: event_type,
         voyage_id: voyage_id_for(voyages, voyage_name),
         location: location,
@@ -324,8 +324,8 @@ defmodule CargoShipping.SampleDataGenerator do
 
     voyages = load_carrier_movement_data()
     itineraries = load_itinerary_data(voyages)
-    cargoes = load_cargo_data(itineraries)
-    load_handling_event_data(voyages, cargoes)
+    cargos = load_cargo_data(itineraries)
+    load_handling_event_data(voyages, cargos)
 
     :ok
   end

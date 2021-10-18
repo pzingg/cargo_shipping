@@ -3,16 +3,16 @@ defmodule CargoShipping.CargoBookingsTest do
 
   alias CargoShipping.CargoBookings
 
-  describe "cargoes" do
+  describe "cargos" do
     alias CargoShipping.CargoBookings.Cargo
 
     import CargoShipping.CargoBookingsFixtures
 
     @invalid_attrs %{tracking_id: nil}
 
-    test "list_cargoes/0 returns all cargoes" do
+    test "list_cargos/0 returns all cargos" do
       cargo = cargo_fixture()
-      assert CargoBookings.list_cargoes() == [cargo]
+      assert CargoBookings.list_cargos() == [cargo]
     end
 
     test "get_cargo!/1 returns the cargo with given id" do

@@ -1,0 +1,25 @@
+<h1><%= @header %></h1>
+<table>
+  <thead>
+    <tr>
+      <th>Tracking ID</th>
+      <th>Origin</th>
+      <th>Destination</th>
+      <th>Routed</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody id="cargos">
+    <%= for cargo <- @cargos do %>
+      <tr id={"cargo-#{cargo.id}"}>
+        <td><%= cargo.tracking_id %></td>
+        <td><%= cargo_origin(cargo) %></td>
+        <td><%= cargo_final_destination(cargo) %></td>
+        <td><%= cargo_routed(cargo) %></td>
+        <td>
+          <span><%= live_redirect "Show", to: Routes.cargo_show_path(@socket, :show, cargo) %></span>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

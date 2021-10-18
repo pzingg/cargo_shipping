@@ -44,7 +44,7 @@ defmodule CargoShipping.CargoBookings.Cargo do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   @timestamps_opts [type: :utc_datetime]
-  schema "cargoes" do
+  schema "cargos" do
     field :tracking_id, :string
     field :origin, :string
     embeds_one :route_specification, RouteSpecification, on_replace: :delete
@@ -67,6 +67,14 @@ defmodule CargoShipping.CargoBookings.Cargo do
     |> cast_embed(:delivery, with: &Delivery.changeset/2)
     |> set_origin_from_route_specification()
     |> validate_required([:origin])
+  end
+
+  def final_destination(cargo) do
+    cargo.route_specification.destination
+  end
+
+  def routed(cargo) do
+    cargo.delivery.routing_status
   end
 
   def set_origin_from_route_specification(changeset) do

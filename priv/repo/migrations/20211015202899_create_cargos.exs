@@ -1,8 +1,8 @@
-defmodule CargoShipping.Repo.Migrations.CreateCargoes do
+defmodule CargoShipping.Repo.Migrations.Createcargos do
   use Ecto.Migration
 
   def change do
-    create table(:cargoes, primary_key: false) do
+    create table(:cargos, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :tracking_id, :string, null: false
       add :origin, :string, null: false
@@ -13,6 +13,6 @@ defmodule CargoShipping.Repo.Migrations.CreateCargoes do
       timestamps()
     end
 
-    create unique_index(:cargoes, [:tracking_id])
+    create unique_index(:cargos, [:tracking_id])
   end
 end

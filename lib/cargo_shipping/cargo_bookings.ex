@@ -11,15 +11,15 @@ defmodule CargoShipping.CargoBookings do
   ## Cargo module
 
   @doc """
-  Returns the list of cargoes.
+  Returns the list of cargos.
 
   ## Examples
 
-      iex> list_cargoes()
+      iex> list_cargos()
       [%Cargo{}, ...]
 
   """
-  def list_cargoes do
+  def list_cargos do
     Repo.all(Cargo)
   end
 
