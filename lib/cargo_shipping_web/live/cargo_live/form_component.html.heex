@@ -1,0 +1,27 @@
+<div>
+  <h2><%= @title %></h2>
+
+  <.form
+    let={f}
+    for={@changeset}
+    id="cargo-form"
+    phx-target={@myself}
+    phx-change="validate"
+    phx-submit="save">
+
+    <%= label f, :origin %>
+    <%= text_input f, :origin %>
+    <%= error_tag f, :origin %>
+
+    <%= label f, :destination %>
+    <%= text_input f, :destination %>
+    <%= error_tag f, :destination %>
+
+    <%= live_component CargoShippingWeb.SharedComponents.Datepicker,
+      id: :arrival_deadline %>
+
+    <div>
+      <%= submit "Save", phx_disable_with: "Saving..." %>
+    </div>
+  </.form>
+</div>
