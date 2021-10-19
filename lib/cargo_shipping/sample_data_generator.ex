@@ -306,16 +306,15 @@ defmodule CargoShipping.SampleDataGenerator do
       {ts(400), ts(440), "UNLOAD", "FIHEL", :voyage_0303, :cargo_jkl}
     ]
     |> Enum.map(fn {completed_at, registered_at, event_type, location, voyage_name, cargo_name} ->
-      %{
-        cargo: Map.fetch!(cargos, cargo_name),
+      cargo = Map.fetch!(cargos, cargo_name)
+      attrs = %{
         event_type: event_type,
         voyage_id: voyage_id_for(voyages, voyage_name),
         location: location,
         completed_at: completed_at,
-        registered_at: registered_at,
-        updated_at: registered_at
+        registered_at: registered_at
       }
-      |> CargoBookings.create_handling_event()
+      {:ok, _handling_event} = CargoBookings.create_handling_event(cargo, attrs)
     end)
   end
 
@@ -353,34 +352,31 @@ defmodule CargoShipping.SampleDataGenerator do
     {:ok, cargo_abc123} = CargoBookings.create_cargo(attrs)
 
     attrs = %{
-      cargo: cargo_abc123,
       event_type: "RECEIVE",
       voyage_id: nil,
       location: "CNHKG",
       completed_at: ~U[2009-03-01 00:00:00Z]
     }
 
-    {:ok, _event1} = CargoBookings.create_handling_event(attrs)
+    {:ok, _event1} = CargoBookings.create_handling_event(cargo_abc123, attrs)
 
     attrs = %{
-      cargo: cargo_abc123,
       event_type: "LOAD",
       voyage_id: voyage_id_for(voyages, :voyage_cnhkg_usnyc),
       location: "CNHKG",
       completed_at: ~U[2009-03-02 00:00:00Z]
     }
 
-    {:ok, _event2} = CargoBookings.create_handling_event(attrs)
+    {:ok, _event2} = CargoBookings.create_handling_event(cargo_abc123, attrs)
 
     attrs = %{
-      cargo: cargo_abc123,
       event_type: "UNLOAD",
       voyage_id: voyage_id_for(voyages, :voyage_cnhkg_usnyc),
       location: "USNYC",
       completed_at: ~U[2009-03-05 00:00:00Z]
     }
 
-    {:ok, _event3} = CargoBookings.create_handling_event(attrs)
+    {:ok, _event3} = CargoBookings.create_handling_event(cargo_abc123, attrs)
 
     handling_history = CargoBookings.lookup_handling_history(cargo_abc123.tracking_id)
     CargoBookings.derive_delivery_progress(cargo_abc123, handling_history)
@@ -433,44 +429,40 @@ defmodule CargoShipping.SampleDataGenerator do
     {:ok, cargo_jkl567} = CargoBookings.create_cargo(attrs)
 
     attrs = %{
-      cargo: cargo_jkl567,
       event_type: "RECEIVE",
       voyage_id: nil,
       location: "CNHGH",
       completed_at: ~U[2009-03-01 00:00:00Z]
     }
 
-    {:ok, _event1} = CargoBookings.create_handling_event(attrs)
+    {:ok, _event1} = CargoBookings.create_handling_event(cargo_jkl567, attrs)
 
     attrs = %{
-      cargo: cargo_jkl567,
       event_type: "LOAD",
       voyage_id: voyage_id_for(voyages, :voyage_cnhkg_usnyc),
       location: "CNHGH",
       completed_at: ~U[2009-03-03 00:00:00Z]
     }
 
-    {:ok, _event2} = CargoBookings.create_handling_event(attrs)
+    {:ok, _event2} = CargoBookings.create_handling_event(cargo_jkl567, attrs)
 
     attrs = %{
-      cargo: cargo_jkl567,
       event_type: "UNLOAD",
       voyage_id: voyage_id_for(voyages, :voyage_cnhkg_usnyc),
       location: "USNYC",
       completed_at: ~U[2009-03-05 00:00:00Z]
     }
 
-    {:ok, _event3} = CargoBookings.create_handling_event(attrs)
+    {:ok, _event3} = CargoBookings.create_handling_event(cargo_jkl567, attrs)
 
     attrs = %{
-      cargo: cargo_jkl567,
       event_type: "LOAD",
       voyage_id: voyage_id_for(voyages, :voyage_cnhkg_usnyc),
       location: "USNYC",
       completed_at: ~U[2009-03-06 00:00:00Z]
     }
 
-    {:ok, _event4} = CargoBookings.create_handling_event(attrs)
+    {:ok, _event4} = CargoBookings.create_handling_event(cargo_jkl567, attrs)
 
     handling_history = CargoBookings.lookup_handling_history(cargo_jkl567.tracking_id)
     CargoBookings.derive_delivery_progress(cargo_jkl567, handling_history)

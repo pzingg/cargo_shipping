@@ -34,15 +34,18 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
 
     belongs_to :cargo, Cargo
 
-    timestamps(inserted_at: :registered_at)
+    timestamps(inserted_at: :registered_at, updated_at: false)
   end
 
-  @cast_fields [:event_type, :voyage_id, :location, :completed_at]
-  @required_fields [:event_type, :location, :completed_at]
+  @cast_fields [:cargo_id, :event_type, :voyage_id, :location, :completed_at, :registered_at]
+  @required_fields [:cargo_id, :event_type, :location, :completed_at]
 
-  @doc false
-  def changeset(handling_event, attrs) do
-    handling_event
+  @doc """
+  Handling events are immutable.
+  """
+  def changeset(cargo, attrs) do
+    cargo
+    |> Ecto.build_assoc(:handling_events)
     |> cast(attrs, @cast_fields)
     |> validate_required(@required_fields)
     |> validate_inclusion(:event_type, @event_type_values)

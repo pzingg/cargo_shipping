@@ -47,9 +47,9 @@ defmodule CargoShipping.CargoBookings.Cargo do
   schema "cargos" do
     field :tracking_id, :string
     field :origin, :string
-    embeds_one :route_specification, RouteSpecification, on_replace: :delete
-    embeds_one :itinerary, Itinerary, on_replace: :delete
-    embeds_one :delivery, Delivery, on_replace: :delete
+    embeds_one :route_specification, RouteSpecification, on_replace: :update
+    embeds_one :itinerary, Itinerary, on_replace: :update
+    embeds_one :delivery, Delivery, on_replace: :update
 
     has_many(:handling_events, HandlingEvent)
 

@@ -1,6 +1,7 @@
 defmodule CargoShippingWeb.LiveHelpers do
   import Phoenix.LiveView.Helpers
 
+  alias CargoShipping.CargoBookings
   alias CargoShipping.CargoBookings.Cargo
   alias CargoShipping.VoyagePlans
   alias CargoShipping.Locations.LocationService
@@ -33,35 +34,40 @@ defmodule CargoShippingWeb.LiveHelpers do
     LocationService.get_by_port_code(location).name
   end
 
-  def cargo_eta(cargo) do
-    if cargo.delivery.eta do
-      Timex.format!(cargo.delivery.eta, "%a %b %d, %Y", :strftime)
-    else
-      "Unknown"
+  def event_time(map, key, default \\ "") do
+    case Map.get(map, key) do
+      nil -> default
+      dt -> Timex.format!(dt, "%a %b %d, %Y %Z", :strftime)
     end
   end
 
   def cargo_next_expected_activity(cargo) do
     activity = cargo.delivery.next_expected_activity
+
     if is_nil(activity) do
-      ""
+      "None"
     else
       voyage_number =
         case activity.voyage_id do
-          nil -> ""
-          voyage_id -> VoyagePlans.get_voyage_number_for_id(voyage_id)
+          nil -> "None"
+          voyage_id -> VoyagePlans.get_voyage_number_for_id!(voyage_id)
         end
-      location =
-        activity.location |> location_name()
+
+      location = activity.location |> location_name()
+
       case activity.event_type do
         :LOAD ->
           "Load cargo onto voyage #{voyage_number} in #{location}"
+
         :UNLOAD ->
           "Unload cargo off of voyage #{voyage_number} in #{location}"
+
         :RECEIVE ->
           "Receive cargo in #{location}"
+
         :CLAIM ->
           "Claim cargo in #{location}"
+
         :CUSTOMS ->
           "Cargo at customs in #{location}"
       end
@@ -91,23 +97,38 @@ defmodule CargoShippingWeb.LiveHelpers do
         location =
           cargo.delivery.last_known_location
           |> location_name
-        "In port at #{location}"
+
+        "Cargo #{cargo.tracking_id} is now in port at #{location}"
+
       :ONBOARD_CARRIER ->
         voyage_number =
           cargo.delivery.current_voyage_id
-          |> VoyagePlans.get_voyage_number_for_id()
-        "Onboard carrier in voyage #{voyage_number}"
-      :CLAIMED -> "Claimed"
-      :NOT_RECEIVED -> "Not received"
-      _ -> "Unknown"
+          |> VoyagePlans.get_voyage_number_for_id!()
+
+        "Cargo #{cargo.tracking_id} is now onboard carrier in voyage #{voyage_number}"
+
+      :CLAIMED ->
+        "Cargo #{cargo.tracking_id} has been claimed"
+
+      :NOT_RECEIVED ->
+        "Cargo #{cargo.tracking_id} has not been received"
+
+      _ ->
+        "Cargo #{cargo.tracking_id} has an unknown status"
+    end
+  end
+
+  def leg_voyage_number(leg) do
+    case leg.voyage_id do
+      nil -> ""
+      voyage_id -> VoyagePlans.get_voyage_number_for_id!(voyage_id)
     end
   end
 
   def handling_event_expected_text(cargo, handling_event) do
-    if Itinerary.handling_event_expected?(cargo.itinerary, handling_event) do
-      "Yes"
-    else
-      "No"
+    case CargoBookings.handling_event_expected(cargo, handling_event) do
+      :ok -> "Yes"
+      {:error, reason} -> reason
     end
   end
 
@@ -115,27 +136,26 @@ defmodule CargoShippingWeb.LiveHelpers do
     voyage_number =
       case handling_event.voyage_id do
         nil -> ""
-        voyage_id -> VoyagePlans.get_voyage_number_for_id(voyage_id)
+        voyage_id -> VoyagePlans.get_voyage_number_for_id!(voyage_id)
       end
-    location = handling_event.location |> location_name()
-    completion_time =
-      handling_event.completed_at
-      |> Timex.format!("%a %b %d, %Y %H:%M:%S %Z", :strftime)
 
-    prefix =
+    location = handling_event.location |> location_name()
+
     case handling_event.event_type do
       :LOAD ->
         "Loaded cargo on voyage #{voyage_number} in #{location}"
+
       :UNLOAD ->
         "Unloaded cargo off of voyage #{voyage_number} in #{location}"
+
       :RECEIVE ->
         "Received cargo in #{location}"
+
       :CLAIM ->
         "Claimed cargo in #{location}"
+
       :CUSTOMS ->
         "Cleared customs"
     end
-
-    "#{prefix}, at #{completion_time}"
   end
 end

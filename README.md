@@ -18,15 +18,20 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
   * Forum: https://elixirforum.com/c/phoenix-forum
   * Source: https://github.com/phoenixframework/phoenix
 
+## Clerk web interface at /tracking
 
-## Admin web interface at /tracking/opsmanagers
+* `live "/", CargoLive.Search, :index` (from track.html)
 
-live "/", CargoLive.Index, :index (from admin/list.html)
-live "/new", CargoLive.Index, :new (from admin/registrationForm.html)
-live "/:cargo_id", CargoLive.Show, :show (from admin/show.html)
-live "/:cargo_id/edit_destination", CargoLive.Show, :edit_destination (from admin/pickNewDestination.html)
-live "/:cargo_id/select_route", CargoLive.Show, :select_route (from admin/selectItinerary.html)
 
-## Clerk web interface at /tracking/clerks
+## Admin web interface at /managers
 
-live "/", CargoLive.Search, :index (from track.html)
+* `live "/", CargoLive.Index, :index` (from admin/list.html)
+* `live "/:id", CargoLive.Show, :show` (from admin/show.html)
+* `live "/events", HandlingEventLive.Index, :index` (from admin/list.html)
+* `live "/events/:id", HandlingEventLive.Show, :show` (from admin/show.html)
+
+## Admin web interface TODO at /managers
+
+* `live "/new", CargoLive.Index, :new` (from admin/registrationForm.html)
+* `live "/:id/edit_destination", CargoLive.Show, :edit_destination` (from admin/pickNewDestination.html)
+* `live "/:id/select_route", CargoLive.Show, :select_route` (from admin/selectItinerary.html)

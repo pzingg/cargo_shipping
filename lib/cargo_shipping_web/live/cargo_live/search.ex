@@ -38,7 +38,9 @@ defmodule CargoShippingWeb.CargoLive.Search do
   end
 
   def handle_event("suggest", %{"tracking_id" => prefix}, socket) do
-    socket = assign(socket, matches: CargoBookings.suggest_tracking_ids(prefix))
+    matches = CargoBookings.suggest_tracking_ids(prefix)
+    socket = assign(socket, matches: matches)
+
     {:noreply, socket}
   end
 

@@ -39,6 +39,11 @@ defmodule CargoShipping.VoyagePlans do
   """
   def get_voyage!(id), do: Repo.get!(Voyage, id)
 
+  def get_voyage_number_for_id!(nil), do: nil
+  def get_voyage_number_for_id!(id) do
+    get_voyage!(id).voyage_number
+  end
+
   @doc """
   Creates a voyage.
 

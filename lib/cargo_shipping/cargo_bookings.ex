@@ -2,11 +2,12 @@ defmodule CargoShipping.CargoBookings do
   @moduledoc """
   The CargoBookings context.
   """
-
   import Ecto.Query, warn: false
 
+  require Logger
+
   alias CargoShipping.Repo
-  alias CargoShipping.CargoBookings.{Cargo, Delivery, HandlingEvent}
+  alias CargoShipping.CargoBookings.{Cargo, Itinerary, Delivery, HandlingEvent}
 
   ## Cargo module
 
@@ -42,9 +43,14 @@ defmodule CargoShipping.CargoBookings do
   def get_cargo_by_tracking_id!(tracking_id) when is_binary(tracking_id) do
     query =
       from c in Cargo,
-        left_join: he in assoc(c, :handling_events),
         where: c.tracking_id == ^tracking_id,
-        preload: [handling_events: he]
+        preload: [
+          handling_events:
+            ^from(
+              he in HandlingEvent,
+              order_by: he.completed_at
+            )
+        ]
 
     case query |> Repo.one() do
       nil ->
@@ -60,11 +66,13 @@ defmodule CargoShipping.CargoBookings do
       []
     else
       prefix_pattern = "#{prefix}%"
+
       query =
         from c in Cargo,
           where: like(c.tracking_id, ^prefix_pattern),
           select: c.tracking_id,
           order_by: c.tracking_id
+
       query
       |> Repo.all()
     end
@@ -162,6 +170,10 @@ defmodule CargoShipping.CargoBookings do
     |> Repo.all()
   end
 
+  def handling_event_expected(cargo, handling_event) do
+    Itinerary.handling_event_expected(cargo.itinerary, handling_event)
+  end
+
   @doc """
   Updates all aspects of the `Cargo` aggregate status
   based on the current route specification, itinerary and handling of the cargo.
@@ -179,10 +191,10 @@ defmodule CargoShipping.CargoBookings do
     # TODO filter events on cargo (must be same as this cargo)
 
     # `Delivery` is a value object, so we can simply discard the old one
-    # and replace it with a new
+    # and replace it with a new one.
     delivery = Delivery.derived_from(cargo.route_specification, cargo.itinerary, handling_history)
-    {:ok, updated_cargo} = update_cargo(cargo, %{delivery: delivery})
-    {:ok, updated_cargo}
+
+    update_cargo(cargo, %{delivery: delivery})
   end
 
   def assign_cargo_to_route(cargo, itinerary) when is_map(itinerary) do
@@ -219,63 +231,15 @@ defmodule CargoShipping.CargoBookings do
 
   ## Examples
 
-      iex> create_handling_event(%{field: value})
+      iex> create_handling_event(cargo, %{field: value})
       {:ok, %HandlingEvent{}}
 
-      iex> create_handling_event(%{field: bad_value})
+      iex> create_handling_event(cargo, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_handling_event(attrs \\ %{}) do
-    %HandlingEvent{}
-    |> HandlingEvent.changeset(attrs)
+  def create_handling_event(cargo, attrs \\ %{}) do
+    HandlingEvent.changeset(cargo, attrs)
     |> Repo.insert()
-  end
-
-  @doc """
-  Updates a handling_event.
-
-  ## Examples
-
-      iex> update_handling_event(handling_event, %{field: new_value})
-      {:ok, %HandlingEvent{}}
-
-      iex> update_handling_event(handling_event, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_handling_event(%HandlingEvent{} = handling_event, attrs) do
-    handling_event
-    |> HandlingEvent.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a handling_event.
-
-  ## Examples
-
-      iex> delete_handling_event(handling_event)
-      {:ok, %HandlingEvent{}}
-
-      iex> delete_handling_event(handling_event)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_handling_event(%HandlingEvent{} = handling_event) do
-    Repo.delete(handling_event)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking handling_event changes.
-
-  ## Examples
-
-      iex> change_handling_event(handling_event)
-      %Ecto.Changeset{data: %HandlingEvent{}}
-
-  """
-  def change_handling_event(%HandlingEvent{} = handling_event, attrs \\ %{}) do
-    HandlingEvent.changeset(handling_event, attrs)
   end
 end

@@ -10,7 +10,7 @@ defmodule CargoShipping.Repo.Migrations.CreateHandlingEvents do
       add :completed_at, :utc_datetime
       add :cargo_id, references(:cargos, type: :binary_id)
 
-      timestamps(inserted_at: :registered_at)
+      timestamps(inserted_at: :registered_at, updated_at: false)
     end
   end
 end

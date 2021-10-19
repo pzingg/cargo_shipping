@@ -3,91 +3,96 @@
 .datepicker {
   position: relative;
   width: 350px;
+}
 
-  .calendar {
+.datepicker .calendar {
     border: 0.1rem solid #d1d1d1;
     border-radius: 5px;
     padding: 1rem;
     transition-property: opacity;
     transition-duration: 75ms;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-    &.hidden {
+.datepicker .calendar.hidden {
       opacity: 0;
       pointer-events: none;
     }
 
-    .header {
+.datepicker .calendar .header {
       display: flex;
       flex-direction: row;
       justify-content: space-between;
       justify-items: center;
       align-items: center;
+}
 
-      .toggles {
+.datepicker .calendar .header .toggles {
         margin-top: 3px;
         display: flex;
         flex-direction: row;
+}
 
-        button {
+
+.datepicker .calendar .header .toggles button {
           padding: 0 1.0rem;
+}
 
-          &.disabled {
+
+.datepicker .calendar .header .toggles button.disabled {
             cursor: not-allowed;
             background-color: #606c76;
-          }
-        }
-      }
-    }
+}
 
-    .weekdays {
+.datepicker .calendar .weekdays {
       display: flex;
       flex-direction: row;
       margin-top: 1rem;
+}
 
-      .day {
+.datepicker .calendar .weekdays .day {
         text-align: center;
         font-weight: 500;
-      }
-    }
+}
 
-    .monthdays {
+.datepicker .calendar .monthdays {
       display: flex;
       flex-wrap: wrap;
       margin-top: 4px;
+}
 
-      .day {
+
+.datepicker .calendar .monthdays .day {
         text-align: center;
         padding-top: 4px;
         padding-bottom: 4px;
+}
 
-        &.selectable {
+
+.datepicker .calendar .monthdays .day.selectable {
           cursor: pointer;
+}
 
-          &:hover {
+
+.datepicker .calendar .monthdays .day.selectable:hover {
             background-color: #0069D9;
             color: white;
             border-radius: 5px;
-          }
-        }
+}
 
-        &.unselectable {
+.datepicker .calendar .monthdays .day.unselectable {
           color: #bdbdbd;
           cursor: not-allowed;
-        }
-      }
-    }
-  }
+}
 
-  .icon {
+.datepicker .icon {
     position: absolute;
     top: 6px;
     right: 8px;
+}
 
-    svg {
+.datepicker .icon svg {
       height: 25px;
       width: 25px;
       color: #aaaaaa;
-    }
-  }
 }

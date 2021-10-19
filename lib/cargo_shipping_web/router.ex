@@ -8,34 +8,42 @@ defmodule CargoShippingWeb.Router do
     plug :put_root_layout, {CargoShippingWeb.LayoutView, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    # plug :fetch_current_user
   end
 
   pipeline :api do
     plug :accepts, ["json"]
   end
 
+  ## The following scopes are organized by application user
+
+  scope "/tracking", CargoShippingWeb do
+    pipe_through :browser
+
+    live "/", CargoLive.Search, :index
+  end
+
+  scope "/managers", CargoShippingWeb do
+    pipe_through :browser
+
+    live "/", CargoLive.Index, :index
+    live "/:id", CargoLive.Show, :show
+    live "/events", HandlingEventLive.Index, :index
+    live "/events/:id", HandlingEventLive.Show, :show
+  end
+
+  ## This scope handles JSON requests and responses
+
+  scope "/api", CargoShippingWeb do
+    pipe_through :api
+  end
+
+  ## This scope handles landing page, logins, etc.
+
   scope "/", CargoShippingWeb do
     pipe_through :browser
 
     get "/", PageController, :index
-  end
-
-  scope "/tracking", CargoShippingWeb do
-    ## The following scopes are organized by application user
-    scope "/clerks" do
-      live "/", CargoLive.ClerkIndex, :index
-    end
-
-    scope "/opsmanagers" do
-      live "/", CargoLive.Index, :index
-      live "/events", HandlingEventLive.Index, :index
-      live "/events/:id", HandlingEventLive.Show, :show
-    end
-
-    ## This scope handles JSON requests and responses
-    scope "/api" do
-      pipe_through :api
-    end
   end
 
   # Enables LiveDashboard only for development

@@ -15,6 +15,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
   @routing_status_values [:NOT_ROUTED, :ROUTED, :MISROUTED]
   @eta_unknown nil
 
+  @primary_key false
   embedded_schema do
     field :transport_status, Ecto.Enum, values: @transport_status_values
     field :last_known_location, :string
@@ -166,7 +167,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
   def calculate_misdirection_status(_itinerary, nil), do: false
 
   def calculate_misdirection_status(itinerary, last_event) do
-    Itinerary.handling_event_expected?(itinerary, last_event)
+    :ok != Itinerary.handling_event_expected(itinerary, last_event)
   end
 
   def calculate_eta(_itinerary, false), do: @eta_unknown
@@ -186,7 +187,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
   def calculate_next_expected_activity(_route_specification, itinerary, last_event, _on_track) do
     case last_event.event_type do
       :LOAD ->
-        case Enum.find(itinerary.legs, fn leg -> leg.location == last_event.location end) do
+        case Enum.find(itinerary.legs, fn leg -> leg.load_location == last_event.location end) do
           nil ->
             nil
 
@@ -196,7 +197,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
         end
 
       :UNLOAD ->
-        case Enum.find_index(itinerary.legs, fn leg -> leg.location == last_event.location end) do
+        case Enum.find_index(itinerary.legs, fn leg -> leg.unload_location == last_event.location end) do
           nil ->
             nil
 
@@ -220,9 +221,16 @@ defmodule CargoShipping.CargoBookings.Delivery do
   end
 
   def activity_from_leg(leg, event_type) do
+    location =
+      case event_type do
+        :LOAD -> leg.load_location
+        :UNLOAD -> leg.unload_location
+        :CLAIM -> leg.unload_location
+        _ -> raise RuntimeError, "Unexpected type #{event_type} for next handling activity"
+      end
     %{
       event_type: event_type,
-      location: leg.location,
+      location: location,
       voyage_id: leg.voyage_id
     }
   end
@@ -230,6 +238,6 @@ defmodule CargoShipping.CargoBookings.Delivery do
   def calculate_unloaded_at_destination(_route_specification, nil), do: false
 
   def calculate_unloaded_at_destination(route_specification, last_event) do
-    last_event.event_type == :UNLOAD && last_event.location == route_specification.location
+    last_event.event_type == :UNLOAD && last_event.location == route_specification.destination
   end
 end

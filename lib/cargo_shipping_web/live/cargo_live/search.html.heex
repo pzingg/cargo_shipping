@@ -1,7 +1,10 @@
 <h1><%= @header %></h1>
 
-<form phx-submit="search">
+<form phx-submit="search" phx-change="suggest">
   <label>Enter your tracking id:</label>
+  <%= if !@cargo && @matches == [] do %>
+    <em>Hint: try tracking "ABC123" or "JKL567".</em><br/>
+  <% end %>
   <input
     type="text"
     name="tracking_id"
@@ -10,23 +13,24 @@
     list="matches"
     readonly={@loading}
     value={@tracking_id}
-    phx-change="suggest"
-    phx-debounce="1000">
+    phx-debounce="500">
+  <datalist id="matches">
+    <%= for tracking_id <- @matches do %>
+      <option value={tracking_id}><%= tracking_id %></option>
+    <% end %>
+  </datalist>
+
   <button type="submit">
     Search
   </button>
 </form>
 
-<%= if !@cargo do %>
-<em>Hint: try tracking "ABC123" or "JKL567".</em>
-<% else %>
-<h2>Cargo <%= @cargo.tracking_id %> is now:
-  <%= cargo_status_text(@cargo) %>
-</h2>
+<%= if @cargo do %>
+<h2><%= cargo_status_text(@cargo) %></h2>
 
 <ul>
   <li><strong>Estimated time of arrival in <%= cargo_destination(@cargo) %>:</strong>
-    <%= cargo_eta(@cargo) %>
+    <%= event_time(@cargo.delivery, :eta) %>
   </li>
   <li><strong>Next expected activity:</strong>
     <%= cargo_next_expected_activity(@cargo) %>
@@ -35,22 +39,48 @@
   <li><strong>Cargo is misdirected!</strong></li>
   <% end %>
 </ul>
+
+<h2>Itinerary</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Voyage</th>
+      <th>Load in</th>
+      <th>Date</th>
+      <th>Unload in</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody id="itinerary-legs">
+    <%= for leg <- @cargo.itinerary.legs do %>
+      <tr id={"leg-#{leg.load_location}-#{leg.unload_location}"}>
+        <td><%= leg_voyage_number(leg) %></td>
+        <td><%= location_name(leg.load_location) %></td>
+        <td><%= event_time(leg, :load_time) %></td>
+        <td><%= location_name(leg.unload_location) %></td>
+        <td><%= event_time(leg, :unload_time) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
 <% end %>
 
-<%= if @handling_events do %>
+<%= if !Enum.empty?(@handling_events) do %>
 <h2>Handling history</h2>
 <table>
   <thead>
     <tr>
-      <th>Expected?</th>
+      <th>Completed at</th>
       <th>Description</th>
+      <th>Expected?</th>
     </tr>
   </thead>
   <tbody id="handling-events">
     <%= for handling_event <- @handling_events do %>
       <tr id={"handling-event-#{handling_event.id}"}>
-        <td><%= handling_event_expected_text(@cargo, handling_event) %></td>
+        <td><%= event_time(handling_event, :completed_at) %></td>
         <td><%= handling_event_description(handling_event) %></td>
+        <td><%= handling_event_expected_text(@cargo, handling_event) %></td>
       </tr>
     <% end %>
   </tbody>

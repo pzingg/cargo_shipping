@@ -11,6 +11,7 @@ defmodule CargoShipping.CargoBookings.RouteSpecification do
 
   alias CargoShipping.Locations
 
+  @primary_key false
   embedded_schema do
     field :origin, :string
     field :destination, :string
