@@ -18,10 +18,14 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
   * Forum: https://elixirforum.com/c/phoenix-forum
   * Source: https://github.com/phoenixframework/phoenix
 
+# Web interface
+
+Original Java templates at `dddsample/src/main/resources/templates`
+
+
 ## Clerk web interface at /tracking
 
 * `live "/", CargoLive.Search, :index` (from track.html)
-
 
 ## Admin web interface at /managers
 

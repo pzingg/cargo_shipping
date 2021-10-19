@@ -1,8 +1,65 @@
-<h1>Cargo</h1>
+<h1>Details for cargo <%= @cargo.tracking_id %></h1>
+
+<h2><%= cargo_status_text(@cargo) %></h2>
 
 <ul>
+  <li><strong>Origin:</strong>
+    <%= cargo_origin(@cargo) %>
+  </li>
+  <li><strong>Destination:</strong>
+    <%= cargo_destination(@cargo) %>
+  </li>
   <li>
-    <strong>Tracking id:</strong>
-    <%= @cargo.tracking_id %>
+    <a href="#" type="button">Pick new destination</a>
+  </li>
+  <li>
+    <strong>Arrival deadline:</strong>
+    <%= event_time(@cargo.route_specification, :arrival_deadline) %>
   </li>
 </ul>
+
+<h2>Itinerary</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Voyage</th>
+      <th>Load in</th>
+      <th>Date</th>
+      <th>Unload in</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody id="itinerary-legs">
+    <%= for leg <- @cargo.itinerary.legs do %>
+      <tr id={"leg-#{leg.load_location}-#{leg.unload_location}"}>
+        <td><%= leg_voyage_number(leg) %></td>
+        <td><%= location_name(leg.load_location) %></td>
+        <td><%= event_time(leg, :load_time) %></td>
+        <td><%= location_name(leg.unload_location) %></td>
+        <td><%= event_time(leg, :unload_time) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<%= if !Enum.empty?(@handling_events) do %>
+<h2>Handling history</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Completed at</th>
+      <th>Description</th>
+      <th>Expected?</th>
+    </tr>
+  </thead>
+  <tbody id="handling-events">
+    <%= for handling_event <- @handling_events do %>
+      <tr id={"handling-event-#{handling_event.id}"}>
+        <td><%= event_time(handling_event, :completed_at) %></td>
+        <td><%= handling_event_description(handling_event) %></td>
+        <td><%= handling_event_expected_text(@cargo, handling_event) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<% end %>

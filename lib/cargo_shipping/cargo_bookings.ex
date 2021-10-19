@@ -40,6 +40,27 @@ defmodule CargoShipping.CargoBookings do
   """
   def get_cargo!(id), do: Repo.get!(Cargo, id)
 
+  def get_cargo_and_events!(id) do
+    query =
+      from c in Cargo,
+        where: c.id == ^id,
+        preload: [
+          handling_events:
+            ^from(
+              he in HandlingEvent,
+              order_by: he.completed_at
+            )
+        ]
+
+    case query |> Repo.one() do
+      nil ->
+        raise Ecto.NoResultsError
+
+      cargo ->
+        cargo
+    end
+  end
+
   def get_cargo_by_tracking_id!(tracking_id) when is_binary(tracking_id) do
     query =
       from c in Cargo,

@@ -10,12 +10,16 @@ defmodule CargoShippingWeb.CargoLive.Show do
 
   @impl true
   def handle_params(%{"id" => id}, _, socket) do
-    cargo = CargoBookings.get_cargo!(id)
+    cargo = CargoBookings.get_cargo_and_events!(id)
+
     {:noreply,
      socket
      |> assign(:page_title, page_title(socket.assigns.live_action))
-     |> assign(:tracking_id, cargo.tracking_id)
-     |> assign(:cargo, cargo)}
+     |> assign(
+       handling_events: cargo.handling_events,
+       tracking_id: cargo.tracking_id,
+       cargo: cargo
+     )}
   end
 
   defp page_title(:show), do: "Cargo"
