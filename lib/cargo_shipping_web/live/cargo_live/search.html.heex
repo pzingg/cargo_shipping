@@ -1,0 +1,58 @@
+<h1><%= @header %></h1>
+
+<form phx-submit="search">
+  <label>Enter your tracking id:</label>
+  <input
+    type="text"
+    name="tracking_id"
+    autofocus
+    autocomplete="off"
+    list="matches"
+    readonly={@loading}
+    value={@tracking_id}
+    phx-change="suggest"
+    phx-debounce="1000">
+  <button type="submit">
+    Search
+  </button>
+</form>
+
+<%= if !@cargo do %>
+<em>Hint: try tracking "ABC123" or "JKL567".</em>
+<% else %>
+<h2>Cargo <%= @cargo.tracking_id %> is now:
+  <%= cargo_status_text(@cargo) %>
+</h2>
+
+<ul>
+  <li><strong>Estimated time of arrival in <%= cargo_destination(@cargo) %>:</strong>
+    <%= cargo_eta(@cargo) %>
+  </li>
+  <li><strong>Next expected activity:</strong>
+    <%= cargo_next_expected_activity(@cargo) %>
+  </li>
+  <%= if cargo_misdirected?(@cargo) do %>
+  <li><strong>Cargo is misdirected!</strong></li>
+  <% end %>
+</ul>
+<% end %>
+
+<%= if @handling_events do %>
+<h2>Handling history</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Expected?</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody id="handling-events">
+    <%= for handling_event <- @handling_events do %>
+      <tr id={"handling-event-#{handling_event.id}"}>
+        <td><%= handling_event_expected_text(@cargo, handling_event) %></td>
+        <td><%= handling_event_description(handling_event) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<% end %>

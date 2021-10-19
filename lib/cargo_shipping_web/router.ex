@@ -23,9 +23,7 @@ defmodule CargoShippingWeb.Router do
   scope "/tracking", CargoShippingWeb do
     ## The following scopes are organized by application user
     scope "/clerks" do
-      # TODO: limit the scope of what the clerk can see
-      live "/", CargoLive.Index, :index
-      live "/cargos/:tracking_id", CargoLive.Show, :show
+      live "/", CargoLive.ClerkIndex, :index
     end
 
     scope "/opsmanagers" do

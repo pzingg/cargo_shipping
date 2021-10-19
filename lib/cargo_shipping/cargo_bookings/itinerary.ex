@@ -26,7 +26,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
   @doc """
   Test if the given handling event is expected when executing this itinerary.
   """
-  def is_expected?(itinerary, handling_event) do
+  def handling_event_expected?(itinerary, handling_event) do
     case itinerary.legs do
       [] ->
         false

@@ -42,7 +42,9 @@ defmodule CargoShipping.CargoBookings do
   def get_cargo_by_tracking_id!(tracking_id) when is_binary(tracking_id) do
     query =
       from c in Cargo,
-        where: c.tracking_id == ^tracking_id
+        left_join: he in assoc(c, :handling_events),
+        where: c.tracking_id == ^tracking_id,
+        preload: [handling_events: he]
 
     case query |> Repo.one() do
       nil ->
@@ -50,6 +52,21 @@ defmodule CargoShipping.CargoBookings do
 
       cargo ->
         cargo
+    end
+  end
+
+  def suggest_tracking_ids(prefix) do
+    if String.length(prefix) < 3 do
+      []
+    else
+      prefix_pattern = "#{prefix}%"
+      query =
+        from c in Cargo,
+          where: like(c.tracking_id, ^prefix_pattern),
+          select: c.tracking_id,
+          order_by: c.tracking_id
+      query
+      |> Repo.all()
     end
   end
 

@@ -166,7 +166,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
   def calculate_misdirection_status(_itinerary, nil), do: false
 
   def calculate_misdirection_status(itinerary, last_event) do
-    Itinerary.is_expected?(itinerary, last_event)
+    Itinerary.handling_event_expected?(itinerary, last_event)
   end
 
   def calculate_eta(_itinerary, false), do: @eta_unknown
