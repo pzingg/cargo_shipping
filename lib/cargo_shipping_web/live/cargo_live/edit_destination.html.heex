@@ -1,0 +1,28 @@
+<div>
+  <h2><%= @page_title %></h2>
+
+  <ul>
+    <li>
+      Change destination for cargo <%= @tracking_id %>
+    </li>
+    <li>
+      <strong>Current destination: <%= cargo_destination(@cargo) %></strong>
+    </li>
+  </ul>
+
+  <.form
+    let={f}
+    for={@changeset}
+    id="cargo-destination-form"
+    phx-change="validate"
+    phx-submit="save">
+
+    <%= label f, :destination, "New destination" %>
+    <%= select f, :destination, @location_options %>
+    <%= error_tag f, :destination %>
+
+    <div>
+      <%= submit "Save", phx_disable_with: "Saving..." %>
+    </div>
+  </.form>
+</div>

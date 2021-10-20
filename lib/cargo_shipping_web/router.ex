@@ -28,6 +28,8 @@ defmodule CargoShippingWeb.Router do
 
     live "/", CargoLive.Index, :index
     live "/:id", CargoLive.Show, :show
+    live "/:id/destination/edit", CargoLive.EditDestination, :edit
+    live "/:id/route/edit", CargoLive.EditRoute, :edit
     live "/events", HandlingEventLive.Index, :index
     live "/events/:id", HandlingEventLive.Show, :show
   end

@@ -135,6 +135,19 @@ defmodule CargoShipping.CargoBookings do
     |> Repo.update()
   end
 
+  def update_cargo_destination(%Cargo{} = cargo, destination) do
+    route_specification = %{
+      origin: cargo.route_specification.origin,
+      destination: destination,
+      arrival_deadline: cargo.route_specification.arrival_deadline
+    }
+
+    attrs = specify_new_route(cargo, route_specification)
+    Logger.error("update_cargo_destination #{inspect(attrs)}")
+
+    update_cargo(cargo, attrs)
+  end
+
   @doc """
   Deletes a cargo.
 
@@ -162,6 +175,11 @@ defmodule CargoShipping.CargoBookings do
   """
   def change_cargo(%Cargo{} = cargo, attrs \\ %{}) do
     Cargo.changeset(cargo, attrs)
+  end
+
+  def change_cargo_destination(%Cargo{} = cargo, attrs \\ %{}) do
+    %Cargo.EditDestination{destination: Cargo.destination(cargo)}
+    |> Cargo.EditDestination.changeset(attrs)
   end
 
   ## HandlingEvent module
@@ -226,9 +244,13 @@ defmodule CargoShipping.CargoBookings do
       maybe_delivery
       |> Delivery.update_on_routing(cargo.route_specification, itinerary)
 
-    cargo
-    |> Map.put(:itinerary, itinerary)
-    |> Map.put(:delivery, delivery)
+    %{itinerary: itinerary, delivery: delivery}
+  end
+
+  def specify_new_route(cargo, route_specification) do
+    delivery = Delivery.update_on_routing(nil, route_specification, cargo.itinerary)
+
+    %{route_specification: route_specification, delivery: delivery}
   end
 
   @doc """

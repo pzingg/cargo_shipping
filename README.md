@@ -38,4 +38,4 @@ Original Java templates at `dddsample/src/main/resources/templates`
 
 * `live "/new", CargoLive.Index, :new` (from admin/registrationForm.html)
 * `live "/:id/edit_destination", CargoLive.Show, :edit_destination` (from admin/pickNewDestination.html)
-* `live "/:id/select_route", CargoLive.Show, :select_route` (from admin/selectItinerary.html)
+* `live "/:id/edit_route", CargoLive.Show, :edit_route` (from admin/selectItinerary.html)

@@ -1,6 +1,6 @@
 <h1>Details for cargo <%= @cargo.tracking_id %></h1>
 
-<h2><%= cargo_status_text(@cargo) %></h2>
+<h2><%= cargo_transport_status(@cargo) %></h2>
 
 <ul>
   <li><strong>Origin:</strong>
@@ -8,9 +8,7 @@
   </li>
   <li><strong>Destination:</strong>
     <%= cargo_destination(@cargo) %>
-  </li>
-  <li>
-    <a href="#" type="button">Pick new destination</a>
+    <span><%= live_redirect "Change destination", to: Routes.cargo_edit_destination_path(@socket, :edit, @cargo) %></span>
   </li>
   <li>
     <strong>Arrival deadline:</strong>
@@ -19,6 +17,16 @@
 </ul>
 
 <h2>Itinerary</h2>
+
+<%= if cargo_misrouted?(@cargo) do %>
+<ul>
+  <li>
+    <strong>Cargo is misrouted!</strong>
+    <span><%= live_redirect "Reroute this cargo", to: Routes.cargo_edit_route_path(@socket, :edit, @cargo) %></span>
+  </li>
+</ul>
+<% end %>
+
 <table>
   <thead>
     <tr>
@@ -42,24 +50,11 @@
   </tbody>
 </table>
 
-<%= if !Enum.empty?(@handling_events) do %>
-<h2>Handling history</h2>
-<table>
-  <thead>
-    <tr>
-      <th>Completed at</th>
-      <th>Description</th>
-      <th>Expected?</th>
-    </tr>
-  </thead>
-  <tbody id="handling-events">
-    <%= for handling_event <- @handling_events do %>
-      <tr id={"handling-event-#{handling_event.id}"}>
-        <td><%= event_time(handling_event, :completed_at) %></td>
-        <td><%= handling_event_description(handling_event) %></td>
-        <td><%= handling_event_expected_text(@cargo, handling_event) %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+<%= if !cargo_routed?(@cargo) do %>
+<ul>
+  <li>
+    <strong>Cargo has not been routed!</strong>
+    <span><%= live_redirect "Select a route", to: Routes.cargo_edit_route_path(@socket, :edit, @cargo) %></span>
+  </li>
+</ul>
 <% end %>

@@ -13,7 +13,7 @@ defmodule CargoShipping.CargoBookings.Cargo do
   and assigns the Cargo to one route. The route to which a Cargo is assigned is described
   by an `Itinerary`.
 
-  A Cargo can be re-routed during transport, on demand of the customer, in which case
+  A Cargo can be re-routing_status during transport, on demand of the customer, in which case
   a new route is specified for the Cargo and a new route is requested. The old itinerary,
   being a value object, is discarded and a new one is attached.
 
@@ -69,11 +69,26 @@ defmodule CargoShipping.CargoBookings.Cargo do
     |> validate_required([:origin])
   end
 
-  def final_destination(cargo) do
+  defmodule EditDestination do
+    @moduledoc """
+    Use a schemaless changeset to build edit destination form.
+    """
+    defstruct [:destination]
+
+    @types %{destination: :string}
+
+    def changeset(destination, attrs) do
+      {destination, @types}
+      |> cast(attrs, [:destination])
+      |> RouteSpecification.validate_location_code(:destination)
+    end
+  end
+
+  def destination(cargo) do
     cargo.route_specification.destination
   end
 
-  def routed(cargo) do
+  def routing_status(cargo) do
     cargo.delivery.routing_status
   end
 

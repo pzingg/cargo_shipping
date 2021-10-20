@@ -14,8 +14,8 @@
       <tr id={"cargo-#{cargo.id}"}>
         <td><%= cargo.tracking_id %></td>
         <td><%= cargo_origin(cargo) %></td>
-        <td><%= cargo_final_destination(cargo) %></td>
-        <td><%= cargo_routed(cargo) %></td>
+        <td><%= cargo_destination(cargo) %></td>
+        <td><%= cargo_routing_status(cargo) %></td>
         <td>
           <span><%= live_redirect "Show", to: Routes.cargo_show_path(@socket, :show, cargo) %></span>
         </td>

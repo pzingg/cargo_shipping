@@ -34,6 +34,15 @@ defmodule CargoShippingWeb.LiveHelpers do
     LocationService.get_by_port_code(location).name
   end
 
+  def all_location_options() do
+    Enum.map(LocationService.all(), fn %{port_code: port_code, name: name} ->
+      # First element is the option label
+      # Second element is the option value
+      {name, port_code}
+    end)
+    |> Enum.sort()
+  end
+
   def event_time(map, key, default \\ "") do
     case Map.get(map, key) do
       nil -> default
@@ -80,23 +89,28 @@ defmodule CargoShippingWeb.LiveHelpers do
     cargo.origin |> location_name()
   end
 
-  # TODO???
   def cargo_destination(cargo) do
-    cargo_final_destination(cargo)
+    Cargo.destination(cargo) |> location_name()
   end
 
-  def cargo_final_destination(cargo) do
-    Cargo.final_destination(cargo) |> location_name()
+  def cargo_routing_status(cargo) do
+    case Cargo.routing_status(cargo) do
+      :ROUTED -> "Routed"
+      :MISROUTED -> "Misrouted"
+      :NOT_ROUTED -> "Not routed"
+    end
   end
 
-  def cargo_routed(cargo), do: Cargo.routed(cargo)
+  def cargo_routed?(cargo), do: Cargo.routing_status(cargo) != :NOT_ROUTED
 
-  def cargo_status_text(cargo) do
+  def cargo_misrouted?(cargo), do: Cargo.routing_status(cargo) == :MISROUTED
+
+  def cargo_transport_status(cargo) do
     case cargo.delivery.transport_status do
       :IN_PORT ->
         location =
           cargo.delivery.last_known_location
-          |> location_name
+          |> location_name()
 
         "Cargo #{cargo.tracking_id} is now in port at #{location}"
 

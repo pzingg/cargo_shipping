@@ -26,7 +26,7 @@
 </form>
 
 <%= if @cargo do %>
-<h2><%= cargo_status_text(@cargo) %></h2>
+<h2><%= cargo_transport_status(@cargo) %></h2>
 
 <ul>
   <li><strong>Estimated time of arrival in <%= cargo_destination(@cargo) %>:</strong>

@@ -1,8 +1,6 @@
 defmodule CargoShippingWeb.HandlingEventLive.Index do
   use CargoShippingWeb, :live_view
 
-  alias CargoShipping.CargoBookings
-
   @impl true
   def mount(_params, _session, socket) do
     {:ok, socket |> default_assigns()}
