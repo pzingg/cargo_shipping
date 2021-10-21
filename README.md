@@ -39,3 +39,13 @@ Original Java templates at `dddsample/src/main/resources/templates`
 * `live "/new", CargoLive.Index, :new` (from admin/registrationForm.html)
 * `live "/:id/edit_destination", CargoLive.Show, :edit_destination` (from admin/pickNewDestination.html)
 * `live "/:id/edit_route", CargoLive.Show, :edit_route` (from admin/selectItinerary.html)
+
+
+## API web interface at /api
+
+* `resource
+
+
+## Testing TODO
+
+Reproduce CargoLifecycleScenarioTest.java

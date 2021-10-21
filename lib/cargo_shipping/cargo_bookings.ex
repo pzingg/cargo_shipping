@@ -83,6 +83,13 @@ defmodule CargoShipping.CargoBookings do
     end
   end
 
+  def cargo_tracking_id_exists?(tracking_id) when is_binary(tracking_id) do
+    query =
+      from c in Cargo,
+        where: c.tracking_id == ^tracking_id
+    Repo.exists?(query)
+  end
+
   def suggest_tracking_ids(prefix) do
     if String.length(prefix) < 3 do
       []
@@ -254,9 +261,7 @@ defmodule CargoShipping.CargoBookings do
 
     # `Delivery` is a value object, so we can simply discard the old one
     # and replace it with a new one.
-    delivery = Delivery.derived_from(cargo.route_specification, cargo.itinerary, handling_history)
-
-    update_cargo(cargo, %{delivery: delivery})
+    Delivery.derived_from(cargo.route_specification, cargo.itinerary, handling_history)
   end
 
   def assign_cargo_to_route(cargo, itinerary) when is_map(itinerary) do
@@ -306,6 +311,11 @@ defmodule CargoShipping.CargoBookings do
   """
   def create_handling_event(cargo, attrs \\ %{}) do
     HandlingEvent.changeset(cargo, attrs)
+    |> Repo.insert()
+  end
+
+  def create_handling_event_from_report(attrs \\ %{}) do
+    HandlingEvent.handling_report_changeset(attrs)
     |> Repo.insert()
   end
 end

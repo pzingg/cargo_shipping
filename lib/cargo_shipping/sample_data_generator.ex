@@ -381,7 +381,8 @@ defmodule CargoShipping.SampleDataGenerator do
     {:ok, _event3} = CargoBookings.create_handling_event(cargo_abc123, attrs)
 
     handling_history = CargoBookings.lookup_handling_history(cargo_abc123.tracking_id)
-    CargoBookings.derive_delivery_progress(cargo_abc123, handling_history)
+    delivery = CargoBookings.derive_delivery_progress(cargo_abc123, handling_history)
+    CargoBookings.update_cargo(cargo_abc123, %{delivery: delivery})
   end
 
   def cargo_abc123_legs(voyages) do
@@ -467,7 +468,8 @@ defmodule CargoShipping.SampleDataGenerator do
     {:ok, _event4} = CargoBookings.create_handling_event(cargo_jkl567, attrs)
 
     handling_history = CargoBookings.lookup_handling_history(cargo_jkl567.tracking_id)
-    CargoBookings.derive_delivery_progress(cargo_jkl567, handling_history)
+    delivery = CargoBookings.derive_delivery_progress(cargo_jkl567, handling_history)
+    CargoBookings.update_cargo(cargo_jkl567, %{delivery: delivery})
   end
 
   def cargo_jkl567_legs(voyages) do

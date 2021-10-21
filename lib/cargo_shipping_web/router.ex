@@ -38,6 +38,8 @@ defmodule CargoShippingWeb.Router do
 
   scope "/api", CargoShippingWeb do
     pipe_through :api
+
+    resources "/handling_reports", HandlingReportController, only: [:index, :create, :show]
   end
 
   ## This scope handles landing page, logins, etc.

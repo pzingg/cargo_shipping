@@ -41,6 +41,17 @@ defmodule CargoShipping.VoyageService do
     end
   end
 
+  def voyage_number_exists?(nil), do: false
+
+  def voyage_number_exists?(number) do
+    Agent.get(__MODULE__, & &1)
+    |> Enum.find(fn {voyage_number, _voyage_id} -> voyage_number == number end)
+    |> case do
+      nil -> false
+      {_voyage_number, _voyage_id} -> true
+    end
+  end
+
   defp load_voyages() do
     VoyagePlans.list_voyages()
     |> Enum.map(fn %{voyage_number: voyage_number, id: voyage_id} ->

@@ -17,6 +17,7 @@ defmodule CargoShipping.Application do
       # Start the Endpoint (http/https)
       CargoShippingWeb.Endpoint,
       # Start a worker by calling: CargoShipping.Worker.start_link(arg)
+      CargoShipping.ApplicationEvents.Consumer,
       CargoShipping.LocationService,
       CargoShipping.VoyageService
     ]

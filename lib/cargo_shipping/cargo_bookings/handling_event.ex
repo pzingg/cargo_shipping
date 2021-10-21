@@ -19,6 +19,7 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
 
   import Ecto.Changeset
 
+  alias CargoShipping.CargoBookings
   alias CargoShipping.CargoBookings.Cargo
 
   @event_type_values [:LOAD, :UNLOAD, :RECEIVE, :CLAIM, :CUSTOMS]
@@ -31,6 +32,7 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
     field :voyage_id, Ecto.UUID
     field :location, :string
     field :completed_at, :utc_datetime
+    field :tracking_id, :string, virtual: true
 
     belongs_to :cargo, Cargo
 
@@ -40,14 +42,35 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
   @cast_fields [:cargo_id, :event_type, :voyage_id, :location, :completed_at, :registered_at]
   @required_fields [:cargo_id, :event_type, :location, :completed_at]
 
-  @doc """
-  Handling events are immutable.
-  """
+  @doc false
   def changeset(cargo, attrs) do
     cargo
     |> Ecto.build_assoc(:handling_events)
     |> cast(attrs, @cast_fields)
     |> validate_required(@required_fields)
     |> validate_inclusion(:event_type, @event_type_values)
+  end
+
+  @doc """
+  Looks up the cargo by tracking id and fails if
+  it cannot find the cargo.
+  """
+  def handling_report_changeset(attrs) do
+    tracking_id_changeset =
+      %__MODULE__{}
+      |> cast([:tracking_id], attrs)
+
+    tracking_id =
+      tracking_id_changeset
+      |> get_change(:tracking_id)
+
+    case CargoBookings.get_cargo_by_tracking_id!(tracking_id) do
+      nil ->
+        tracking_id_changeset
+        |> add_error(:tracking_id, "is invalid")
+
+      cargo ->
+        changeset(cargo, attrs)
+    end
   end
 end

@@ -52,6 +52,16 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# EventBus topics
+config :event_bus,
+  id_generator: CargoShipping.ApplicationEvents.Producer,
+  topics: [
+    :cargo_arrived,
+    :cargo_misdirected,
+    :handling_report_received,
+    :handling_report_rejected
+  ]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

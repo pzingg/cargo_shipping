@@ -134,6 +134,7 @@ defmodule CargoShipping.RoutingService do
   end
 
   defp on_day_after(dt) do
+    # Add between 6 and 18 hours randomly, on 10 minute intervals.
     rand_seconds = Enum.random(36..108) * 600
 
     dt
