@@ -14,11 +14,14 @@ defmodule CargoShipping.HandlingEventService do
     # Store the new handling event, which updates the persistent
     # state of the handling event aggregate.
     case CargoBookings.create_handling_event_from_report(params) do
-      {:ok, handling_event} ->
+      {:ok, handling_event, attrs} ->
         # Publish an event stating that a cargo has been handled.
-        publish_event(:cargo_was_handled, handling_event)
+        publish_event(:cargo_was_handled, attrs)
+        {:ok, handling_event}
+
       {:error, changeset} ->
         publish_event(:cargo_handling_rejected, changeset)
+        {:error, changeset}
     end
   end
 

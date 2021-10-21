@@ -87,6 +87,7 @@ defmodule CargoShipping.CargoBookings do
     query =
       from c in Cargo,
         where: c.tracking_id == ^tracking_id
+
     Repo.exists?(query)
   end
 
@@ -120,8 +121,7 @@ defmodule CargoShipping.CargoBookings do
 
   """
   def create_cargo(attrs \\ %{}) do
-    %Cargo{}
-    |> Cargo.changeset(attrs)
+    Cargo.changeset(%Cargo{}, attrs)
     |> Repo.insert()
   end
 
@@ -138,8 +138,7 @@ defmodule CargoShipping.CargoBookings do
 
   """
   def update_cargo(%Cargo{} = cargo, attrs) do
-    cargo
-    |> Cargo.changeset(attrs)
+    Cargo.changeset(cargo, attrs)
     |> Repo.update()
   end
 
@@ -217,28 +216,6 @@ defmodule CargoShipping.CargoBookings do
     |> Repo.all()
   end
 
-  def possible_routes_for_cargo(cargo) do
-    itineraries = routes_for_specification(cargo.route_specification)
-    Logger.info("possible_routes #{inspect(itineraries)}")
-    itineraries
-  end
-
-  @doc """
-  The RouteSpecification is picked apart and adapted to the external API.
-  """
-  def routes_for_specification(route_specification) do
-    limitations = [deadline: route_specification.arrival_deadline]
-
-    RoutingService.find_itineraries(
-      route_specification.origin,
-      route_specification.destination,
-      limitations
-    )
-    |> Enum.filter(fn itinerary ->
-      Itinerary.satisfies?(itinerary, route_specification)
-    end)
-  end
-
   def handling_event_expected(cargo, handling_event) do
     Itinerary.handling_event_expected(cargo.itinerary, handling_event)
   end
@@ -264,21 +241,34 @@ defmodule CargoShipping.CargoBookings do
     Delivery.derived_from(cargo.route_specification, cargo.itinerary, handling_history)
   end
 
-  def assign_cargo_to_route(cargo, itinerary) when is_map(itinerary) do
+  @doc """
+  Argument `cargo` can be a map (when creating cargos), or an existing Cargo struct.
+  """
+  def assign_cargo_to_route(%{route_specification: route_specification} = cargo, itinerary)
+      when is_map(itinerary) do
     # Handling consistency within the Cargo aggregate synchronously
     maybe_delivery = Map.get(cargo, :delivery, Map.get(cargo, "delivery"))
+    delivery = Delivery.update_on_routing(maybe_delivery, route_specification, itinerary)
 
-    delivery =
-      maybe_delivery
-      |> Delivery.update_on_routing(cargo.route_specification, itinerary)
-
-    %{itinerary: itinerary, delivery: delivery}
+    cargo
+    |> Map.delete(:__struct__)
+    |> Map.merge(%{
+      route_specification: Map.delete(route_specification, :__struct__),
+      itinerary: itinerary,
+      delivery: delivery
+    })
   end
 
-  def specify_new_route(cargo, route_specification) do
-    delivery = Delivery.update_on_routing(nil, route_specification, cargo.itinerary)
+  def specify_new_route(%{itinerary: itinerary} = cargo, route_specification) do
+    delivery = Delivery.update_on_routing(nil, route_specification, itinerary)
 
-    %{route_specification: route_specification, delivery: delivery}
+    cargo
+    |> Map.delete(:__struct__)
+    |> Map.merge(%{
+      route_specification: route_specification,
+      itinerary: Map.delete(itinerary, :__struct__),
+      delivery: delivery
+    })
   end
 
   @doc """
@@ -315,7 +305,18 @@ defmodule CargoShipping.CargoBookings do
   end
 
   def create_handling_event_from_report(attrs \\ %{}) do
-    HandlingEvent.handling_report_changeset(attrs)
-    |> Repo.insert()
+    changeset = HandlingEvent.handling_report_changeset(attrs)
+    tracking_id = Ecto.Changeset.get_field(changeset, :tracking_id)
+
+    case Repo.insert(changeset) do
+      {:ok, handling_event} ->
+        # Logger.error("from_report changeset #{inspect(changeset)}")
+        # Logger.error("from_report handling_event #{inspect(handling_event)}")
+
+        {:ok, handling_event, attrs}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 end

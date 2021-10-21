@@ -2,6 +2,8 @@ defmodule CargoShipping.SampleDataGenerator do
   @moduledoc """
   Seeds the database.
   """
+  require Logger
+
   alias CargoShipping.{CargoBookings, VoyagePlans}
   alias CargoShipping.VoyagePlans.VoyageBuilder
 
@@ -498,6 +500,88 @@ defmodule CargoShipping.SampleDataGenerator do
     ]
   end
 
+  ## Sample voyages
+
+  def voyage_v100() do
+    VoyageBuilder.init("V100", "CNHKG")
+    |> VoyageBuilder.add_movement(
+      "JPTOK",
+      ~U[2009-03-03 00:00:00Z],
+      ~U[2008-03-06 00:00:00Z]
+    )
+    |> VoyageBuilder.add_movement(
+      "USNYC",
+      ~U[2008-03-06 00:00:00Z],
+      ~U[2009-03-09 00:00:00Z]
+    )
+    |> VoyageBuilder.build()
+  end
+
+  def voyage_v200() do
+    VoyageBuilder.init("V200", "JPTOK")
+    |> VoyageBuilder.add_movement(
+      "USNYC",
+      ~U[2008-03-06 00:00:00Z],
+      ~U[2008-03-08 00:00:00Z]
+    )
+    |> VoyageBuilder.add_movement(
+      "USCHI",
+      ~U[2008-03-10 00:00:00Z],
+      ~U[2008-03-14 00:00:00Z]
+    )
+    |> VoyageBuilder.add_movement(
+      "SESTO",
+      ~U[2008-03-14 00:00:00Z],
+      ~U[2009-03-16 00:00:00Z]
+    )
+    |> VoyageBuilder.build()
+  end
+
+  def voyage_v300() do
+    VoyageBuilder.init("V300", "JPTOK")
+    |> VoyageBuilder.add_movement(
+      "NLRTM",
+      ~U[2009-03-08 00:00:00Z],
+      ~U[2008-03-11 00:00:00Z]
+    )
+    |> VoyageBuilder.add_movement(
+      "DEHAM",
+      ~U[2009-03-11 00:00:00Z],
+      ~U[2008-03-12 00:00:00Z]
+    )
+    |> VoyageBuilder.add_movement(
+      "AUMEL",
+      ~U[2009-03-14 00:00:00Z],
+      ~U[2008-03-18 00:00:00Z]
+    )
+    |> VoyageBuilder.add_movement(
+      "JPTOK",
+      ~U[2008-03-19 00:00:00Z],
+      ~U[2009-03-21 00:00:00Z]
+    )
+    |> VoyageBuilder.build()
+  end
+
+  def voyage_v400() do
+    VoyageBuilder.init("V400", "DEHAM")
+    |> VoyageBuilder.add_movement(
+      "SESTO",
+      ~U[2009-03-14 00:00:00Z],
+      ~U[2008-03-15 00:00:00Z]
+    )
+    |> VoyageBuilder.add_movement(
+      "FIHEL",
+      ~U[2008-03-15 00:00:00Z],
+      ~U[2009-03-16 00:00:00Z]
+    )
+    |> VoyageBuilder.add_movement(
+      "DEHAM",
+      ~U[2009-03-20 00:00:00Z],
+      ~U[2009-03-22 00:00:00Z]
+    )
+    |> VoyageBuilder.build()
+  end
+
   def voyage_cnhkg_usnyc() do
     # Voyage number 0100S (by ship)
     # Hongkong - Hangzou - Tokyo - Melbourne - New York
@@ -607,6 +691,10 @@ defmodule CargoShipping.SampleDataGenerator do
     voyages =
       Enum.reduce(
         [
+          :voyage_v100,
+          :voyage_v200,
+          :voyage_v300,
+          :voyage_v400,
           :voyage_cnhkg_usnyc,
           :voyage_usnyc_usdal,
           :voyage_usdal_fihel,

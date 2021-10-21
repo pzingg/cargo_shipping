@@ -51,8 +51,8 @@ defmodule CargoShipping.Reports do
   """
   def create_handling_report(attrs \\ %{}) do
     changeset =
-    %HandlingReport{}
-    |> HandlingReport.changeset(attrs)
+      %HandlingReport{}
+      |> HandlingReport.changeset(attrs)
 
     result = Repo.insert(changeset)
     HandlingReportService.register_handling_report_attempt(result)

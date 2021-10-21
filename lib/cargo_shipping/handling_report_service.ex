@@ -14,6 +14,10 @@ defmodule CargoShipping.HandlingReportService do
   end
 
   def publish_event(topic, payload) do
-    CargoShipping.ApplicationEvents.Producer.publish_event(topic, "HandlingReportService", payload)
+    CargoShipping.ApplicationEvents.Producer.publish_event(
+      topic,
+      "HandlingReportService",
+      payload
+    )
   end
 end

@@ -9,14 +9,13 @@ defmodule CargoShipping.ApplicationEvents.Producer do
   """
   def publish_event(topic, source, payload)
       when is_atom(topic) and is_binary(source) do
-    params =
-      %{
-        source: source,
-        topic: topic
-      }
+    params = %{
+      source: source,
+      topic: topic
+    }
 
     event =
-      EventBus.EventSource.build(params) do
+      EventBus.EventSource.build params do
         payload
       end
 

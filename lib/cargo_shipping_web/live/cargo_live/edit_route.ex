@@ -1,7 +1,7 @@
 defmodule CargoShippingWeb.CargoLive.EditRoute do
   use CargoShippingWeb, :live_view
 
-  alias CargoShipping.CargoBookings
+  alias CargoShipping.{CargoBookings, CargoBookingService}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -12,8 +12,8 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
   def handle_params(%{"id" => id}, _, socket) do
     cargo = CargoBookings.get_cargo!(id)
 
-    candidates =
-      CargoBookings.possible_routes_for_cargo(cargo)
+    itineraries =
+      CargoBookingService.possible_routes_for_cargo(cargo)
       |> Enum.with_index(fn itinerary, index -> {itinerary, index + 1} end)
 
     {:noreply,
@@ -22,7 +22,7 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
      |> assign(
        tracking_id: cargo.tracking_id,
        cargo: cargo,
-       route_candidates: candidates
+       route_candidates: itineraries
      )}
   end
 

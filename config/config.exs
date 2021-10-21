@@ -58,6 +58,7 @@ config :event_bus,
   topics: [
     :cargo_arrived,
     :cargo_misdirected,
+    :cargo_was_handled,
     :handling_report_received,
     :handling_report_rejected
   ]

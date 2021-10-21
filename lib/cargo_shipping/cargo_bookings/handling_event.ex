@@ -58,11 +58,9 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
   def handling_report_changeset(attrs) do
     tracking_id_changeset =
       %__MODULE__{}
-      |> cast([:tracking_id], attrs)
+      |> cast(attrs, [:tracking_id])
 
-    tracking_id =
-      tracking_id_changeset
-      |> get_change(:tracking_id)
+    tracking_id = get_change(tracking_id_changeset, :tracking_id)
 
     case CargoBookings.get_cargo_by_tracking_id!(tracking_id) do
       nil ->

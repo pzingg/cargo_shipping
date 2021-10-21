@@ -6,6 +6,8 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   require Logger
 
+  alias CargoShipping.CargoInspectionService
+
   ## GenServer public API
 
   @doc false
@@ -50,7 +52,9 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
     config = %{name: name}
     subscriber = {__MODULE__, config}
     topics = Keyword.get(arg, :topics, [".*"])
-    _ = EventBus.subscribe({subscriber, topics})
+    result = EventBus.subscribe({subscriber, topics})
+
+    Logger.error("Consumer #{name} subscribed to #{inspect(topics)} -> #{inspect(result)}")
 
     {:ok, config}
   end
@@ -75,12 +79,14 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
   end
 
   defp handle_event(:cargo_was_handled, config, event) do
-    Logger.error("[cargo_was_handled]")
+    # Payload is the params used to create the event
+    Logger.error("[cargo_was_handled] #{inspect(event.data)}")
+
+    CargoInspectionService.inspect_cargo(event.data.tracking_id)
   end
 
   defp handle_event(:handling_report_received, config, event) do
     Logger.error("[handling_report_received]")
-
   end
 
   defp handle_event(:handling_report_rejected, config, event) do

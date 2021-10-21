@@ -19,7 +19,13 @@ defmodule CargoShippingWeb.HandlingReportControllerTest do
     tracking_id: "some updated tracking_id",
     voyage_number: "some updated voyage_number"
   }
-  @invalid_attrs %{completed_at: nil, event_type: nil, location: nil, tracking_id: nil, voyage_number: nil}
+  @invalid_attrs %{
+    completed_at: nil,
+    event_type: nil,
+    location: nil,
+    tracking_id: nil,
+    voyage_number: nil
+  }
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -34,7 +40,9 @@ defmodule CargoShippingWeb.HandlingReportControllerTest do
 
   describe "create handling_report" do
     test "renders handling_report when data is valid", %{conn: conn} do
-      conn = post(conn, Routes.handling_report_path(conn, :create), handling_report: @create_attrs)
+      conn =
+        post(conn, Routes.handling_report_path(conn, :create), handling_report: @create_attrs)
+
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
       conn = get(conn, Routes.handling_report_path(conn, :show, id))
@@ -50,7 +58,9 @@ defmodule CargoShippingWeb.HandlingReportControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, Routes.handling_report_path(conn, :create), handling_report: @invalid_attrs)
+      conn =
+        post(conn, Routes.handling_report_path(conn, :create), handling_report: @invalid_attrs)
+
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
@@ -58,8 +68,15 @@ defmodule CargoShippingWeb.HandlingReportControllerTest do
   describe "update handling_report" do
     setup [:create_handling_report]
 
-    test "renders handling_report when data is valid", %{conn: conn, handling_report: %HandlingReport{id: id} = handling_report} do
-      conn = put(conn, Routes.handling_report_path(conn, :update, handling_report), handling_report: @update_attrs)
+    test "renders handling_report when data is valid", %{
+      conn: conn,
+      handling_report: %HandlingReport{id: id} = handling_report
+    } do
+      conn =
+        put(conn, Routes.handling_report_path(conn, :update, handling_report),
+          handling_report: @update_attrs
+        )
+
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
       conn = get(conn, Routes.handling_report_path(conn, :show, id))
@@ -75,7 +92,11 @@ defmodule CargoShippingWeb.HandlingReportControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn, handling_report: handling_report} do
-      conn = put(conn, Routes.handling_report_path(conn, :update, handling_report), handling_report: @invalid_attrs)
+      conn =
+        put(conn, Routes.handling_report_path(conn, :update, handling_report),
+          handling_report: @invalid_attrs
+        )
+
       assert json_response(conn, 422)["errors"] != %{}
     end
   end

@@ -43,18 +43,25 @@ defmodule CargoShipping.CargoBookings.Delivery do
   ]
   @required_fields [
     :transport_status,
-    :last_known_location,
     :misdirected?,
     :unloaded_at_destination?,
     :routing_status,
     :calculated_at
   ]
 
-  @doc false
-  # def changeset(delivery, attrs) when map_size(attrs) == 0 do
-  #  delivery
-  #  |> cast(%{}, @cast_fields)
-  # end
+  def not_routed() do
+    %{
+      transport_status: :NOT_RECEIVED,
+      last_known_location: nil,
+      current_voyage_id: nil,
+      misdirected?: false,
+      eta: nil,
+      unloaded_at_destination?: false,
+      routing_status: :NOT_ROUTED,
+      calculated_at: DateTime.utc_now(),
+      last_event_id: nil
+    }
+  end
 
   def changeset(delivery, attrs) do
     delivery

@@ -37,6 +37,7 @@ defmodule CargoShipping.Reports.HandlingReport do
 
   def validate_cargo_exists?(changeset) do
     tracking_id = get_change(changeset, :tracking_id)
+
     if CargoBookings.cargo_tracking_id_exists?(tracking_id) do
       changeset
     else
@@ -66,6 +67,7 @@ defmodule CargoShipping.Reports.HandlingReport do
 
   def validate_voyage_exists?(changeset) do
     voyage_number = get_change(changeset, :voyage_number)
+
     if VoyageService.voyage_number_exists?(voyage_number) do
       changeset
     else
@@ -73,5 +75,4 @@ defmodule CargoShipping.Reports.HandlingReport do
       |> add_error(:voyage_number, "is invalid")
     end
   end
-
 end

@@ -8,7 +8,13 @@ defmodule CargoShipping.ReportsTest do
 
     import CargoShipping.ReportsFixtures
 
-    @invalid_attrs %{completed_at: nil, event_type: nil, location: nil, tracking_id: nil, voyage_number: nil}
+    @invalid_attrs %{
+      completed_at: nil,
+      event_type: nil,
+      location: nil,
+      tracking_id: nil,
+      voyage_number: nil
+    }
 
     test "list_handling_reports/0 returns all handling_reports" do
       handling_report = handling_report_fixture()
@@ -21,9 +27,17 @@ defmodule CargoShipping.ReportsTest do
     end
 
     test "create_handling_report/1 with valid data creates a handling_report" do
-      valid_attrs = %{completed_at: ~U[2021-10-20 03:47:00Z], event_type: "some event_type", location: "some location", tracking_id: "some tracking_id", voyage_number: "some voyage_number"}
+      valid_attrs = %{
+        completed_at: ~U[2021-10-20 03:47:00Z],
+        event_type: "some event_type",
+        location: "some location",
+        tracking_id: "some tracking_id",
+        voyage_number: "some voyage_number"
+      }
 
-      assert {:ok, %HandlingReport{} = handling_report} = Reports.create_handling_report(valid_attrs)
+      assert {:ok, %HandlingReport{} = handling_report} =
+               Reports.create_handling_report(valid_attrs)
+
       assert handling_report.completed_at == ~U[2021-10-20 03:47:00Z]
       assert handling_report.event_type == "some event_type"
       assert handling_report.location == "some location"
@@ -37,9 +51,18 @@ defmodule CargoShipping.ReportsTest do
 
     test "update_handling_report/2 with valid data updates the handling_report" do
       handling_report = handling_report_fixture()
-      update_attrs = %{completed_at: ~U[2021-10-21 03:47:00Z], event_type: "some updated event_type", location: "some updated location", tracking_id: "some updated tracking_id", voyage_number: "some updated voyage_number"}
 
-      assert {:ok, %HandlingReport{} = handling_report} = Reports.update_handling_report(handling_report, update_attrs)
+      update_attrs = %{
+        completed_at: ~U[2021-10-21 03:47:00Z],
+        event_type: "some updated event_type",
+        location: "some updated location",
+        tracking_id: "some updated tracking_id",
+        voyage_number: "some updated voyage_number"
+      }
+
+      assert {:ok, %HandlingReport{} = handling_report} =
+               Reports.update_handling_report(handling_report, update_attrs)
+
       assert handling_report.completed_at == ~U[2021-10-21 03:47:00Z]
       assert handling_report.event_type == "some updated event_type"
       assert handling_report.location == "some updated location"
@@ -49,7 +72,10 @@ defmodule CargoShipping.ReportsTest do
 
     test "update_handling_report/2 with invalid data returns error changeset" do
       handling_report = handling_report_fixture()
-      assert {:error, %Ecto.Changeset{}} = Reports.update_handling_report(handling_report, @invalid_attrs)
+
+      assert {:error, %Ecto.Changeset{}} =
+               Reports.update_handling_report(handling_report, @invalid_attrs)
+
       assert handling_report == Reports.get_handling_report!(handling_report.id)
     end
 
