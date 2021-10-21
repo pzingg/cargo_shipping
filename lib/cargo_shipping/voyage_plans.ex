@@ -5,7 +5,7 @@ defmodule CargoShipping.VoyagePlans do
 
   import Ecto.Query, warn: false
 
-  alias CargoShipping.Repo
+  alias CargoShipping.{Repo, VoyageService}
   alias CargoShipping.VoyagePlans.{CarrierMovement, Voyage}
 
   ## Voyage module
@@ -40,8 +40,20 @@ defmodule CargoShipping.VoyagePlans do
   def get_voyage!(id), do: Repo.get!(Voyage, id)
 
   def get_voyage_number_for_id!(nil), do: nil
+
   def get_voyage_number_for_id!(id) do
     get_voyage!(id).voyage_number
+  end
+
+  def get_voyage_by_number(nil), do: nil
+
+  def get_voyage_by_number(voyage_number) do
+    query =
+      from v in Voyage,
+        where: [voyage_number: ^voyage_number]
+
+    query
+    |> Repo.one()
   end
 
   @doc """
@@ -57,9 +69,14 @@ defmodule CargoShipping.VoyagePlans do
 
   """
   def create_voyage(attrs \\ %{}) do
-    %Voyage{}
-    |> Voyage.changeset(attrs)
-    |> Repo.insert()
+    result =
+      %Voyage{}
+      |> Voyage.changeset(attrs)
+      |> Repo.insert()
+
+    VoyageService.update_cache()
+
+    result
   end
 
   @doc """
@@ -75,9 +92,14 @@ defmodule CargoShipping.VoyagePlans do
 
   """
   def update_voyage(%Voyage{} = voyage, attrs) do
-    voyage
-    |> Voyage.changeset(attrs)
-    |> Repo.update()
+    result =
+      voyage
+      |> Voyage.changeset(attrs)
+      |> Repo.update()
+
+    VoyageService.update_cache()
+
+    result
   end
 
   @doc """
@@ -93,7 +115,11 @@ defmodule CargoShipping.VoyagePlans do
 
   """
   def delete_voyage(%Voyage{} = voyage) do
-    Repo.delete(voyage)
+    result = Repo.delete(voyage)
+
+    VoyageService.update_cache()
+
+    result
   end
 
   @doc """

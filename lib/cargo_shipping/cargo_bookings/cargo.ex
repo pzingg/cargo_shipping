@@ -73,14 +73,38 @@ defmodule CargoShipping.CargoBookings.Cargo do
     @moduledoc """
     Use a schemaless changeset to build edit destination form.
     """
-    defstruct [:destination]
+    use TypedStruct
 
-    @types %{destination: :string}
+    typedstruct do
+      @typedoc "A destination"
+      plugin(TypedStructEctoChangeset)
+
+      field :destination, :string
+    end
 
     def changeset(destination, attrs) do
-      {destination, @types}
+      destination
       |> cast(attrs, [:destination])
       |> RouteSpecification.validate_location_code(:destination)
+    end
+  end
+
+  defmodule EditRoute do
+    @moduledoc """
+    Use a schemaless changeset to build edit route form.
+    """
+    use TypedStruct
+
+    typedstruct do
+      @typedoc "An itinerary"
+      plugin(TypedStructEctoChangeset)
+
+      field :id, :binary_id
+    end
+
+    def changeset(itinerary, attrs) do
+      itinerary
+      |> cast(attrs, [:id])
     end
   end
 

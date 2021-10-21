@@ -1,55 +1,40 @@
-defmodule CargoShippingWeb.CargoLive.FormComponent do
+defmodule CargoShippingWeb.CargoLive.RouteFormComponent do
   use CargoShippingWeb, :live_component
 
+  require Logger
+
   alias CargoShipping.CargoBookings
+  alias CargoShipping.CargoBookings.Cargo
 
   @impl true
-  def update(%{cargo: cargo} = assigns, socket) do
-    changeset = CargoBookings.change_cargo(cargo)
+  def update(%{id: id, index: index} = assigns, socket) do
+    changeset =
+      %Cargo.EditRoute{id: id}
+      |> Cargo.EditRoute.changeset(%{})
 
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(:changeset, changeset)}
+     |> assign(:changeset, changeset)
+     |> assign(:title, "Route candidate #{index}")}
   end
 
   @impl true
-  def handle_event("validate", %{"cargo" => cargo_params}, socket) do
-    changeset =
-      socket.assigns.cargo
-      |> CargoBookings.change_cargo(cargo_params)
-      |> Map.put(:action, :validate)
-
-    {:noreply, assign(socket, :changeset, changeset)}
+  def handle_event("save", _params, socket) do
+    attrs = CargoBookings.assign_cargo_to_route(socket.assigns.cargo, socket.assigns.itinerary)
+    update_cargo(socket, attrs)
   end
 
-  def handle_event("save", %{"cargo" => cargo_params}, socket) do
-    save_cargo(socket, socket.assigns.action, cargo_params)
-  end
-
-  defp save_cargo(socket, :edit, cargo_params) do
-    case CargoBookings.update_cargo(socket.assigns.cargo, cargo_params) do
+  defp update_cargo(socket, attrs) do
+    case CargoBookings.update_cargo(socket.assigns.cargo, attrs) do
       {:ok, _cargo} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Cargo updated successfully")
+         |> put_flash(:info, "Cargo assigned to route successfully")
          |> push_redirect(to: socket.assigns.return_to)}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :changeset, changeset)}
-    end
-  end
-
-  defp save_cargo(socket, :new, cargo_params) do
-    case CargoBookings.create_cargo(cargo_params) do
-      {:ok, _cargo} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Cargo created successfully")
-         |> push_redirect(to: socket.assigns.return_to)}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, changeset: changeset)}
+      {:error, %Ecto.Changeset{} = _changeset} ->
+        {:noreply, socket |> put_flash(:error, "Could not assign route")}
     end
   end
 end

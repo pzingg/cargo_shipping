@@ -7,7 +7,7 @@ defmodule CargoShipping.Locations.Location do
   import Ecto.Changeset
 
   typedstruct do
-    @typedoc "A person"
+    @typedoc "A location"
     plugin(TypedStructEctoChangeset)
 
     field :id, String.t(), enforce: true

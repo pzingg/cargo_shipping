@@ -1,0 +1,26 @@
+<div>
+  <h2><%= @page_title %></h2>
+
+  <ul>
+    <li>
+      Cargo <%= @cargo.tracking_id %> is going from
+        <%= cargo_origin(@cargo) %> to
+        <%= cargo_destination(@cargo) %>
+    </li>
+  </ul>
+
+  <%= if @route_candidates == [] do %>
+    <p>No routes were found that satisfy the route specification.</p>
+    <p>Try setting an arrival deadline futher into the future (a few weeks at least).</p>
+    <%= live_redirect "Back", to: Routes.cargo_show_path(@socket, :show, @cargo) %>
+  <% else %>
+  <%= for {itinerary, index} <- @route_candidates do %>
+    <%= live_component CargoShippingWeb.CargoLive.RouteFormComponent,
+      id: "candidate-#{index}",
+      itinerary: itinerary,
+      index: index,
+      cargo: @cargo,
+      return_to: Routes.cargo_show_path(@socket, :show, @cargo) %>
+    <% end %>
+  <% end %>
+</div>

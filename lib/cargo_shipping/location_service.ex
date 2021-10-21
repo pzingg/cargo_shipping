@@ -1,4 +1,4 @@
-defmodule CargoShipping.Locations.LocationService do
+defmodule CargoShipping.LocationService do
   @moduledoc """
   Read-only repository for locations.
   """
@@ -29,6 +29,14 @@ defmodule CargoShipping.Locations.LocationService do
 
   def all() do
     Agent.get(__MODULE__, & &1)
+    |> Enum.reject(fn %Location{port_code: port_code} ->
+      port_code == "_"
+    end)
+  end
+
+  def all_locodes() do
+    all()
+    |> Enum.map(fn %Location{port_code: port_code} -> port_code end)
   end
 
   def get!(id) do

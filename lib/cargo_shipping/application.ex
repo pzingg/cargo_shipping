@@ -17,7 +17,8 @@ defmodule CargoShipping.Application do
       # Start the Endpoint (http/https)
       CargoShippingWeb.Endpoint,
       # Start a worker by calling: CargoShipping.Worker.start_link(arg)
-      CargoShipping.Locations.LocationService
+      CargoShipping.LocationService,
+      CargoShipping.VoyageService
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

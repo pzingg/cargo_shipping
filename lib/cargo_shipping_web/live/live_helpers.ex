@@ -1,10 +1,8 @@
 defmodule CargoShippingWeb.LiveHelpers do
   import Phoenix.LiveView.Helpers
 
-  alias CargoShipping.CargoBookings
+  alias CargoShipping.{CargoBookings, VoyageService, LocationService}
   alias CargoShipping.CargoBookings.Cargo
-  alias CargoShipping.VoyagePlans
-  alias CargoShipping.Locations.LocationService
 
   @doc """
   Renders a component inside the `Example16Web.ModalComponent` component.
@@ -59,7 +57,7 @@ defmodule CargoShippingWeb.LiveHelpers do
       voyage_number =
         case activity.voyage_id do
           nil -> "None"
-          voyage_id -> VoyagePlans.get_voyage_number_for_id!(voyage_id)
+          voyage_id -> VoyageService.get_voyage_number_for_id!(voyage_id)
         end
 
       location = activity.location |> location_name()
@@ -117,7 +115,7 @@ defmodule CargoShippingWeb.LiveHelpers do
       :ONBOARD_CARRIER ->
         voyage_number =
           cargo.delivery.current_voyage_id
-          |> VoyagePlans.get_voyage_number_for_id!()
+          |> VoyageService.get_voyage_number_for_id!()
 
         "Cargo #{cargo.tracking_id} is now onboard carrier in voyage #{voyage_number}"
 
@@ -135,7 +133,7 @@ defmodule CargoShippingWeb.LiveHelpers do
   def leg_voyage_number(leg) do
     case leg.voyage_id do
       nil -> ""
-      voyage_id -> VoyagePlans.get_voyage_number_for_id!(voyage_id)
+      voyage_id -> VoyageService.get_voyage_number_for_id!(voyage_id)
     end
   end
 
@@ -150,7 +148,7 @@ defmodule CargoShippingWeb.LiveHelpers do
     voyage_number =
       case handling_event.voyage_id do
         nil -> ""
-        voyage_id -> VoyagePlans.get_voyage_number_for_id!(voyage_id)
+        voyage_id -> VoyageService.get_voyage_number_for_id!(voyage_id)
       end
 
     location = handling_event.location |> location_name()

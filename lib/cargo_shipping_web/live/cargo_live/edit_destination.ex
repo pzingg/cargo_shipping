@@ -53,10 +53,12 @@ defmodule CargoShippingWeb.CargoLive.EditDestination do
         changeset =
           socket.assigns.cargo
           |> CargoBookings.change_cargo_destination(params)
+
         error_changeset =
           Enum.reduce(cargo_changeset.errors, changeset, fn {field, error}, acc ->
             Changeset.add_error(acc, field, error)
           end)
+
         {:noreply, assign(socket, :changeset, error_changeset)}
     end
   end

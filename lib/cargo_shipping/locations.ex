@@ -5,7 +5,7 @@ defmodule CargoShipping.Locations do
 
   import Ecto.Query, warn: false
 
-  alias CargoShipping.Locations.LocationService
+  alias CargoShipping.LocationService
 
   ## Location module
 

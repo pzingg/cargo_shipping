@@ -307,6 +307,7 @@ defmodule CargoShipping.SampleDataGenerator do
     ]
     |> Enum.map(fn {completed_at, registered_at, event_type, location, voyage_name, cargo_name} ->
       cargo = Map.fetch!(cargos, cargo_name)
+
       attrs = %{
         event_type: event_type,
         voyage_id: voyage_id_for(voyages, voyage_name),
@@ -314,6 +315,7 @@ defmodule CargoShipping.SampleDataGenerator do
         completed_at: completed_at,
         registered_at: registered_at
       }
+
       {:ok, _handling_event} = CargoBookings.create_handling_event(cargo, attrs)
     end)
   end

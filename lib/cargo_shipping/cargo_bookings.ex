@@ -8,6 +8,7 @@ defmodule CargoShipping.CargoBookings do
 
   alias CargoShipping.Repo
   alias CargoShipping.CargoBookings.{Cargo, Itinerary, Delivery, HandlingEvent}
+  alias CargoShipping.RoutingService
 
   ## Cargo module
 
@@ -207,6 +208,28 @@ defmodule CargoShipping.CargoBookings do
 
     query
     |> Repo.all()
+  end
+
+  def possible_routes_for_cargo(cargo) do
+    itineraries = routes_for_specification(cargo.route_specification)
+    Logger.info("possible_routes #{inspect(itineraries)}")
+    itineraries
+  end
+
+  @doc """
+  The RouteSpecification is picked apart and adapted to the external API.
+  """
+  def routes_for_specification(route_specification) do
+    limitations = [deadline: route_specification.arrival_deadline]
+
+    RoutingService.find_itineraries(
+      route_specification.origin,
+      route_specification.destination,
+      limitations
+    )
+    |> Enum.filter(fn itinerary ->
+      Itinerary.satisfies?(itinerary, route_specification)
+    end)
   end
 
   def handling_event_expected(cargo, handling_event) do

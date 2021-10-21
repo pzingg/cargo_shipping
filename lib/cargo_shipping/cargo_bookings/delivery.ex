@@ -197,7 +197,9 @@ defmodule CargoShipping.CargoBookings.Delivery do
         end
 
       :UNLOAD ->
-        case Enum.find_index(itinerary.legs, fn leg -> leg.unload_location == last_event.location end) do
+        case Enum.find_index(itinerary.legs, fn leg ->
+               leg.unload_location == last_event.location
+             end) do
           nil ->
             nil
 
@@ -228,6 +230,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
         :CLAIM -> leg.unload_location
         _ -> raise RuntimeError, "Unexpected type #{event_type} for next handling activity"
       end
+
     %{
       event_type: event_type,
       location: location,
