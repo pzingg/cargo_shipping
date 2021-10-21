@@ -44,7 +44,7 @@ defmodule CargoShippingWeb.LiveHelpers do
   def event_time(map, key, default \\ "") do
     case Map.get(map, key) do
       nil -> default
-      dt -> Timex.format!(dt, "%a %b %d, %Y %Z", :strftime)
+      dt -> Timex.format!(dt, "%a %b %d, %Y %H:%M", :strftime)
     end
   end
 

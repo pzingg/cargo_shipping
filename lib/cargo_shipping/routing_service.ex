@@ -2,6 +2,8 @@ defmodule CargoShipping.RoutingService do
   @moduledoc """
   A module that builds new routes.
   """
+  require Logger
+
   alias CargoShipping.{LocationService, VoyageService}
 
   defmodule TransitEdge do
@@ -14,7 +16,7 @@ defmodule CargoShipping.RoutingService do
     typedstruct do
       @typedoc "An edge in a TransitPath"
 
-      field :edge, String.t(), enforce: true
+      field :id, String.t(), enforce: true
       field :from_node, String.t(), enforce: true
       field :to_node, String.t(), enforce: true
       field :from_date, DateTime.t(), enforce: true
@@ -30,7 +32,7 @@ defmodule CargoShipping.RoutingService do
   end
 
   defp leg_from_edge(edge) do
-    voyage_id = VoyageService.get_voyage_id_for_number!(edge.edge)
+    voyage_id = VoyageService.get_voyage_id_for_number!(edge.id)
 
     %{
       voyage_id: voyage_id,
@@ -42,39 +44,48 @@ defmodule CargoShipping.RoutingService do
   end
 
   defp find_transit_paths(origin, destination, _limitations) do
-    vertices =
-      LocationService.all_locodes()
-      |> List.delete(origin)
-      |> List.delete(destination)
-      |> random_chunk_of_nodes()
-
+    start_date = DateTime.utc_now()
+    voyage_numbers = VoyageService.all_voyage_numbers()
     candidate_count = Enum.random(3..6)
 
-    voyage_numbers = VoyageService.all_voyage_numbers()
-
     Enum.map(1..candidate_count, fn _i ->
-      build_transit_path(origin, destination, vertices, voyage_numbers, DateTime.utc_now())
+      vertices =
+        LocationService.all_locodes()
+        |> List.delete(origin)
+        |> List.delete(destination)
+        |> random_chunk_of_nodes()
+
+      leg_vertices = [origin] ++ vertices ++ [destination]
+      build_transit_path(leg_vertices, start_date, voyage_numbers)
     end)
+    |> Enum.reject(fn path -> is_nil(path) end)
   end
 
-  def build_transit_path(origin, destination, vertices, voyage_numbers, start_date) do
-    first_leg_to = List.first(vertices)
-    last_leg_from = List.last(vertices)
-
-    init_acc = %{voyage_numbers: voyage_numbers, date: later_date(start_date), edges: []}
-    first_acc = accumulate_edge(origin, first_leg_to, init_acc)
+  def build_transit_path(vertices, start_date, voyage_numbers) do
+    init_acc = %{
+      error: nil,
+      voyage_numbers: voyage_numbers,
+      date: on_day_after(start_date),
+      edges: []
+    }
 
     last_index = Enum.count(vertices) - 2
 
-    next_acc =
-      Enum.reduce(0..last_index, first_acc, fn j, acc ->
+    final_acc =
+      Enum.reduce_while(0..last_index, init_acc, fn j, acc ->
         curr = Enum.at(vertices, j)
         next = Enum.at(vertices, j + 1)
         accumulate_edge(curr, next, acc)
       end)
 
-    %{edges: edges} = accumulate_edge(last_leg_from, destination, next_acc)
-    Enum.reverse(edges)
+    case final_acc do
+      {:error, reason} ->
+        Logger.error("Giving up: #{reason}")
+        nil
+
+      %{edges: edges} ->
+        Enum.reverse(edges)
+    end
   end
 
   defp accumulate_edge(
@@ -82,46 +93,48 @@ defmodule CargoShipping.RoutingService do
          to_node,
          %{voyage_numbers: voyage_numbers, date: date, edges: edges} = acc
        ) do
-    from_date = later_date(date)
-    to_date = later_date(from_date)
-    next_date = later_date(to_date)
+    from_date = on_day_after(date)
+    to_date = on_day_after(from_date)
+    next_date = on_day_after(to_date)
 
-    %{
-      acc
-      | date: next_date,
-        edges: [
-          %TransitEdge{
-            edge: get_transit_edge(from_node, to_node, voyage_numbers),
-            from_node: from_node,
-            to_node: to_node,
-            from_date: from_date,
-            to_date: to_date
-          }
-          | edges
-        ]
+    edge = %TransitEdge{
+      id: nil,
+      from_node: from_node,
+      to_node: to_node,
+      from_date: from_date,
+      to_date: to_date
     }
+
+    edge_id = find_edge_id(edge, voyage_numbers)
+
+    if edge_id do
+      {:cont,
+       %{
+         acc
+         | date: next_date,
+           edges: [%TransitEdge{edge | id: edge_id} | edges]
+       }}
+    else
+      {:halt, {:error, "no voyage matching #{Map.from_struct(edge)}"}}
+    end
   end
 
-  defp get_transit_edge(_from_node, _to_node, voyage_numbers) do
+  # TODO: Select a real voyage (or create a new one?),
+  # based on from and to.
+  defp find_edge_id(_edge, voyage_numbers) do
     Enum.random(voyage_numbers)
   end
 
   defp random_chunk_of_nodes(all_nodes) do
-    total = Enum.count(all_nodes)
-
-    chunk_size =
-      if total > 4 do
-        Enum.random(1..5)
-      else
-        total
-      end
+    longest_chunk = min(Enum.count(all_nodes), 4)
+    chunk_size = Enum.random(1..longest_chunk)
 
     Enum.shuffle(all_nodes)
     |> Enum.take(chunk_size)
   end
 
-  defp later_date(dt) do
-    rand_seconds = Enum.random(500..1_000) * 60
+  defp on_day_after(dt) do
+    rand_seconds = Enum.random(36..108) * 600
 
     dt
     |> Timex.beginning_of_day()
