@@ -66,9 +66,13 @@ defmodule CargoShipping.CargoBookings.Itinerary do
             if expected do
               :ok
             else
-              Logger.error(
-                ":LOAD #{location} does not match any load location of voyage #{voyage_number}"
-              )
+              if is_nil(handling_event.voyage_id) do
+                Logger.error(":LOAD #{location} does not have a voyage id")
+              else
+                Logger.error(
+                  ":LOAD #{location} does not match any load location of voyage #{voyage_number}"
+                )
+              end
 
               {:error, "#{voyage_number} load mismatch"}
             end
@@ -84,9 +88,13 @@ defmodule CargoShipping.CargoBookings.Itinerary do
             if expected do
               :ok
             else
-              Logger.error(
-                ":UNLOAD #{location} does not match any unload location of voyage #{voyage_number}"
-              )
+              if is_nil(handling_event.voyage_id) do
+                Logger.error(":UNLOAD #{location} does not have a voyage id")
+              else
+                Logger.error(
+                  ":UNLOAD #{location} does not match any unload location of voyage #{voyage_number}"
+                )
+              end
 
               {:error, "#{voyage_number} unload mismatch"}
             end

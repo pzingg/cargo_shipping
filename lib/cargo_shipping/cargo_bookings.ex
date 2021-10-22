@@ -306,7 +306,6 @@ defmodule CargoShipping.CargoBookings do
 
   def create_handling_event_from_report(attrs \\ %{}) do
     changeset = HandlingEvent.handling_report_changeset(attrs)
-    tracking_id = Ecto.Changeset.get_field(changeset, :tracking_id)
 
     case Repo.insert(changeset) do
       {:ok, handling_event} ->

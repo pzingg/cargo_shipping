@@ -19,7 +19,7 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
 
   import Ecto.Changeset
 
-  alias CargoShipping.CargoBookings
+  alias CargoShipping.{CargoBookings, VoyageService}
   alias CargoShipping.CargoBookings.Cargo
 
   @event_type_values [:LOAD, :UNLOAD, :RECEIVE, :CLAIM, :CUSTOMS]
@@ -32,6 +32,7 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
     field :voyage_id, Ecto.UUID
     field :location, :string
     field :completed_at, :utc_datetime
+    field :voyage_number, :string, virtual: true
     field :tracking_id, :string, virtual: true
 
     belongs_to :cargo, Cargo
@@ -39,7 +40,15 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
     timestamps(inserted_at: :registered_at, updated_at: false)
   end
 
-  @cast_fields [:cargo_id, :event_type, :voyage_id, :location, :completed_at, :registered_at]
+  @cast_fields [
+    :cargo_id,
+    :event_type,
+    :voyage_id,
+    :voyage_number,
+    :location,
+    :completed_at,
+    :registered_at
+  ]
   @required_fields [:cargo_id, :event_type, :location, :completed_at]
 
   @doc false
@@ -48,7 +57,43 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
     |> Ecto.build_assoc(:handling_events)
     |> cast(attrs, @cast_fields)
     |> validate_required(@required_fields)
+    |> validate_voyage_number_or_id()
     |> validate_inclusion(:event_type, @event_type_values)
+  end
+
+  def validate_voyage_number_or_id(changeset) do
+    case get_field(changeset, :event_type) do
+      :LOAD ->
+        required_voyage_number_or_id(changeset)
+
+      :UNLOAD ->
+        required_voyage_number_or_id(changeset)
+
+      _ ->
+        changeset
+    end
+  end
+
+  def required_voyage_number_or_id(changeset) do
+    existing_voyage_number =
+      get_field(changeset, :voyage_id)
+      |> VoyageService.get_voyage_number_for_id!()
+
+    if is_nil(existing_voyage_number) do
+      voyage_number = get_field(changeset, :voyage_number)
+      if is_nil(voyage_number) do
+        add_error(changeset, :voyage_number, "is required")
+      else
+        voyage_id = VoyageService.get_voyage_id_for_number!(voyage_number)
+        if is_nil(voyage_id) do
+          add_error(changeset, :voyage_number, "is invalid")
+        else
+          put_change(changeset, :voyage_id, voyage_id)
+        end
+      end
+    else
+      changeset
+    end
   end
 
   @doc """
