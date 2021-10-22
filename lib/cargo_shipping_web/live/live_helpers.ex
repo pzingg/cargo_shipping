@@ -29,7 +29,7 @@ defmodule CargoShippingWeb.LiveHelpers do
   end
 
   def location_name(location) do
-    LocationService.get_by_port_code(location).name
+    LocationService.get_by_locode(location).name
   end
 
   def all_location_options() do

@@ -5,12 +5,17 @@ defmodule CargoShipping.HandlingReportService do
   """
   require Logger
 
-  def register_handling_report_attempt({:ok, handling_report}) do
-    publish_event(:handling_report_received, handling_report)
+  alias CargoShipping.Utils
+
+  def register_handling_report_attempt({:ok, handling_report}, _params) do
+    publish_event(:handling_report_received, Utils.from_struct(handling_report))
   end
 
-  def register_handling_report_attempt({:error, changeset}) do
-    publish_event(:handling_report_rejected, changeset)
+  @doc """
+  The changeset is a HandlingReport changeset.
+  """
+  def register_handling_report_attempt({:error, changeset}, params) do
+    publish_event(:handling_report_rejected, Map.put(params, :errors, changeset.errors))
   end
 
   def publish_event(topic, payload) do

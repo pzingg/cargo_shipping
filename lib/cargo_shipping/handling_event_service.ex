@@ -6,7 +6,7 @@ defmodule CargoShipping.HandlingEventService do
   for creating a new handling event for the cargo in the report.
   """
 
-  alias CargoShipping.CargoBookings
+  alias CargoShipping.{CargoBookings, Utils}
 
   @doc """
   """
@@ -14,13 +14,13 @@ defmodule CargoShipping.HandlingEventService do
     # Store the new handling event, which updates the persistent
     # state of the handling event aggregate.
     case CargoBookings.create_handling_event_from_report(params) do
-      {:ok, handling_event, attrs} ->
+      {:ok, handling_event, params} ->
         # Publish an event stating that a cargo has been handled.
-        publish_event(:cargo_was_handled, attrs)
+        publish_event(:cargo_was_handled, Utils.from_struct(handling_event) |> Map.put(:tracking_id, params.tracking_id))
         {:ok, handling_event}
 
       {:error, changeset} ->
-        publish_event(:cargo_handling_rejected, changeset)
+        publish_event(:cargo_handling_rejected, Map.put(params, :errors, changeset.errors))
         {:error, changeset}
     end
   end

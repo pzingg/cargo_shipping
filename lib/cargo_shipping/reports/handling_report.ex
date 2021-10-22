@@ -2,7 +2,7 @@ defmodule CargoShipping.Reports.HandlingReport do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias CargoShipping.{CargoBookings, VoyageService}
+  alias CargoShipping.{CargoBookings, LocationService, VoyageService}
 
   @event_type_values [:LOAD, :UNLOAD, :RECEIVE, :CLAIM, :CUSTOMS]
 
@@ -23,8 +23,10 @@ defmodule CargoShipping.Reports.HandlingReport do
   def changeset(handling_report, attrs) do
     handling_report
     |> cast(attrs, [:event_type, :tracking_id, :voyage_number, :location, :completed_at])
-    |> validate_required([:event_type, :tracking_id, :location, :completed_at])
+    |> validate_required([:event_type, :completed_at])
     |> validate_inclusion(:event_type, @event_type_values)
+    |> validate_tracking_id()
+    |> validate_location()
     |> validate_voyage_number()
     |> validate_tracking_id()
   end
@@ -46,6 +48,23 @@ defmodule CargoShipping.Reports.HandlingReport do
     end
   end
 
+  def validate_location(changeset) do
+    changeset
+    |> validate_required([:location])
+    |> validate_location_exists?()
+  end
+
+  def validate_location_exists?(changeset) do
+    location = get_change(changeset, :location)
+
+    if LocationService.locode_exists?(location) do
+      changeset
+    else
+      changeset
+      |> add_error(:location, "is invalid")
+    end
+  end
+
   def validate_voyage_number(changeset) do
     event_type = get_change(changeset, :event_type)
 
@@ -53,13 +72,13 @@ defmodule CargoShipping.Reports.HandlingReport do
       :LOAD ->
         changeset
         |> validate_required([:voyage_number])
+        |> validate_voyage_exists?()
 
-      # |> validate_voyage_exists?(changeset)
       :UNLOAD ->
         changeset
         |> validate_required([:voyage_number])
+        |> validate_voyage_exists?()
 
-      # |> validate_voyage_exists?(changeset)
       _ ->
         changeset
     end

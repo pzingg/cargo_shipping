@@ -22,6 +22,8 @@ defmodule CargoShipping.CargoInspectionService do
     if cargo.delivery.unloaded_at_destination? do
       publish_event(:cargo_arrived, inspected_cargo)
     end
+
+    publish_event(:cargo_delivery_updated, inspected_cargo)
   end
 
   def publish_event(topic, payload) do

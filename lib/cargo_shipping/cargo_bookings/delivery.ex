@@ -9,6 +9,9 @@ defmodule CargoShipping.CargoBookings.Delivery do
 
   import Ecto.Changeset
 
+  require Logger
+
+  alias CargoShipping.VoyageService
   alias CargoShipping.CargoBookings.{HandlingActivity, Itinerary}
 
   @transport_status_values [:NOT_RECEIVED, :IN_PORT, :ONBOARD_CARRIER, :CLAIMED, :UNKNOWN]
@@ -48,6 +51,31 @@ defmodule CargoShipping.CargoBookings.Delivery do
     :routing_status,
     :calculated_at
   ]
+
+  def debug_delivery(delivery) do
+    misdirect =
+      if delivery.misdirected? do
+        " MISDIRECTED"
+      else
+        ""
+      end
+    Logger.error("delivery #{delivery.routing_status} #{delivery.transport_status}#{misdirect}")
+    if delivery.current_voyage_id do
+      voyage_number =
+        VoyageService.get_voyage_number_for_id!(delivery.current_voyage_id)
+        |> String.pad_trailing(6)
+      Logger.error("  on voyage #{voyage_number} from #{delivery.last_known_location}")
+    else
+      if delivery.last_known_location != "_" do
+        Logger.error("  at #{delivery.last_known_location}")
+      end
+    end
+    if delivery.next_expected_activity do
+      Logger.error("  next #{delivery.next_expected_activity.event_type} at #{delivery.next_expected_activity.location}")
+    else
+      Logger.error("  no expected activity")
+    end
+  end
 
   def not_routed() do
     %{

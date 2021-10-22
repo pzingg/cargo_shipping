@@ -6,9 +6,8 @@ defmodule CargoShipping.CargoBookings do
 
   require Logger
 
-  alias CargoShipping.Repo
-  alias CargoShipping.CargoBookings.{Cargo, Itinerary, Delivery, HandlingEvent}
-  alias CargoShipping.RoutingService
+  alias CargoShipping.{Repo, Utils}
+  alias CargoShipping.CargoBookings.{Cargo, Delivery, HandlingEvent, Itinerary}
 
   ## Cargo module
 
@@ -150,8 +149,6 @@ defmodule CargoShipping.CargoBookings do
     }
 
     attrs = specify_new_route(cargo, route_specification)
-    Logger.error("update_cargo_destination #{inspect(attrs)}")
-
     update_cargo(cargo, attrs)
   end
 
@@ -251,9 +248,9 @@ defmodule CargoShipping.CargoBookings do
     delivery = Delivery.update_on_routing(maybe_delivery, route_specification, itinerary)
 
     cargo
-    |> Map.delete(:__struct__)
+    |> Utils.from_struct()
     |> Map.merge(%{
-      route_specification: Map.delete(route_specification, :__struct__),
+      route_specification: Utils.from_struct(route_specification),
       itinerary: itinerary,
       delivery: delivery
     })
@@ -263,10 +260,10 @@ defmodule CargoShipping.CargoBookings do
     delivery = Delivery.update_on_routing(nil, route_specification, itinerary)
 
     cargo
-    |> Map.delete(:__struct__)
+    |> Utils.from_struct()
     |> Map.merge(%{
       route_specification: route_specification,
-      itinerary: Map.delete(itinerary, :__struct__),
+      itinerary: Utils.from_struct(itinerary),
       delivery: delivery
     })
   end
@@ -309,8 +306,6 @@ defmodule CargoShipping.CargoBookings do
 
     case Repo.insert(changeset) do
       {:ok, handling_event} ->
-        # Logger.error("from_report changeset #{inspect(changeset)}")
-        # Logger.error("from_report handling_event #{inspect(handling_event)}")
 
         {:ok, handling_event, attrs}
 

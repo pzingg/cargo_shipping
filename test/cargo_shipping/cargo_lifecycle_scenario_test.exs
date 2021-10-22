@@ -4,6 +4,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
   require Logger
 
   alias CargoShipping.{CargoBookings, CargoBookingService, HandlingEventService, VoyageService}
+  alias CargoShipping.CargoBookings.{Delivery, Itinerary}
 
   test "cargo undergoes lifecycle changes" do
     # Test setup: A cargo should be shipped from Hongkong to Stockholm,
@@ -45,8 +46,12 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     itineraries = CargoBookingService.possible_routes_for_cargo(cargo)
     refute Enum.empty?(itineraries)
     itinerary = select_prefered_itinerary(itineraries)
-    attrs = CargoBookings.assign_cargo_to_route(cargo, itinerary)
-    {:ok, cargo} = CargoBookings.update_cargo(cargo, attrs)
+    new_route_params = CargoBookings.assign_cargo_to_route(cargo, itinerary)
+    {:ok, cargo} = CargoBookings.update_cargo(cargo, new_route_params)
+
+    Logger.error("52 after reroute")
+    Itinerary.debug_itinerary(cargo.itinerary)
+    Delivery.debug_delivery(cargo.delivery)
 
     assert cargo.delivery.transport_status == :NOT_RECEIVED
     assert cargo.delivery.routing_status == :ROUTED
@@ -67,14 +72,15 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     # the attempt is rejected.
 
     # Handling begins: cargo is received in Hongkong.
-    attrs = %{
+
+    handling_params = %{
       completed_at: ~U[2009-03-01 00:00:00Z],
       tracking_id: tracking_id,
       location: "CNHKG",
       event_type: :RECEIVE
     }
 
-    {:ok, _event} = HandlingEventService.register_handling_event(attrs)
+    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
     # TODO wait for event
     Process.sleep(500)
@@ -84,36 +90,264 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     assert cargo.delivery.transport_status == :IN_PORT
     assert cargo.delivery.last_known_location == "CNHKG"
 
-    # Next event: Load onto voyage CM003 in Hongkong
-    v100 = VoyageService.get_voyage_id_for_number!("V100")
-    assert v100
+    # Next event: Load onto voyage in Hong Kong
+    current_leg = Itinerary.find_leg(:LOAD, cargo.itinerary, "CNHKG")
+    voyage_number = VoyageService.get_voyage_number_for_id!(current_leg.voyage_id)
+    assert voyage_number
 
-    attrs = %{
+    handling_params = %{
       completed_at: ~U[2009-03-03 00:00:00Z],
       tracking_id: tracking_id,
-      voyage_number: "V100",
+      voyage_number: voyage_number,
       location: "CNHKG",
       event_type: :LOAD
     }
 
-    {:ok, _event} = HandlingEventService.register_handling_event(attrs)
+    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
     # TODO wait for event
     Process.sleep(500)
 
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
-    assert cargo
     assert cargo.delivery.transport_status == :ONBOARD_CARRIER
-    assert cargo.delivery.current_voyage_id == v100
+    assert cargo.delivery.current_voyage_id == current_leg.voyage_id
     assert cargo.delivery.last_known_location == "CNHKG"
     refute cargo.delivery.misdirected?
     assert cargo.delivery.next_expected_activity
     assert cargo.delivery.next_expected_activity.event_type == :UNLOAD
-    assert cargo.delivery.next_expected_activity.voyage_id == :UNLOAD
-    assert cargo.delivery.next_expected_activity.location == "USNYC"
+    assert cargo.delivery.next_expected_activity.voyage_id == current_leg.voyage_id
+    assert cargo.delivery.next_expected_activity.location == current_leg.unload_location
+
+    # Here's an attempt to register a handling event that's not valid
+    # because there is no voyage with the specified voyage number,
+    # and there's no location with the specified UN Locode either.
+
+    # This attempt will be rejected and will not affect the cargo delivery in any way.
+    handling_params = %{
+      completed_at: ~U[2009-03-05 00:00:00Z],
+      tracking_id: tracking_id,
+      voyage_number: "XX000",
+      location: "ZZZZZ",
+      event_type: :LOAD
+    }
+
+    {:error, changeset} = HandlingEventService.register_handling_event(handling_params)
+    assert changeset.errors[:voyage_number] == {"is invalid", []}
+    assert changeset.errors[:location] == {"is invalid", []}
+
+    # (Incorrectly) unload cargo in Tokyo
+    handling_params = %{
+      completed_at: ~U[2009-03-05 00:00:00Z],
+      tracking_id: tracking_id,
+      voyage_number: voyage_number,
+      location: "JPTOK",
+      event_type: :UNLOAD
+    }
+
+    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+
+    # TODO wait for event
+    Process.sleep(500)
+
+    # Check current state - cargo is misdirected!
+    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
+    assert cargo.delivery.transport_status == :IN_PORT
+    refute cargo.delivery.current_voyage_id
+    assert cargo.delivery.last_known_location == "JPTOK"
+    assert cargo.delivery.misdirected?
+    refute cargo.delivery.next_expected_activity
+
+    # Cargo needs to be rerouted
+    # TODO cleaner reroute from "earliest location from where the new route originates".
+
+    # Specify a new route, this time from Tokyo (where it was incorrectly unloaded) to Stockholm.
+
+    from_tokyo = %{
+      origin: "JPTOK",
+      destination: "SESTO",
+      arrival_deadline: arrival_deadline
+    }
+
+    new_route_params = CargoBookings.specify_new_route(cargo, from_tokyo)
+    {:ok, cargo} = CargoBookings.update_cargo(cargo, new_route_params)
+
+    assert cargo.delivery.routing_status == :MISROUTED
+    refute cargo.delivery.next_expected_activity
+
+    # Repeat procedure of selecting one out of a number of possible
+    # routes satisfying the route spec.
+
+    itineraries = CargoBookingService.possible_routes_for_cargo(cargo)
+    refute Enum.empty?(itineraries)
+    itinerary = get_preset_itinerary()
+    new_route_params = CargoBookings.assign_cargo_to_route(cargo, itinerary)
+    {:ok, cargo} = CargoBookings.update_cargo(cargo, new_route_params)
+
+    # New itinerary should satisfy new route
+    assert cargo.delivery.routing_status == :ROUTED
+
+    # TODO we can't handle the fact that after a reroute, the cargo isn't
+    # misdirected anymore.
+    # refute cargo.delivery.misdirected?
+    # assert cargo.delivery.next_expected_activity.event_type == :LOAD
+    # assert cargo.delivery.next_expected_activity.location == "JPTOK"
+
+    Logger.error("193 after reroute")
+    Itinerary.debug_itinerary(cargo.itinerary)
+    Delivery.debug_delivery(cargo.delivery)
+
+    # -- Cargo has been rerouted, shipping continues --
+
+    # Load in Tokyo
+
+    handling_params = %{
+      completed_at: ~U[2009-03-08 00:00:00Z],
+      tracking_id: tracking_id,
+      voyage_number: "V300",
+      location: "JPTOK",
+      event_type: :LOAD
+    }
+
+    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+
+    # TODO wait for event
+    Process.sleep(500)
+
+    # Check current state - should be ok
+    v300 = VoyageService.get_voyage_id_for_number!("V300")
+    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
+    assert cargo.delivery.current_voyage_id == v300
+    assert cargo.delivery.last_known_location == "JPTOK"
+    assert cargo.delivery.transport_status == :ONBOARD_CARRIER
+    refute cargo.delivery.misdirected?
+    assert cargo.delivery.next_expected_activity.event_type == :UNLOAD
+    assert cargo.delivery.next_expected_activity.location == "DEHAM"
+    assert cargo.delivery.next_expected_activity.voyage_id == v300
+
+    # Unload in Hamburg
+
+    handling_params = %{
+      completed_at: ~U[2009-03-12 00:00:00Z],
+      tracking_id: tracking_id,
+      voyage_number: "V300",
+      location: "DEHAM",
+      event_type: :UNLOAD
+    }
+
+    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+
+    # TODO wait for event
+    Process.sleep(500)
+
+    # Check current state - should be ok
+    v400 = VoyageService.get_voyage_id_for_number!("V400")
+    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
+    refute cargo.delivery.current_voyage_id
+    assert cargo.delivery.last_known_location == "DEHAM"
+    assert cargo.delivery.transport_status == :IN_PORT
+    refute cargo.delivery.misdirected?
+    assert cargo.delivery.next_expected_activity.event_type == :LOAD
+    assert cargo.delivery.next_expected_activity.location == "DEHAM"
+    assert cargo.delivery.next_expected_activity.voyage_id == v400
+
+    # Load in Hamburg
+
+    handling_params = %{
+      completed_at: ~U[2009-03-14 00:00:00Z],
+      tracking_id: tracking_id,
+      voyage_number: "V400",
+      location: "DEHAM",
+      event_type: :LOAD
+    }
+
+    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+
+    # TODO wait for event
+    Process.sleep(500)
+
+    # Check current state - should be ok
+    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
+    assert cargo.delivery.current_voyage_id == v400
+    assert cargo.delivery.last_known_location == "DEHAM"
+    assert cargo.delivery.transport_status == :ONBOARD_CARRIER
+    refute cargo.delivery.misdirected?
+    assert cargo.delivery.next_expected_activity.event_type == :UNLOAD
+    assert cargo.delivery.next_expected_activity.location == "SESTO"
+    assert cargo.delivery.next_expected_activity.voyage_id == v400
+
+    # Unload in Stockholm
+
+    handling_params = %{
+      completed_at: ~U[2009-03-15 00:00:00Z],
+      tracking_id: tracking_id,
+      voyage_number: "V400",
+      location: "SESTO",
+      event_type: :UNLOAD
+    }
+
+    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+
+    # TODO wait for event
+    Process.sleep(500)
+
+    # Check current state - should be ok
+    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
+    refute cargo.delivery.current_voyage_id
+    assert cargo.delivery.last_known_location == "SESTO"
+    assert cargo.delivery.transport_status == :IN_PORT
+    refute cargo.delivery.misdirected?
+    assert cargo.delivery.next_expected_activity.event_type == :CLAIM
+    assert cargo.delivery.next_expected_activity.location == "SESTO"
+
+    # Finally, cargo is claimed in Stockholm. This ends the cargo lifecycle from our perspective.
+
+    handling_params = %{
+      completed_at: ~U[2009-03-15 00:00:00Z],
+      tracking_id: tracking_id,
+      voyage_number: nil,
+      location: "SESTO",
+      event_type: :CLAIM
+    }
+
+    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+
+    # TODO wait for event
+    Process.sleep(500)
+
+    # Check current state - should be ok
+    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
+    refute cargo.delivery.current_voyage_id
+    assert cargo.delivery.last_known_location == "SESTO"
+    assert cargo.delivery.transport_status == :CLAIMED
+    refute cargo.delivery.misdirected?
+    refute cargo.delivery.next_expected_activity
   end
 
   ## Utility stubs
 
   def select_prefered_itinerary(itineraries), do: List.first(itineraries)
+
+  def get_preset_itinerary() do
+    v300 = VoyageService.get_voyage_id_for_number!("V300")
+    v400 = VoyageService.get_voyage_id_for_number!("V400")
+
+    %{
+      legs: [
+        %{
+          voyage_id: v300,
+          load_location: "JPTOK",
+          unload_location: "DEHAM",
+          load_time: ~U[2009-03-08 00:00:00Z],
+          unload_time: ~U[2009-03-12 00:00:00Z]
+        },
+        %{
+          voyage_id: v400,
+          load_location: "DEHAM",
+          unload_location: "SESTO",
+          load_time: ~U[2009-03-14 00:00:00Z],
+          unload_time: ~U[2009-03-15 00:00:00Z]
+        }
+      ]
+    }
+  end
 end

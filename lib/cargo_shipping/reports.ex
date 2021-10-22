@@ -2,7 +2,6 @@ defmodule CargoShipping.Reports do
   @moduledoc """
   The Reports context.
   """
-
   import Ecto.Query, warn: false
 
   alias CargoShipping.{HandlingReportService, Repo}
@@ -55,42 +54,8 @@ defmodule CargoShipping.Reports do
       |> HandlingReport.changeset(attrs)
 
     result = Repo.insert(changeset)
-    HandlingReportService.register_handling_report_attempt(result)
+    HandlingReportService.register_handling_report_attempt(result, attrs)
     result
-  end
-
-  @doc """
-  Updates a handling_report.
-
-  ## Examples
-
-      iex> update_handling_report(handling_report, %{field: new_value})
-      {:ok, %HandlingReport{}}
-
-      iex> update_handling_report(handling_report, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_handling_report(%HandlingReport{} = handling_report, attrs) do
-    handling_report
-    |> HandlingReport.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a handling_report.
-
-  ## Examples
-
-      iex> delete_handling_report(handling_report)
-      {:ok, %HandlingReport{}}
-
-      iex> delete_handling_report(handling_report)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_handling_report(%HandlingReport{} = handling_report) do
-    Repo.delete(handling_report)
   end
 
   @doc """

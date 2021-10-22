@@ -39,10 +39,10 @@ defmodule CargoShipping.Locations do
   def get_location!(id), do: LocationService.get!(id)
 
   def find_location(un_locode) when is_binary(un_locode) do
-    LocationService.get_by_port_code(un_locode)
+    LocationService.get_by_locode(un_locode)
   end
 
   def location_exists?(un_locode) when is_binary(un_locode) do
-    LocationService.port_code_exists?(un_locode)
+    LocationService.locode_exists?(un_locode)
   end
 end

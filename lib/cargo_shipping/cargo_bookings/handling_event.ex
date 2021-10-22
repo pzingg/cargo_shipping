@@ -19,7 +19,7 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
 
   import Ecto.Changeset
 
-  alias CargoShipping.{CargoBookings, VoyageService}
+  alias CargoShipping.{CargoBookings, LocationService, VoyageService}
   alias CargoShipping.CargoBookings.Cargo
 
   @event_type_values [:LOAD, :UNLOAD, :RECEIVE, :CLAIM, :CUSTOMS]
@@ -57,43 +57,9 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
     |> Ecto.build_assoc(:handling_events)
     |> cast(attrs, @cast_fields)
     |> validate_required(@required_fields)
-    |> validate_voyage_number_or_id()
     |> validate_inclusion(:event_type, @event_type_values)
-  end
-
-  def validate_voyage_number_or_id(changeset) do
-    case get_field(changeset, :event_type) do
-      :LOAD ->
-        required_voyage_number_or_id(changeset)
-
-      :UNLOAD ->
-        required_voyage_number_or_id(changeset)
-
-      _ ->
-        changeset
-    end
-  end
-
-  def required_voyage_number_or_id(changeset) do
-    existing_voyage_number =
-      get_field(changeset, :voyage_id)
-      |> VoyageService.get_voyage_number_for_id!()
-
-    if is_nil(existing_voyage_number) do
-      voyage_number = get_field(changeset, :voyage_number)
-      if is_nil(voyage_number) do
-        add_error(changeset, :voyage_number, "is required")
-      else
-        voyage_id = VoyageService.get_voyage_id_for_number!(voyage_number)
-        if is_nil(voyage_id) do
-          add_error(changeset, :voyage_number, "is invalid")
-        else
-          put_change(changeset, :voyage_id, voyage_id)
-        end
-      end
-    else
-      changeset
-    end
+    |> validate_location()
+    |> validate_voyage_number_or_id()
   end
 
   @doc """
@@ -114,6 +80,70 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
 
       cargo ->
         changeset(cargo, attrs)
+    end
+  end
+
+  def validate_location(changeset) do
+    changeset
+    |> validate_required([:location])
+    |> validate_location_exists?()
+  end
+
+  def validate_location_exists?(changeset) do
+    location = get_change(changeset, :location)
+
+    if LocationService.locode_exists?(location) do
+      changeset
+    else
+      changeset
+      |> add_error(:location, "is invalid")
+    end
+  end
+
+  def validate_voyage_number_or_id(changeset) do
+    case get_field(changeset, :event_type) do
+      :LOAD ->
+        validate_required_voyage_number_or_id(changeset)
+
+      :UNLOAD ->
+        validate_required_voyage_number_or_id(changeset)
+
+      _ ->
+        changeset
+    end
+  end
+
+  def validate_required_voyage_number_or_id(changeset) do
+    validate_voyage_params(
+      changeset,
+      get_field(changeset, :voyage_id),
+      get_field(changeset, :voyage_number)
+    )
+  end
+
+  defp validate_voyage_params(changeset, nil, nil) do
+    changeset
+    |> add_error(:voyage_number, "can't be blank if voyage_id is blank")
+  end
+
+  defp validate_voyage_params(changeset, nil, voyage_number) do
+    case VoyageService.get_voyage_id_for_number!(voyage_number) do
+      nil ->
+        changeset
+        |> add_error(:voyage_number, "is invalid")
+
+      voyage_id ->
+        changeset
+        |> put_change(:voyage_id, voyage_id)
+    end
+  end
+
+  defp validate_voyage_params(changeset, voyage_id, _) do
+    if VoyageService.voyage_id_exists?(voyage_id) do
+      changeset
+    else
+      changeset
+      |> add_error(:voyage_id, "is invalid")
     end
   end
 end

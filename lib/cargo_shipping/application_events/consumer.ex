@@ -7,6 +7,7 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
   require Logger
 
   alias CargoShipping.CargoInspectionService
+  alias CargoShipping.CargoBookings.{Cargo, Delivery}
 
   ## GenServer public API
 
@@ -70,26 +71,42 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
     {:noreply, state}
   end
 
-  defp handle_event(:cargo_arrived, config, event) do
-    Logger.error("[cargo_arrived]")
+  defp handle_event(:cargo_arrived, _config, event) do
+    # Payload is the cargo
+    Logger.error("[cargo_arrived] #{event.data.tracking_id} at #{Cargo.destination(event.data)}")
   end
 
-  defp handle_event(:cargo_misdirected, config, event) do
-    Logger.error("[cargo_rejected]")
+  defp handle_event(:cargo_misdirected, _config, event) do
+    # Payload is the cargo
+    Logger.error("[cargo_rejected] #{event.data.tracking_id}")
   end
 
-  defp handle_event(:cargo_was_handled, config, event) do
-    # Payload is the params used to create the event
-    Logger.error("[cargo_was_handled] #{inspect(event.data)}")
+  defp handle_event(:cargo_delivery_updated, _config, event) do
+    # Payload is the cargo
+    Logger.error("[cargo_delivery_updated] #{event.data.tracking_id}")
+    Delivery.debug_delivery(event.data.delivery)
+  end
 
+  defp handle_event(:cargo_was_handled, _config, event) do
+    # Payload is the handling_event
+    Logger.error("[cargo_was_handled] #{event.data.tracking_id} #{event.data.event_type} at #{event.data.location}")
+
+    # Respond to the event by updating the delivery status
     CargoInspectionService.inspect_cargo(event.data.tracking_id)
   end
 
-  defp handle_event(:handling_report_received, config, event) do
-    Logger.error("[handling_report_received]")
+  defp handle_event(:cargo_handling_rejected, _config, event) do
+    # Payload is the (error-containing) params
+    Logger.error("[cargo_handling_rejected] #{event.data.tracking_id} #{inspect(event.data.errors)}")
   end
 
-  defp handle_event(:handling_report_rejected, config, event) do
-    Logger.error("[handling_report_rejected]")
+  defp handle_event(:handling_report_received, _config, event) do
+    # Payload is handling report
+    Logger.error("[handling_report_received] #{event.data.tracking_id} #{event.data.event_type}")
+  end
+
+  defp handle_event(:handling_report_rejected, _config, event) do
+    # Payload is the (error-containing) params
+    Logger.error("[handling_report_rejected] #{event.data.tracking_id} #{inspect(event.data.errors)}")
   end
 end

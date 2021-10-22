@@ -30,6 +30,8 @@ defmodule CargoShipping.VoyageService do
     end
   end
 
+  def voyage_id_exists?(voyage_id), do: !is_nil(get_voyage_number_for_id!(voyage_id))
+
   def get_voyage_id_for_number!(nil), do: nil
 
   def get_voyage_id_for_number!(number) do
@@ -41,16 +43,7 @@ defmodule CargoShipping.VoyageService do
     end
   end
 
-  def voyage_number_exists?(nil), do: false
-
-  def voyage_number_exists?(number) do
-    Agent.get(__MODULE__, & &1)
-    |> Enum.find(fn {voyage_number, _voyage_id} -> voyage_number == number end)
-    |> case do
-      nil -> false
-      {_voyage_number, _voyage_id} -> true
-    end
-  end
+  def voyage_number_exists?(number), do: !is_nil(get_voyage_id_for_number!(number))
 
   defp load_voyages() do
     VoyagePlans.list_voyages()

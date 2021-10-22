@@ -4,7 +4,7 @@ defmodule CargoShipping.RoutingService do
   """
   require Logger
 
-  alias CargoShipping.{LocationService, VoyageService}
+  alias CargoShipping.{LocationService, Utils, VoyageService}
 
   defmodule TransitEdge do
     @moduledoc """
@@ -115,7 +115,7 @@ defmodule CargoShipping.RoutingService do
            edges: [%TransitEdge{edge | id: edge_id} | edges]
        }}
     else
-      {:halt, {:error, "no voyage matching #{Map.from_struct(edge)}"}}
+      {:halt, {:error, "no voyage matching #{Utils.from_struct(edge)}"}}
     end
   end
 
