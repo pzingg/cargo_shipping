@@ -95,38 +95,14 @@ defmodule CargoShipping.CargoBookingsTest do
       }
 
       assert {:ok, %HandlingEvent{} = handling_event} =
-               CargoBookings.create_handling_event(valid_attrs)
+               CargoBookings.create_handling_event(cargo_fixture(), valid_attrs)
 
       assert handling_event.event_type == :RECEIVE
       assert handling_event.completed_at == ~U[2021-10-14 20:32:00Z]
     end
 
     test "create_handling_event/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = CargoBookings.create_handling_event(@invalid_attrs)
-    end
-
-    test "update_handling_event/2 with valid data updates the handling_event" do
-      handling_event = handling_event_fixture()
-
-      update_attrs = %{
-        "event_type" => "CUSTOMS",
-        "completed_at" => ~U[2021-10-15 20:32:00Z]
-      }
-
-      assert {:ok, %HandlingEvent{} = handling_event} =
-               CargoBookings.update_handling_event(handling_event, update_attrs)
-
-      assert handling_event.completed_at == ~U[2021-10-15 20:32:00Z]
-      assert handling_event.event_type == :CUSTOMS
-    end
-
-    test "update_handling_event/2 with invalid data returns error changeset" do
-      handling_event = handling_event_fixture()
-
-      assert {:error, %Ecto.Changeset{}} =
-               CargoBookings.update_handling_event(handling_event, @invalid_attrs)
-
-      assert handling_event == CargoBookings.get_handling_event!(handling_event.id)
+      assert {:error, %Ecto.Changeset{}} = CargoBookings.create_handling_event(cargo_fixture(), @invalid_attrs)
     end
 
     test "delete_handling_event/1 deletes the handling_event" do
@@ -136,11 +112,6 @@ defmodule CargoShipping.CargoBookingsTest do
       assert_raise Ecto.NoResultsError, fn ->
         CargoBookings.get_handling_event!(handling_event.id)
       end
-    end
-
-    test "change_handling_event/1 returns a handling_event changeset" do
-      handling_event = handling_event_fixture()
-      assert %Ecto.Changeset{} = CargoBookings.change_handling_event(handling_event)
     end
   end
 end

@@ -1,6 +1,23 @@
 defmodule CargoShipping.CargoBookings do
   @moduledoc """
   The CargoBookings context.
+
+  Methods in this context update aspects of the `Cargo` aggregate status
+  based on the current route specification, itinerary and handling of the cargo.
+
+  The system may handle commands that change any of these value objects:
+
+  1. a new route is specified (origin, destination, arrival deadline) for the cargo
+  2. the cargo is assigned to a different itinerary
+  3. the cargo is handled
+
+  When these events are received, the status must be re-calculated.
+
+  `RouteSpecification` and `Itinerary` are both inside the `Cargo`
+  aggregate, so changes to them cause the status to be updated synchronously,
+  but changes to the delivery history (when a cargo is handled) cause the
+  status update to happen asynchronously since `HandlingEvent` is in a
+  different aggregate.
   """
   import Ecto.Query, warn: false
 
@@ -82,6 +99,8 @@ defmodule CargoShipping.CargoBookings do
     end
   end
 
+  def cargo_tracking_id_exists?(nil), do: false
+
   def cargo_tracking_id_exists?(tracking_id) when is_binary(tracking_id) do
     query =
       from c in Cargo,
@@ -120,7 +139,16 @@ defmodule CargoShipping.CargoBookings do
 
   """
   def create_cargo(attrs \\ %{}) do
-    Cargo.changeset(%Cargo{}, attrs)
+    {itinerary, other_attrs} = Map.pop(attrs, :itinerary)
+
+    recalculated_attrs =
+      if itinerary do
+        cargo_params_for_new_itinerary(other_attrs, itinerary)
+      else
+        attrs
+      end
+
+    Cargo.changeset(%Cargo{}, recalculated_attrs)
     |> Repo.insert()
   end
 
@@ -141,15 +169,69 @@ defmodule CargoShipping.CargoBookings do
     |> Repo.update()
   end
 
-  def update_cargo_destination(%Cargo{} = cargo, destination) do
+  @doc """
+  Synchronously updates the Cargo aggregate with a new RouteSpecification that
+  has a different destination.  The origin and arrival_deadline are
+  not changed.
+  """
+  def update_cargo_for_new_destination(%Cargo{} = cargo, destination) do
     route_specification = %{
       origin: cargo.route_specification.origin,
       destination: destination,
       arrival_deadline: cargo.route_specification.arrival_deadline
     }
 
-    attrs = specify_new_route(cargo, route_specification)
-    update_cargo(cargo, attrs)
+    update_cargo_for_new_route(cargo, route_specification)
+  end
+
+  @doc """
+  Synchronously updates the Cargo aggregate with a new RouteSpecification.
+  """
+  def update_cargo_for_new_route(cargo, route_specification) do
+    params = new_route_params(cargo, route_specification)
+    update_cargo(cargo, params)
+  end
+
+  defp new_route_params(%{itinerary: itinerary} = cargo, route_specification) do
+    delivery = Delivery.params_derived_from_routing(nil, route_specification, itinerary)
+
+    cargo
+    |> Utils.from_struct()
+    |> Map.merge(%{
+      route_specification: route_specification,
+      itinerary: Utils.from_struct(itinerary),
+      delivery: delivery
+    })
+  end
+
+  @doc """
+  Synchronously updates the Cargo aggregate with a new Itinerary after
+  re-routing.
+  """
+  def update_cargo_for_new_itinerary(cargo, itinerary) do
+    params = cargo_params_for_new_itinerary(cargo, itinerary)
+    update_cargo(cargo, params)
+  end
+
+  # Argument `cargo` can be a map (when creating cargos), or an existing Cargo struct.
+  defp cargo_params_for_new_itinerary(
+         %{route_specification: route_specification} = cargo,
+         itinerary
+       )
+       when is_map(itinerary) do
+    # Handling consistency within the Cargo aggregate synchronously
+    maybe_delivery = Map.get(cargo, :delivery) || Map.get(cargo, "delivery")
+
+    delivery =
+      Delivery.params_derived_from_routing(maybe_delivery, route_specification, itinerary)
+
+    cargo
+    |> Utils.from_struct()
+    |> Map.merge(%{
+      route_specification: Utils.from_struct(route_specification),
+      itinerary: itinerary,
+      delivery: delivery
+    })
   end
 
   @doc """
@@ -181,6 +263,10 @@ defmodule CargoShipping.CargoBookings do
     Cargo.changeset(cargo, attrs)
   end
 
+  @doc """
+  Returns a changeset that validates a change to the destination
+  of a Cargo's RouteSpecification
+  """
   def change_cargo_destination(%Cargo{} = cargo, attrs \\ %{}) do
     %Cargo.EditDestination{destination: Cargo.destination(cargo)}
     |> Cargo.EditDestination.changeset(attrs)
@@ -201,6 +287,10 @@ defmodule CargoShipping.CargoBookings do
     Repo.all(HandlingEvent)
   end
 
+  @doc """
+  Returns all the HandlingEvents related to a Cargo in descending
+  order of when they were registered.
+  """
   def lookup_handling_history(tracking_id) when is_binary(tracking_id) do
     query =
       from he in HandlingEvent,
@@ -213,59 +303,24 @@ defmodule CargoShipping.CargoBookings do
     |> Repo.all()
   end
 
+  @doc """
+  Returns true if the Cargo's Itinerary is expecting the HandlingEvent.
+  """
   def handling_event_expected(cargo, handling_event) do
     Itinerary.handling_event_expected(cargo.itinerary, handling_event)
   end
 
   @doc """
-  Updates all aspects of the `Cargo` aggregate status
-  based on the current route specification, itinerary and handling of the cargo.
-
-  When either of those three changes, i.e. when a new route is specified for the cargo,
-  the cargo is assigned to a route or when the cargo is handled, the status must be
-  re-calculated.
-
-  `RouteSpecification` and `Itinerary` are both inside the `Cargo`
-  aggregate, so changes to them cause the status to be updated synchronously,
-  but changes to the delivery history (when a cargo is handled) cause the status update
-  to happen asynchronously since `HandlingEvent` is in a different aggregate.
+  Returns params that can be used to update a Cargo's delivery status.
   """
   def derive_delivery_progress(%Cargo{} = cargo, handling_history) do
-    # TODO filter events on cargo (must be same as this cargo)
-
-    # `Delivery` is a value object, so we can simply discard the old one
+    # The `Delivery` is a value object, so we can simply discard the old one
     # and replace it with a new one.
-    Delivery.derived_from(cargo.route_specification, cargo.itinerary, handling_history)
-  end
-
-  @doc """
-  Argument `cargo` can be a map (when creating cargos), or an existing Cargo struct.
-  """
-  def assign_cargo_to_route(%{route_specification: route_specification} = cargo, itinerary)
-      when is_map(itinerary) do
-    # Handling consistency within the Cargo aggregate synchronously
-    maybe_delivery = Map.get(cargo, :delivery, Map.get(cargo, "delivery"))
-    delivery = Delivery.update_on_routing(maybe_delivery, route_specification, itinerary)
-
-    cargo
-    |> Utils.from_struct()
-    |> Map.merge(%{
-      route_specification: Utils.from_struct(route_specification),
-      itinerary: itinerary,
-      delivery: delivery
-    })
-  end
-
-  def specify_new_route(%{itinerary: itinerary} = cargo, route_specification) do
-    delivery = Delivery.update_on_routing(nil, route_specification, itinerary)
-
-    cargo
-    |> Utils.from_struct()
-    |> Map.merge(%{
-      route_specification: route_specification,
-      itinerary: Utils.from_struct(itinerary),
-      delivery: delivery
-    })
+    Delivery.params_derived_from_history(
+      cargo.route_specification,
+      cargo.itinerary,
+      handling_history
+    )
   end
 
   @doc """
@@ -297,7 +352,17 @@ defmodule CargoShipping.CargoBookings do
 
   """
   def create_handling_event(cargo, attrs \\ %{}) do
-    HandlingEvent.changeset(cargo, attrs)
+    cargo_id_key =
+      if Utils.atom_keys?(attrs) do
+        :cargo_id
+      else
+        "cargo_id"
+      end
+
+    create_attrs = Map.put(attrs, cargo_id_key, cargo.id)
+
+    %HandlingEvent{}
+    |> HandlingEvent.changeset(create_attrs)
     |> Repo.insert()
   end
 
@@ -306,11 +371,26 @@ defmodule CargoShipping.CargoBookings do
 
     case Repo.insert(changeset) do
       {:ok, handling_event} ->
-
         {:ok, handling_event, attrs}
 
       {:error, changeset} ->
         {:error, changeset}
     end
+  end
+
+  @doc """
+  Deletes a handling event.
+
+  ## Examples
+
+      iex> delete_handling_event(handling_event)
+      {:ok, %Cargo{}}
+
+      iex> delete_handling_event(handling_event)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_handling_event(%HandlingEvent{} = handling_event) do
+    Repo.delete(handling_event)
   end
 end

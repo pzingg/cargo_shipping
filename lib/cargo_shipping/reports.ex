@@ -59,15 +59,18 @@ defmodule CargoShipping.Reports do
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking handling_report changes.
+  Deletes a handling report.
 
   ## Examples
 
-      iex> change_handling_report(handling_report)
-      %Ecto.Changeset{data: %HandlingReport{}}
+      iex> delete_handling_report(handling_report)
+      {:ok, %Cargo{}}
+
+      iex> delete_handling_report(handling_report)
+      {:error, %Ecto.Changeset{}}
 
   """
-  def change_handling_report(%HandlingReport{} = handling_report, attrs \\ %{}) do
-    HandlingReport.changeset(handling_report, attrs)
+  def delete_handling_report(%HandlingReport{} = handling_report) do
+    Repo.delete(handling_report)
   end
 end

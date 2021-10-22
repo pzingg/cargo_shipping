@@ -323,6 +323,8 @@ defmodule CargoShipping.SampleDataGenerator do
   end
 
   def load_sample_data() do
+    Logger.error("SampleDataGenerator.load_sample_data")
+
     # Locations are read-only in memory
 
     voyages = load_carrier_movement_data()
@@ -338,20 +340,17 @@ defmodule CargoShipping.SampleDataGenerator do
   def load_cargo_abc123(voyages) do
     # Cargo ABC123
 
-    itinerary = %{
-      legs: cargo_abc123_legs(voyages)
-    }
-
-    attrs =
-      %{
-        tracking_id: "ABC123",
-        route_specification: %{
-          origin: "CNHKG",
-          destination: "FIHEL",
-          arrival_deadline: ~U[2009-03-15 00:00:00Z]
-        }
+    attrs = %{
+      tracking_id: "ABC123",
+      route_specification: %{
+        origin: "CNHKG",
+        destination: "FIHEL",
+        arrival_deadline: ~U[2009-03-15 00:00:00Z]
+      },
+      itinerary: %{
+        legs: cargo_abc123_legs(voyages)
       }
-      |> CargoBookings.assign_cargo_to_route(itinerary)
+    }
 
     {:ok, cargo_abc123} = CargoBookings.create_cargo(attrs)
 
@@ -416,20 +415,17 @@ defmodule CargoShipping.SampleDataGenerator do
   def load_cargo_jkl567(voyages) do
     # Cargo JKL567
 
-    itinerary = %{
-      legs: cargo_jkl567_legs(voyages)
-    }
-
-    attrs =
-      %{
-        tracking_id: "JKL567",
-        route_specification: %{
-          origin: "CNHGH",
-          destination: "SESTO",
-          arrival_deadline: ~U[2009-03-18 00:00:00Z]
-        }
+    attrs = %{
+      tracking_id: "JKL567",
+      route_specification: %{
+        origin: "CNHGH",
+        destination: "SESTO",
+        arrival_deadline: ~U[2009-03-18 00:00:00Z]
+      },
+      itinerary: %{
+        legs: cargo_jkl567_legs(voyages)
       }
-      |> CargoBookings.assign_cargo_to_route(itinerary)
+    }
 
     {:ok, cargo_jkl567} = CargoBookings.create_cargo(attrs)
 
@@ -685,6 +681,8 @@ defmodule CargoShipping.SampleDataGenerator do
   end
 
   def generate() do
+    Logger.error("SampleDataGenerator.generate")
+
     # Locations are read-only in memory
 
     # Voyages

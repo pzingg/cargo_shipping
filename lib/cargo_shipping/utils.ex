@@ -18,4 +18,6 @@ defmodule CargoShipping.Utils do
   end
 
   def from_struct(v), do: v
+
+  def atom_keys?(attrs), do: Enum.any?(attrs, fn {k, _v} -> is_atom(k) end)
 end

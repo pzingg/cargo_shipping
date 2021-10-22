@@ -49,9 +49,13 @@ defmodule CargoShipping.LocationService do
     end
   end
 
+  def get_by_locode(nil), do: nil
+
   def get_by_locode(un_locode) when is_binary(un_locode) do
     Enum.find(all(), fn %Location{port_code: port_code} -> port_code == un_locode end)
   end
+
+  def locode_exists?(nil), do: false
 
   def locode_exists?(un_locode) when is_binary(un_locode) do
     !is_nil(get_by_locode(un_locode))

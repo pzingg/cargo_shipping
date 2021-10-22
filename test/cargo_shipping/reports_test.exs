@@ -27,67 +27,35 @@ defmodule CargoShipping.ReportsTest do
     end
 
     test "create_handling_report/1 with valid data creates a handling_report" do
+      cargo = CargoShipping.CargoBookingsFixtures.cargo_fixture()
+      voyage = CargoShipping.VoyagePlansFixtures.voyage_fixture()
+
       valid_attrs = %{
         completed_at: ~U[2021-10-20 03:47:00Z],
-        event_type: "some event_type",
-        location: "some location",
-        tracking_id: "some tracking_id",
-        voyage_number: "some voyage_number"
+        event_type: "UNLOAD",
+        location: "DEHAM",
+        tracking_id: cargo.tracking_id,
+        voyage_number: voyage.voyage_number
       }
 
       assert {:ok, %HandlingReport{} = handling_report} =
                Reports.create_handling_report(valid_attrs)
 
       assert handling_report.completed_at == ~U[2021-10-20 03:47:00Z]
-      assert handling_report.event_type == "some event_type"
-      assert handling_report.location == "some location"
-      assert handling_report.tracking_id == "some tracking_id"
-      assert handling_report.voyage_number == "some voyage_number"
+      assert handling_report.event_type == :UNLOAD
+      assert handling_report.location == "DEHAM"
+      assert handling_report.tracking_id == cargo.tracking_id
+      assert handling_report.voyage_number == voyage.voyage_number
     end
 
     test "create_handling_report/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = Reports.create_handling_report(@invalid_attrs)
     end
 
-    test "update_handling_report/2 with valid data updates the handling_report" do
-      handling_report = handling_report_fixture()
-
-      update_attrs = %{
-        completed_at: ~U[2021-10-21 03:47:00Z],
-        event_type: "some updated event_type",
-        location: "some updated location",
-        tracking_id: "some updated tracking_id",
-        voyage_number: "some updated voyage_number"
-      }
-
-      assert {:ok, %HandlingReport{} = handling_report} =
-               Reports.update_handling_report(handling_report, update_attrs)
-
-      assert handling_report.completed_at == ~U[2021-10-21 03:47:00Z]
-      assert handling_report.event_type == "some updated event_type"
-      assert handling_report.location == "some updated location"
-      assert handling_report.tracking_id == "some updated tracking_id"
-      assert handling_report.voyage_number == "some updated voyage_number"
-    end
-
-    test "update_handling_report/2 with invalid data returns error changeset" do
-      handling_report = handling_report_fixture()
-
-      assert {:error, %Ecto.Changeset{}} =
-               Reports.update_handling_report(handling_report, @invalid_attrs)
-
-      assert handling_report == Reports.get_handling_report!(handling_report.id)
-    end
-
     test "delete_handling_report/1 deletes the handling_report" do
       handling_report = handling_report_fixture()
       assert {:ok, %HandlingReport{}} = Reports.delete_handling_report(handling_report)
       assert_raise Ecto.NoResultsError, fn -> Reports.get_handling_report!(handling_report.id) end
-    end
-
-    test "change_handling_report/1 returns a handling_report changeset" do
-      handling_report = handling_report_fixture()
-      assert %Ecto.Changeset{} = Reports.change_handling_report(handling_report)
     end
   end
 end

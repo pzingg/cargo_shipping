@@ -7,16 +7,16 @@ defmodule CargoShipping.VoyagePlansFixtures do
   def schedule_fixture() do
     [
       %{
-        "departure_location" => "DEHAM",
-        "arrival_location" => "CNSHA",
-        "departure_time" => ~U[2015-01-23 23:50:07Z],
-        "arrival_time" => ~U[2015-02-23 23:50:07Z]
+        departure_location: "DEHAM",
+        arrival_location: "CNSHA",
+        departure_time: ~U[2015-01-23 23:50:07Z],
+        arrival_time: ~U[2015-02-23 23:50:07Z]
       },
       %{
-        "departure_location" => "CNSHA",
-        "arrival_location" => "JPTOK",
-        "departure_time" => ~U[2015-02-24 23:50:07Z],
-        "arrival_time" => ~U[2015-03-23 23:50:07Z]
+        departure_location: "CNSHA",
+        arrival_location: "JPTOK",
+        departure_time: ~U[2015-02-24 23:50:07Z],
+        arrival_time: ~U[2015-03-23 23:50:07Z]
       }
     ]
   end
@@ -27,8 +27,8 @@ defmodule CargoShipping.VoyagePlansFixtures do
   def voyage_fixture(attrs \\ %{}) do
     attrs =
       Enum.into(attrs, %{
-        "voyage_number" => 42,
-        "schedule_items" => schedule_fixture()
+        voyage_number: "V42",
+        schedule_items: schedule_fixture()
       })
 
     {:ok, voyage} = CargoShipping.VoyagePlans.create_voyage(attrs)

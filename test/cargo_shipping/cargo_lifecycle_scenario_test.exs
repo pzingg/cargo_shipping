@@ -6,6 +6,9 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
   alias CargoShipping.{CargoBookings, CargoBookingService, HandlingEventService, VoyageService}
   alias CargoShipping.CargoBookings.{Delivery, Itinerary}
 
+  import CargoShipping.ItinerariesFixtures
+
+  @tag hibernate_data: true
   test "cargo undergoes lifecycle changes" do
     # Test setup: A cargo should be shipped from Hongkong to Stockholm,
     # and it should arrive in no more than two weeks.
@@ -42,12 +45,12 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     # Selection could be affected by things like price and time of delivery,
     # but this test simply uses an arbitrary selection to mimic that process.
 
-    # The cargo is then assigned to the selected route, described by an itinerary. */
+    # The cargo is then assigned to the selected route, described by an itinerary.
+
     itineraries = CargoBookingService.possible_routes_for_cargo(cargo)
     refute Enum.empty?(itineraries)
     itinerary = select_prefered_itinerary(itineraries)
-    new_route_params = CargoBookings.assign_cargo_to_route(cargo, itinerary)
-    {:ok, cargo} = CargoBookings.update_cargo(cargo, new_route_params)
+    {:ok, cargo} = CargoBookings.update_cargo_for_new_itinerary(cargo, itinerary)
 
     Logger.error("52 after reroute")
     Itinerary.debug_itinerary(cargo.itinerary)
@@ -82,7 +85,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
-    # TODO wait for event
+    # Wait for event bus
     Process.sleep(500)
 
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
@@ -90,7 +93,8 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     assert cargo.delivery.transport_status == :IN_PORT
     assert cargo.delivery.last_known_location == "CNHKG"
 
-    # Next event: Load onto voyage in Hong Kong
+    ## Next event: Load onto voyage in Hong Kong
+
     current_leg = Itinerary.find_leg(:LOAD, cargo.itinerary, "CNHKG")
     voyage_number = VoyageService.get_voyage_number_for_id!(current_leg.voyage_id)
     assert voyage_number
@@ -105,7 +109,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
-    # TODO wait for event
+    # Wait for event bus
     Process.sleep(500)
 
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
@@ -135,7 +139,8 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     assert changeset.errors[:voyage_number] == {"is invalid", []}
     assert changeset.errors[:location] == {"is invalid", []}
 
-    # (Incorrectly) unload cargo in Tokyo
+    ## (Incorrectly) unload cargo in Tokyo.
+
     handling_params = %{
       completed_at: ~U[2009-03-05 00:00:00Z],
       tracking_id: tracking_id,
@@ -146,8 +151,10 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
-    # TODO wait for event
+    # Wait for event bus
     Process.sleep(500)
+
+    # TODO: Verify that :cargo_misdirected event was received
 
     # Check current state - cargo is misdirected!
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
@@ -157,10 +164,13 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     assert cargo.delivery.misdirected?
     refute cargo.delivery.next_expected_activity
 
-    # Cargo needs to be rerouted
-    # TODO cleaner reroute from "earliest location from where the new route originates".
+    ## Cargo needs to be rerouted
 
-    # Specify a new route, this time from Tokyo (where it was incorrectly unloaded) to Stockholm.
+    # TODO: Cleaner reroute from "earliest location from where the
+    # new route originates".
+
+    # Specify a new route, this time from Tokyo (where it was
+    # incorrectly unloaded) to Stockholm.
 
     from_tokyo = %{
       origin: "JPTOK",
@@ -168,8 +178,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       arrival_deadline: arrival_deadline
     }
 
-    new_route_params = CargoBookings.specify_new_route(cargo, from_tokyo)
-    {:ok, cargo} = CargoBookings.update_cargo(cargo, new_route_params)
+    {:ok, cargo} = CargoBookings.update_cargo_for_new_route(cargo, from_tokyo)
 
     assert cargo.delivery.routing_status == :MISROUTED
     refute cargo.delivery.next_expected_activity
@@ -177,26 +186,25 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     # Repeat procedure of selecting one out of a number of possible
     # routes satisfying the route spec.
 
-    itineraries = CargoBookingService.possible_routes_for_cargo(cargo)
-    refute Enum.empty?(itineraries)
-    itinerary = get_preset_itinerary()
-    new_route_params = CargoBookings.assign_cargo_to_route(cargo, itinerary)
-    {:ok, cargo} = CargoBookings.update_cargo(cargo, new_route_params)
+    # itineraries = CargoBookingService.possible_routes_for_cargo(cargo)
+    # refute Enum.empty?(itineraries)
+
+    # Use a predefined itinerary for the rest of the test
+    # that uses legs from the "V300" and "V400" voyages.
+    itinerary = jptok_deham_sesto_itinerary()
+    {:ok, cargo} = CargoBookings.update_cargo_for_new_itinerary(cargo, itinerary)
 
     # New itinerary should satisfy new route
     assert cargo.delivery.routing_status == :ROUTED
 
-    # TODO we can't handle the fact that after a reroute, the cargo isn't
-    # misdirected anymore.
+    # TODO: We aren't properly handling the fact that after a reroute,
+    # the cargo isn't misdirected anymore.
+
     # refute cargo.delivery.misdirected?
     # assert cargo.delivery.next_expected_activity.event_type == :LOAD
     # assert cargo.delivery.next_expected_activity.location == "JPTOK"
 
-    Logger.error("193 after reroute")
-    Itinerary.debug_itinerary(cargo.itinerary)
-    Delivery.debug_delivery(cargo.delivery)
-
-    # -- Cargo has been rerouted, shipping continues --
+    ## Cargo has been rerouted, shipping continues
 
     # Load in Tokyo
 
@@ -210,7 +218,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
-    # TODO wait for event
+    # Wait for event bus
     Process.sleep(500)
 
     # Check current state - should be ok
@@ -236,7 +244,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
-    # TODO wait for event
+    # Wait for event bus
     Process.sleep(500)
 
     # Check current state - should be ok
@@ -262,7 +270,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
-    # TODO wait for event
+    # Wait for event bus
     Process.sleep(500)
 
     # Check current state - should be ok
@@ -287,7 +295,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
-    # TODO wait for event
+    # Wait for event bus
     Process.sleep(500)
 
     # Check current state - should be ok
@@ -299,7 +307,8 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     assert cargo.delivery.next_expected_activity.event_type == :CLAIM
     assert cargo.delivery.next_expected_activity.location == "SESTO"
 
-    # Finally, cargo is claimed in Stockholm. This ends the cargo lifecycle from our perspective.
+    # Finally, cargo is claimed in Stockholm. This ends the cargo lifecycle
+    # from our perspective.
 
     handling_params = %{
       completed_at: ~U[2009-03-15 00:00:00Z],
@@ -311,8 +320,10 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
-    # TODO wait for event
+    # Wait for event bus
     Process.sleep(500)
+
+    # TODO: Verify that :cargo_arrived event was received
 
     # Check current state - should be ok
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
@@ -325,29 +336,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
   ## Utility stubs
 
-  def select_prefered_itinerary(itineraries), do: List.first(itineraries)
-
-  def get_preset_itinerary() do
-    v300 = VoyageService.get_voyage_id_for_number!("V300")
-    v400 = VoyageService.get_voyage_id_for_number!("V400")
-
-    %{
-      legs: [
-        %{
-          voyage_id: v300,
-          load_location: "JPTOK",
-          unload_location: "DEHAM",
-          load_time: ~U[2009-03-08 00:00:00Z],
-          unload_time: ~U[2009-03-12 00:00:00Z]
-        },
-        %{
-          voyage_id: v400,
-          load_location: "DEHAM",
-          unload_location: "SESTO",
-          load_time: ~U[2009-03-14 00:00:00Z],
-          unload_time: ~U[2009-03-15 00:00:00Z]
-        }
-      ]
-    }
-  end
+  # TODO: Find an itinerary that matches our route, rather than
+  # just building random ones.
+  defp select_prefered_itinerary(itineraries), do: List.first(itineraries)
 end

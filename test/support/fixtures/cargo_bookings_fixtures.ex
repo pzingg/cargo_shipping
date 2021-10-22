@@ -62,14 +62,16 @@ defmodule CargoShipping.CargoBookingsFixtures do
   Generate a handling_event.
   """
   def handling_event_fixture(attrs \\ %{}) do
-    {:ok, handling_event} =
-      attrs
-      |> Enum.into(%{
-        "event_type" => "RECEIVE",
-        "location" => "DEHAM",
-        "completed_at" => ~U[2021-10-14 20:32:00Z]
+    cargo = cargo_fixture()
+
+    attrs =
+      Enum.into(attrs, %{
+        event_type: "RECEIVE",
+        location: "DEHAM",
+        completed_at: ~U[2021-10-14 20:32:00Z]
       })
-      |> CargoShipping.CargoBookings.create_handling_event()
+
+    {:ok, handling_event} = CargoShipping.CargoBookings.create_handling_event(cargo, attrs)
 
     handling_event
   end

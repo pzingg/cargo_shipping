@@ -19,7 +19,7 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
 
   import Ecto.Changeset
 
-  alias CargoShipping.{CargoBookings, LocationService, VoyageService}
+  alias CargoShipping.{CargoBookings, LocationService, Utils, VoyageService}
   alias CargoShipping.CargoBookings.Cargo
 
   @event_type_values [:LOAD, :UNLOAD, :RECEIVE, :CLAIM, :CUSTOMS]
@@ -52,11 +52,11 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
   @required_fields [:cargo_id, :event_type, :location, :completed_at]
 
   @doc false
-  def changeset(cargo, attrs) do
-    cargo
-    |> Ecto.build_assoc(:handling_events)
+  def changeset(handling_event, attrs) do
+    handling_event
     |> cast(attrs, @cast_fields)
     |> validate_required(@required_fields)
+    |> validate_cargo_exists?()
     |> validate_inclusion(:event_type, @event_type_values)
     |> validate_location()
     |> validate_voyage_number_or_id()
@@ -79,8 +79,36 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
         |> add_error(:tracking_id, "is invalid")
 
       cargo ->
-        changeset(cargo, attrs)
+        cargo_id_key =
+          if Utils.atom_keys?(attrs) do
+            :cargo_id
+          else
+            "cargo_id"
+          end
+
+        event_attrs =
+          attrs
+          |> Map.put(cargo_id_key, cargo.id)
+
+        %__MODULE__{}
+        |> changeset(event_attrs)
     end
+  end
+
+  def validate_cargo_exists?(changeset) do
+    cargo_id = get_change(changeset, :cargo_id)
+
+    if CargoBookings.get_cargo!(cargo_id) do
+      changeset
+    else
+      changeset
+      |> add_error(:cargo_id, "is invalid")
+    end
+  end
+
+  def validate_cargo_or_id(changeset, %Cargo{id: cargo_id} = _cargo, nil) do
+    changeset
+    |> put_change(:cargo_id, cargo_id)
   end
 
   def validate_location(changeset) do

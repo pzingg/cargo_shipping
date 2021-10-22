@@ -42,7 +42,7 @@ defmodule CargoShippingWeb.CargoLive.EditDestination do
   end
 
   defp save_cargo_destination(socket, :edit, %{"destination" => destination} = params) do
-    case CargoBookings.update_cargo_destination(socket.assigns.cargo, destination) do
+    case CargoBookings.update_cargo_for_new_destination(socket.assigns.cargo, destination) do
       {:ok, _cargo} ->
         {:noreply,
          socket

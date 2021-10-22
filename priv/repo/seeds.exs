@@ -10,4 +10,6 @@
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
 
-CargoShipping.SampleDataGenerator.generate()
+if Mix.env() != :test do
+  CargoShipping.SampleDataGenerator.generate()
+end

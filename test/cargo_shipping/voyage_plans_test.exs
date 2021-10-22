@@ -30,10 +30,10 @@ defmodule CargoShipping.VoyagePlansTest do
     end
 
     test "create_voyage/1 with valid data creates a voyage" do
-      valid_attrs = %{"voyage_number" => 42, "schedule_items" => schedule_fixture()}
+      valid_attrs = %{"voyage_number" => "V42", "schedule_items" => schedule_fixture()}
 
       assert {:ok, %Voyage{} = voyage} = VoyagePlans.create_voyage(valid_attrs)
-      assert voyage.voyage_number == 42
+      assert voyage.voyage_number == "V42"
       assert Enum.count(voyage.schedule_items) == 2
       assert hd(voyage.schedule_items).departure_location == "DEHAM"
     end
@@ -44,10 +44,10 @@ defmodule CargoShipping.VoyagePlansTest do
 
     test "update_voyage/2 with valid data updates the voyage" do
       voyage = voyage_fixture()
-      update_attrs = %{"voyage_number" => 43, "schedule_items" => @schedule_update_attrs}
+      update_attrs = %{"voyage_number" => "V43", "schedule_items" => @schedule_update_attrs}
 
       assert {:ok, %Voyage{} = voyage} = VoyagePlans.update_voyage(voyage, update_attrs)
-      assert voyage.voyage_number == 43
+      assert voyage.voyage_number == "V43"
       assert Enum.count(voyage.schedule_items) == 1
       assert hd(voyage.schedule_items).departure_location == "NLRTM"
     end
