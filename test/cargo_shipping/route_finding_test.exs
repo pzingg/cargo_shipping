@@ -13,7 +13,9 @@ defmodule CargoShipping.RouteFindingTest do
       shortest = List.first(itineraries)
 
       refute is_nil(shortest)
-      assert Enum.count(shortest.itinerary.legs) == 3
+      assert Enum.count(shortest.itinerary.legs) == 11
+      Itinerary.debug_itinerary(shortest.itinerary)
+
       first_leg = List.first(shortest.itinerary.legs)
       last_leg = List.last(shortest.itinerary.legs)
       assert first_leg.load_location == "CNHKG"
@@ -27,7 +29,9 @@ defmodule CargoShipping.RouteFindingTest do
       shortest = List.first(itineraries)
 
       refute is_nil(shortest)
-      assert Enum.count(shortest.itinerary.legs) == 5
+      assert Enum.count(shortest.itinerary.legs) == 7
+      Itinerary.debug_itinerary(shortest.itinerary)
+
       first_leg = List.first(shortest.itinerary.legs)
       last_leg = List.last(shortest.itinerary.legs)
       assert first_leg.load_location == "USNYC"

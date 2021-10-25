@@ -159,8 +159,8 @@ defmodule CargoShipping.RoutingService do
 
   defmodule Vertex do
     @moduledoc """
-    Represents a vertex in a graph in Dijkstra's algorithm.
-    `type` is :LOAD, :UNLOAD, :ORIGIN, :DESTINATION
+    Represents a vertex in a directed graph.
+    `type` is :DEPART, :ARRIVE, :ORIGIN, :DESTINATION
     """
 
     use TypedStruct
@@ -248,21 +248,21 @@ defmodule CargoShipping.RoutingService do
 
     legs =
       Enum.map(1..last_index//2, fn i ->
-        v_load = Enum.at(vertices, i)
-        v_unload = Enum.at(vertices, i + 1)
-        leg_from_libgraph_edge(v_load, v_unload)
+        v_depart = Enum.at(vertices, i)
+        v_arrive = Enum.at(vertices, i + 1)
+        leg_from_libgraph_edge(v_depart, v_arrive)
       end)
 
     %{id: UUID.uuid4(), legs: legs}
   end
 
-  defp leg_from_libgraph_edge(v_load, v_unload) do
+  defp leg_from_libgraph_edge(v_depart, v_arrive) do
     %{
-      voyage_id: v_load.voyage_id,
-      load_location: v_load.location,
-      unload_location: v_unload.location,
-      load_time: v_load.time,
-      unload_time: v_unload.time
+      voyage_id: v_depart.voyage_id,
+      load_location: v_depart.location,
+      unload_location: v_arrive.location,
+      load_time: v_depart.time,
+      unload_time: v_arrive.time
     }
   end
 
@@ -274,53 +274,75 @@ defmodule CargoShipping.RoutingService do
         internal_voyage_edges(voyage, acc)
       end)
 
-    all_load_vertices = [
-      v_destination
-      | Enum.map(internal_edges, fn {v_load, _v_unload, _opts} -> v_load end)
+    arrival_vertices = [
+      v_origin
+      | Enum.map(internal_edges, fn {_v_depart, v_arrive, _opts} -> v_arrive end)
     ]
 
-    all_unload_vertices = [
-      v_origin
-      | Enum.map(internal_edges, fn {_v_load, v_unload, _opts} -> v_unload end)
+    departure_vertices = [
+      v_destination
+      | Enum.map(internal_edges, fn {v_depart, _v_arrive, _opts} -> v_depart end)
     ]
 
     external_edges =
-      Enum.reduce(all_load_vertices, [], fn v_load, acc ->
-        load_location = v_load.location
-        at_destination? = v_load.type == :DESTINATION
-        load_voyage_number = v_load.voyage_number
-        load_index = v_load.index
+      Enum.reduce(arrival_vertices, [], fn v_arrive, acc ->
+        at_origin? = v_arrive.type == :ORIGIN
+        arrival_location = v_arrive.location
+        earliest_departure_time = DateTime.add(v_arrive.time, 12 * 3_600, :second)
+        arrival_voyage_number = v_arrive.voyage_number
 
-        Enum.reduce(all_unload_vertices, acc, fn v_unload, edges ->
-          # TODO match times
-          if v_unload.location == load_location do
-            {label, weight, color, style} =
-              cond do
-                v_unload.type == :ORIGIN ->
-                  {"RECEIVE", 1, "black", "bold"}
+        departure_index =
+          case v_arrive.index do
+            nil -> nil
+            index -> index + 1
+          end
 
-                at_destination? ->
-                  {"CLAIM", 1, "black", "bold"}
+        Enum.reduce(departure_vertices, acc, fn v_depart, edges ->
+          departure_time_compare = DateTime.compare(v_depart.time, earliest_departure_time)
 
-                v_unload.voyage_number == load_voyage_number &&
-                    v_unload.index + 1 == load_index ->
-                  {"IN_PORT", 1, "black", "bold"}
+          {label, weight, color, style} =
+            cond do
+              v_depart.location != arrival_location ->
+                {nil, nil, nil, nil}
 
-                true ->
-                  {"TRANSFER", 100, "red", "dashed"}
-              end
+              at_origin? ->
+                {"RECEIVE", 1, "black", "bold"}
 
+              v_depart.type == :DESTINATION ->
+                {"CLAIM", 1, "black", "bold"}
+
+              !is_nil(v_depart.index) && !is_nil(departure_index) &&
+                v_depart.voyage_number == arrival_voyage_number &&
+                  v_depart.index == departure_index ->
+                {"IN_PORT", 1, "black", "bold"}
+
+              departure_time_compare != :lt ->
+                {"TRANSFER", 100, "red", "dashed"}
+
+              true ->
+                # Logger.warn(
+                #   "rejecting transfer at #{arrival_location} from #{arrival_voyage_number} to #{v_depart.voyage_number}"
+                # )
+                # Logger.warn("arrival time   #{v_arrive.time}")
+                # Logger.warn("departure_time #{v_depart.time}")
+                # Logger.warn("earliest       #{earliest_departure_time}")
+                # Logger.warn("")
+
+                {nil, nil, nil, nil}
+            end
+
+          if is_nil(label) do
+            edges
+          else
             [
-              {v_unload, v_load, [label: label, weight: weight, color: color, style: style]}
+              {v_arrive, v_depart, [label: label, weight: weight, color: color, style: style]}
               | edges
             ]
-          else
-            edges
           end
         end)
       end)
 
-    all_vertices = all_load_vertices ++ all_unload_vertices
+    all_vertices = departure_vertices ++ arrival_vertices
     all_edges = internal_edges ++ external_edges
 
     all_vertices
@@ -349,9 +371,9 @@ defmodule CargoShipping.RoutingService do
   end
 
   def internal_leg_edges(voyage, leg, {edges, i, last}) do
-    v_load = %Vertex{
+    v_depart = %Vertex{
       name: "#{leg.departure_location}:DEP:#{voyage.voyage_number}:#{i}",
-      type: :LOAD,
+      type: :DEPART,
       location: leg.departure_location,
       time: leg.departure_time,
       voyage_id: voyage.id,
@@ -359,9 +381,9 @@ defmodule CargoShipping.RoutingService do
       index: i
     }
 
-    v_unload = %Vertex{
+    v_arrive = %Vertex{
       name: "#{leg.arrival_location}:ARR:#{voyage.voyage_number}:#{i}",
-      type: :UNLOAD,
+      type: :ARRIVE,
       location: leg.arrival_location,
       time: leg.arrival_time,
       voyage_id: voyage.id,
@@ -377,6 +399,6 @@ defmodule CargoShipping.RoutingService do
       end
 
     label = "ONB:#{voyage.voyage_number}:#{i}#{is_last}"
-    {[{v_load, v_unload, [label: label, weight: 1]} | edges], i + 1, last}
+    {[{v_depart, v_arrive, [label: label, weight: 1]} | edges], i + 1, last}
   end
 end

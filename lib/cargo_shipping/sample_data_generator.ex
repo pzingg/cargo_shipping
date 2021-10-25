@@ -503,11 +503,11 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.add_movement(
       "JPTYO",
       ~U[2009-03-03 00:00:00Z],
-      ~U[2008-03-06 00:00:00Z]
+      ~U[2009-03-06 00:00:00Z]
     )
     |> VoyageBuilder.add_movement(
       "USNYC",
-      ~U[2008-03-06 00:00:00Z],
+      ~U[2009-03-06 00:00:00Z],
       ~U[2009-03-09 00:00:00Z]
     )
     |> VoyageBuilder.build()
@@ -517,17 +517,17 @@ defmodule CargoShipping.SampleDataGenerator do
     VoyageBuilder.init("V200", "JPTYO")
     |> VoyageBuilder.add_movement(
       "USNYC",
-      ~U[2008-03-06 00:00:00Z],
-      ~U[2008-03-08 00:00:00Z]
+      ~U[2009-03-06 00:00:00Z],
+      ~U[2009-03-08 00:00:00Z]
     )
     |> VoyageBuilder.add_movement(
       "USCHI",
-      ~U[2008-03-10 00:00:00Z],
-      ~U[2008-03-14 00:00:00Z]
+      ~U[2009-03-10 00:00:00Z],
+      ~U[2009-03-14 00:00:00Z]
     )
     |> VoyageBuilder.add_movement(
       "SESTO",
-      ~U[2008-03-14 00:00:00Z],
+      ~U[2009-03-14 00:00:00Z],
       ~U[2009-03-16 00:00:00Z]
     )
     |> VoyageBuilder.build()
@@ -538,21 +538,21 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.add_movement(
       "NLRTM",
       ~U[2009-03-08 00:00:00Z],
-      ~U[2008-03-11 00:00:00Z]
+      ~U[2009-03-11 00:00:00Z]
     )
     |> VoyageBuilder.add_movement(
       "DEHAM",
       ~U[2009-03-11 00:00:00Z],
-      ~U[2008-03-12 00:00:00Z]
+      ~U[2009-03-12 00:00:00Z]
     )
     |> VoyageBuilder.add_movement(
       "AUMEL",
       ~U[2009-03-14 00:00:00Z],
-      ~U[2008-03-18 00:00:00Z]
+      ~U[2009-03-18 00:00:00Z]
     )
     |> VoyageBuilder.add_movement(
       "JPTYO",
-      ~U[2008-03-19 00:00:00Z],
+      ~U[2009-03-19 00:00:00Z],
       ~U[2009-03-21 00:00:00Z]
     )
     |> VoyageBuilder.build()
@@ -563,11 +563,11 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.add_movement(
       "SESTO",
       ~U[2009-03-14 00:00:00Z],
-      ~U[2008-03-15 00:00:00Z]
+      ~U[2009-03-15 00:00:00Z]
     )
     |> VoyageBuilder.add_movement(
       "FIHEL",
-      ~U[2008-03-15 00:00:00Z],
+      ~U[2009-03-15 00:00:00Z],
       ~U[2009-03-16 00:00:00Z]
     )
     |> VoyageBuilder.add_movement(
