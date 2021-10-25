@@ -13,6 +13,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
   alias CargoShipping.VoyageService
   alias CargoShipping.CargoBookings.Leg
 
+  @start_of_days ~U[2000-01-01 00:00:00Z]
   @end_of_days ~U[2049-12-31 23:59:59Z]
 
   @primary_key false
@@ -40,6 +41,17 @@ defmodule CargoShipping.CargoBookings.Itinerary do
         leg.load_location
     end
   end
+
+  def initial_departure_date(itinerary) do
+    case initial_leg(itinerary) do
+      nil ->
+        @start_of_days
+
+      leg ->
+        leg.load_time
+    end
+  end
+
 
   def final_leg(itinerary), do: List.last(itinerary.legs)
 
@@ -83,7 +95,8 @@ defmodule CargoShipping.CargoBookings.Itinerary do
   def satisfies?(itinerary, route_specification) do
     initial_departure_location(itinerary) == route_specification.origin &&
       final_arrival_location(itinerary) == route_specification.destination &&
-      final_arrival_date(itinerary) < route_specification.arrival_deadline
+      initial_departure_date(itinerary) >= route_specification.earliest_departure &&
+      final_arrival_date(itinerary) <= route_specification.arrival_deadline
   end
 
   @doc """

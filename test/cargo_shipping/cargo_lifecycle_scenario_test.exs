@@ -14,6 +14,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     # and it should arrive in no more than two weeks.
     origin = "CNHKG"
     destination = "SESTO"
+    earliest_departure = ~U[2009-02-01 00:00:00Z]
     arrival_deadline = ~U[2009-03-18 00:00:00Z]
 
     ## Use case 1: booking
@@ -175,6 +176,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     from_tokyo = %{
       origin: "JPTYO",
       destination: "SESTO",
+      earliest_departure: earliest_departure,
       arrival_deadline: arrival_deadline
     }
 

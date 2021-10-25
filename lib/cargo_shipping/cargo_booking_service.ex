@@ -6,7 +6,7 @@ defmodule CargoShipping.CargoBookingService do
   alias CargoShipping.CargoBookings.{Cargo, Delivery, Itinerary}
 
   @doc false
-  def book_new_cargo(origin, destination, arrival_deadline) do
+  def book_new_cargo(origin, destination, arrival_deadline, earliest_departure \\ nil) do
     case unique_tracking_id() do
       {:ok, tracking_id} ->
         attrs = %{
@@ -14,6 +14,7 @@ defmodule CargoShipping.CargoBookingService do
           route_specification: %{
             origin: origin,
             destination: destination,
+            earliest_departure: earliest_departure,
             arrival_deadline: arrival_deadline
           },
           delivery: Delivery.not_routed()
@@ -80,7 +81,9 @@ defmodule CargoShipping.CargoBookingService do
     RoutingService.find_itineraries(
       route_specification.origin,
       route_specification.destination,
-      Keyword.put(opts, :arrival_deadline, route_specification.arrival_deadline)
+      opts
+      |> Keyword.put(:earliest_departure, route_specification.earliest_departure)
+      |> Keyword.put(:arrival_deadline, route_specification.arrival_deadline)
     )
     |> Enum.filter(fn %{itinerary: itinerary} ->
       Itinerary.satisfies?(itinerary, route_specification)

@@ -178,8 +178,8 @@ defmodule CargoShipping.RoutingService do
     end
   end
 
-  def find_itineraries_libgraph(origin, destination, limitations) do
-    earliest_load_time = Keyword.get(limitations, :origin_load_time, ~U[2000-01-01 00:00:00Z])
+  defp find_itineraries_libgraph(origin, destination, limitations) do
+    earliest_load_time = Keyword.get(limitations, :earliest_departure, ~U[2000-01-01 00:00:00Z])
     latest_unload_time = Keyword.get(limitations, :arrival_deadline, ~U[2049-12-31 23:59:59Z])
 
     v_origin = %Vertex{
@@ -288,7 +288,7 @@ defmodule CargoShipping.RoutingService do
       Enum.reduce(arrival_vertices, [], fn v_arrive, acc ->
         at_origin? = v_arrive.type == :ORIGIN
         arrival_location = v_arrive.location
-        earliest_departure_time = DateTime.add(v_arrive.time, 12 * 3_600, :second)
+        earliest_departure = DateTime.add(v_arrive.time, 12 * 3_600, :second)
         arrival_voyage_number = v_arrive.voyage_number
 
         departure_index =
@@ -298,7 +298,7 @@ defmodule CargoShipping.RoutingService do
           end
 
         Enum.reduce(departure_vertices, acc, fn v_depart, edges ->
-          departure_time_compare = DateTime.compare(v_depart.time, earliest_departure_time)
+          departure_time_compare = DateTime.compare(v_depart.time, earliest_departure)
 
           {label, weight, color, style} =
             cond do
@@ -325,7 +325,7 @@ defmodule CargoShipping.RoutingService do
                 # )
                 # Logger.warn("arrival time   #{v_arrive.time}")
                 # Logger.warn("departure_time #{v_depart.time}")
-                # Logger.warn("earliest       #{earliest_departure_time}")
+                # Logger.warn("earliest       #{earliest_departure}")
                 # Logger.warn("")
 
                 {nil, nil, nil, nil}

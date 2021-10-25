@@ -53,6 +53,7 @@ defmodule CargoShipping.RouteFindingTest do
     route_specification = %{
       origin: from,
       destination: to,
+      earliest_departure: ~U[2000-01-01 00:00:00Z],
       arrival_deadline: DateTime.utc_now()
     }
 

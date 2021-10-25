@@ -133,6 +133,7 @@ defmodule CargoShipping.SampleDataGenerator do
         route_specification: %{
           origin: "SESTO",
           destination: "AUMEL",
+          earliest_departure: ts(0),
           arrival_deadline: ts(10)
         },
         delivery: %{
@@ -154,6 +155,7 @@ defmodule CargoShipping.SampleDataGenerator do
         route_specification: %{
           origin: "SESTO",
           destination: "FIHEL",
+          earliest_departure: ts(0),
           arrival_deadline: ts(20)
         },
         delivery: %{
@@ -175,6 +177,7 @@ defmodule CargoShipping.SampleDataGenerator do
         route_specification: %{
           origin: "AUMEL",
           destination: "SESTO",
+          earliest_departure: ts(0),
           arrival_deadline: ts(30)
         },
         delivery: %{
@@ -196,6 +199,7 @@ defmodule CargoShipping.SampleDataGenerator do
         route_specification: %{
           origin: "FIHEL",
           destination: "SESTO",
+          earliest_departure: ts(0),
           arrival_deadline: ts(40)
         },
         delivery: %{
@@ -218,6 +222,7 @@ defmodule CargoShipping.SampleDataGenerator do
         route_specification: %{
           origin: "CNHKG",
           destination: "FIHEL",
+          earliest_departure: ts(0),
           arrival_deadline: ts(50)
         },
         itinerary: Map.fetch!(itineraries, :itinerary_fgh),
@@ -240,6 +245,7 @@ defmodule CargoShipping.SampleDataGenerator do
         route_specification: %{
           origin: "DEHAM",
           destination: "JPTYO",
+          earliest_departure: ts(0),
           arrival_deadline: ts(60)
         },
         itinerary: Map.fetch!(itineraries, :itinerary_jkl),
@@ -345,6 +351,7 @@ defmodule CargoShipping.SampleDataGenerator do
       route_specification: %{
         origin: "CNHKG",
         destination: "FIHEL",
+        earliest_departure: ~U[2009-02-01 00:00:00Z],
         arrival_deadline: ~U[2009-03-15 00:00:00Z]
       },
       itinerary: %{
@@ -420,6 +427,7 @@ defmodule CargoShipping.SampleDataGenerator do
       route_specification: %{
         origin: "CNHGH",
         destination: "SESTO",
+        earliest_departure: ~U[2009-02-01 00:00:00Z],
         arrival_deadline: ~U[2009-03-18 00:00:00Z]
       },
       itinerary: %{
