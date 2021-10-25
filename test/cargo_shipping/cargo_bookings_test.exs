@@ -102,7 +102,8 @@ defmodule CargoShipping.CargoBookingsTest do
     end
 
     test "create_handling_event/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = CargoBookings.create_handling_event(cargo_fixture(), @invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} =
+               CargoBookings.create_handling_event(cargo_fixture(), @invalid_attrs)
     end
 
     test "delete_handling_event/1 deletes the handling_event" do

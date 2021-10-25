@@ -35,8 +35,16 @@ defmodule CargoShipping.DataCase do
       :ok = CargoShipping.SampleDataGenerator.load_sample_data()
     end
 
-    if tags[:hibernate_data] do
-      :ok = CargoShipping.SampleDataGenerator.generate()
+    case Map.get(tags, :hibernate_data) do
+      nil ->
+        :ok
+
+      :voyages ->
+        _ = CargoShipping.SampleDataGenerator.generate_voyages()
+        :ok
+
+      _ ->
+        :ok = CargoShipping.SampleDataGenerator.generate()
     end
 
     :ok

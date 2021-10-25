@@ -680,37 +680,42 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.build()
   end
 
+  def generate_voyages() do
+    Enum.reduce(
+      [
+        :voyage_v100,
+        :voyage_v200,
+        :voyage_v300,
+        :voyage_v400,
+        :voyage_cnhkg_usnyc,
+        :voyage_usnyc_usdal,
+        :voyage_usdal_fihel,
+        :voyage_usdal_fihel_alt,
+        :voyage_fihel_cnhkg
+      ],
+      %{},
+      fn func, acc ->
+        attrs = apply(__MODULE__, func, [])
+        {:ok, voyage} = VoyagePlans.create_voyage(attrs)
+        Map.put(acc, func, voyage)
+      end
+    )
+  end
+
+  def generate_cargos(voyages) do
+    load_cargo_abc123(voyages)
+    load_cargo_jkl567(voyages)
+
+    :ok
+  end
+
   def generate() do
     Logger.error("SampleDataGenerator.generate")
 
     # Locations are read-only in memory
 
-    # Voyages
-    voyages =
-      Enum.reduce(
-        [
-          :voyage_v100,
-          :voyage_v200,
-          :voyage_v300,
-          :voyage_v400,
-          :voyage_cnhkg_usnyc,
-          :voyage_usnyc_usdal,
-          :voyage_usdal_fihel,
-          :voyage_usdal_fihel_alt,
-          :voyage_fihel_cnhkg
-        ],
-        %{},
-        fn func, acc ->
-          attrs = apply(__MODULE__, func, [])
-          {:ok, voyage} = VoyagePlans.create_voyage(attrs)
-          Map.put(acc, func, voyage)
-        end
-      )
-
-    load_cargo_abc123(voyages)
-    load_cargo_jkl567(voyages)
-
-    :ok
+    voyages = generate_voyages()
+    generate_cargos(voyages)
   end
 
   ## Utilities

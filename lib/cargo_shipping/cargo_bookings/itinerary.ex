@@ -13,7 +13,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
   alias CargoShipping.VoyageService
   alias CargoShipping.CargoBookings.Leg
 
-  @end_of_days ~U[2050-12-31 23:59:59Z]
+  @end_of_days ~U[2049-12-31 23:59:59Z]
 
   @primary_key false
   embedded_schema do
@@ -65,12 +65,14 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
   def find_leg(:LOAD, itinerary, location) do
     Enum.find(itinerary.legs, fn leg ->
-      leg.load_location == location end)
+      leg.load_location == location
+    end)
   end
 
   def find_leg(:UNLOAD, itinerary, location) do
     Enum.find(itinerary.legs, fn leg ->
-      leg.unload_location == location end)
+      leg.unload_location == location
+    end)
   end
 
   @doc """

@@ -55,40 +55,47 @@ defmodule CargoShipping.CargoBookings do
       ** (Ecto.NoResultsError)
 
   """
-  def get_cargo!(id), do: Repo.get!(Cargo, id)
+  def get_cargo!(id, opts \\ []) do
+    if opts[:with_events] do
+      query =
+        from c in Cargo,
+          where: c.id == ^id,
+          preload: [
+            handling_events:
+              ^from(
+                he in HandlingEvent,
+                order_by: he.completed_at
+              )
+          ]
 
-  def get_cargo_and_events!(id) do
-    query =
-      from c in Cargo,
-        where: c.id == ^id,
-        preload: [
-          handling_events:
-            ^from(
-              he in HandlingEvent,
-              order_by: he.completed_at
-            )
-        ]
+      case query |> Repo.one() do
+        nil ->
+          raise Ecto.NoResultsError
 
-    case query |> Repo.one() do
-      nil ->
-        raise Ecto.NoResultsError
-
-      cargo ->
-        cargo
+        cargo ->
+          cargo
+      end
+    else
+      Repo.get!(Cargo, id)
     end
   end
 
-  def get_cargo_by_tracking_id!(tracking_id) when is_binary(tracking_id) do
+  def get_cargo_by_tracking_id!(tracking_id, opts \\ []) when is_binary(tracking_id) do
     query =
-      from c in Cargo,
-        where: c.tracking_id == ^tracking_id,
-        preload: [
-          handling_events:
-            ^from(
-              he in HandlingEvent,
-              order_by: he.completed_at
-            )
-        ]
+      if opts[:with_events] do
+        from c in Cargo,
+          where: c.tracking_id == ^tracking_id,
+          preload: [
+            handling_events:
+              ^from(
+                he in HandlingEvent,
+                order_by: he.completed_at
+              )
+          ]
+      else
+        from c in Cargo,
+          where: c.tracking_id == ^tracking_id
+      end
 
     case query |> Repo.one() do
       nil ->
@@ -175,13 +182,9 @@ defmodule CargoShipping.CargoBookings do
   not changed.
   """
   def update_cargo_for_new_destination(%Cargo{} = cargo, destination) do
-    route_specification = %{
-      origin: cargo.route_specification.origin,
-      destination: destination,
-      arrival_deadline: cargo.route_specification.arrival_deadline
-    }
+    new_route_specification = %{cargo.route_specification | destination: destination}
 
-    update_cargo_for_new_route(cargo, route_specification)
+    update_cargo_for_new_route(cargo, new_route_specification)
   end
 
   @doc """
@@ -232,6 +235,35 @@ defmodule CargoShipping.CargoBookings do
       itinerary: itinerary,
       delivery: delivery
     })
+  end
+
+  def get_remaining_route_specification(cargo) do
+    case {cargo.delivery.route_status, cargo.delivery.transport_status} do
+      {:NOT_ROUTED, _} ->
+        cargo.route_specifiction
+
+      {_, :CLAIMED} ->
+        nil
+
+      {_, :IN_PORT} ->
+        origin = cargo.delivery.last_known_location
+        mabye_route_specification(cargo.route_specification, origin)
+
+      {_, :ONBOARD_CARRIER} ->
+        origin = cargo.delivery.next_expected_activity.location
+        mabye_route_specification(cargo.route_specification, origin)
+
+      {_, _} ->
+        cargo.route_specifiction
+    end
+  end
+
+  defp mabye_route_specification(route_specification, new_origin) do
+    if new_origin == route_specification.destination do
+      nil
+    else
+      %{route_specification | origin: new_origin}
+    end
   end
 
   @doc """

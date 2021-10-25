@@ -54,7 +54,8 @@ defmodule CargoShipping.MixProject do
       {:uuid, "~> 1.1"},
       {:typed_struct, "~> 0.2"},
       {:typed_struct_ecto_changeset, "~> 0.1"},
-      {:event_bus, "~> 1.6"}
+      {:event_bus, "~> 1.6"},
+      {:libgraph, "~> 0.13"}
     ]
   end
 

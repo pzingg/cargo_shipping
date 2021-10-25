@@ -21,7 +21,10 @@ defmodule CargoShippingWeb.CargoLive.RouteFormComponent do
 
   @impl true
   def handle_event("save", _params, socket) do
-    case CargoBookings.update_cargo_for_new_itinerary(socket.assigns.cargo, socket.assigns.itinerary) do
+    case CargoBookings.update_cargo_for_new_itinerary(
+           socket.assigns.cargo,
+           socket.assigns.itinerary
+         ) do
       {:ok, _cargo} ->
         {:noreply,
          socket

@@ -1,0 +1,139 @@
+strict digraph {
+    "AUMEL:ARR:V300:2"
+    "FIHEL:DEP:0400S:0"
+    "NLRTM:ARR:0400S:0"
+    "AUMEL:ARR:0100S:2"
+    "USDAL:DEP:0300A:0"
+    "CNHGH:DEP:0100S:1"
+    "JPTOK:DEP:V100:1"
+    "FIHEL:DEP:V400:2"
+    "SESTO:ARR:V200:2"
+    "USDAL:DEP:0301S:0"
+    "USNYC:DEP:0200T:0"
+    "DEHAM:DEP:0300A:1"
+    "AUMEL:DEP:V300:3"
+    "CNSHA:DEP:0400S:2"
+    "SESTO:ARR:0300A:1"
+    "SESTO:ARR:V400:0"
+    "USCHI:ARR:V200:1"
+    "JPTOK:ARR:V300:3"
+    "DEHAM:DEP:V300:2"
+    "SESTO:DEP:V400:1"
+    "USNYC:ARR:V200:0"
+    "DEHAM:ARR:V300:1"
+    "USNYC:DEP:V200:1"
+    "CNHKG:ORG"
+    "JPTOK:ARR:V100:0"
+    "CNHGH:ARR:0100S:0"
+    "NLRTM:ARR:V300:0"
+    "DEHAM:DEP:V400:0"
+    "JPTOK:DEP:V300:0"
+    "CNSHA:DST"
+    "FIHEL:ARR:V400:1"
+    "JPTOK:DEP:0100S:2"
+    "FIHEL:ARR:0301S:0"
+    "USNYC:ARR:V100:1"
+    "USNYC:ARR:0100S:3"
+    "DEHAM:ARR:0300A:0"
+    "CNHKG:DEP:V100:0"
+    "SESTO:DEP:0300A:2"
+    "JPTOK:DEP:V200:0"
+    "CNHKG:DEP:0100S:0"
+    "USDAL:ARR:0200T:1"
+    "USCHI:DEP:0200T:1"
+    "USCHI:DEP:V200:2"
+    "USCHI:ARR:0200T:0"
+    "CNSHA:ARR:0400S:1"
+    "CNHKG:ARR:0400S:2"
+    "FIHEL:ARR:0300A:2"
+    "NLRTM:DEP:V300:1"
+    "JPTOK:ARR:0100S:1"
+    "NLRTM:DEP:0400S:1"
+    "AUMEL:DEP:0100S:3"
+    "DEHAM:ARR:V400:2"
+    "AUMEL:ARR:V300:2" -> "AUMEL:DEP:0100S:3" [label="TRANSFER"; weight=100]
+    "AUMEL:ARR:V300:2" -> "AUMEL:DEP:V300:3" [label="IN_PORT"; weight=1]
+    "FIHEL:DEP:0400S:0" -> "NLRTM:ARR:0400S:0" [label="ONB:0400S:0"; weight=1]
+    "NLRTM:ARR:0400S:0" -> "NLRTM:DEP:V300:1" [label="TRANSFER"; weight=100]
+    "NLRTM:ARR:0400S:0" -> "NLRTM:DEP:0400S:1" [label="IN_PORT"; weight=1]
+    "AUMEL:ARR:0100S:2" -> "AUMEL:DEP:0100S:3" [label="IN_PORT"; weight=1]
+    "AUMEL:ARR:0100S:2" -> "AUMEL:DEP:V300:3" [label="TRANSFER"; weight=100]
+    "USDAL:DEP:0300A:0" -> "DEHAM:ARR:0300A:0" [label="ONB:0300A:0"; weight=1]
+    "CNHGH:DEP:0100S:1" -> "JPTOK:ARR:0100S:1" [label="ONB:0100S:1"; weight=1]
+    "JPTOK:DEP:V100:1" -> "USNYC:ARR:V100:1" [label="ONB:V100:1:LAST"; weight=1]
+    "FIHEL:DEP:V400:2" -> "DEHAM:ARR:V400:2" [label="ONB:V400:2:LAST"; weight=1]
+    "SESTO:ARR:V200:2" -> "SESTO:DEP:0300A:2" [label="TRANSFER"; weight=100]
+    "SESTO:ARR:V200:2" -> "SESTO:DEP:V400:1" [label="TRANSFER"; weight=100]
+    "USDAL:DEP:0301S:0" -> "FIHEL:ARR:0301S:0" [label="ONB:0301S:0:LAST"; weight=1]
+    "USNYC:DEP:0200T:0" -> "USCHI:ARR:0200T:0" [label="ONB:0200T:0"; weight=1]
+    "DEHAM:DEP:0300A:1" -> "SESTO:ARR:0300A:1" [label="ONB:0300A:1"; weight=1]
+    "AUMEL:DEP:V300:3" -> "JPTOK:ARR:V300:3" [label="ONB:V300:3:LAST"; weight=1]
+    "CNSHA:DEP:0400S:2" -> "CNHKG:ARR:0400S:2" [label="ONB:0400S:2:LAST"; weight=1]
+    "SESTO:ARR:0300A:1" -> "SESTO:DEP:0300A:2" [label="IN_PORT"; weight=1]
+    "SESTO:ARR:0300A:1" -> "SESTO:DEP:V400:1" [label="TRANSFER"; weight=100]
+    "SESTO:ARR:V400:0" -> "SESTO:DEP:0300A:2" [label="TRANSFER"; weight=100]
+    "SESTO:ARR:V400:0" -> "SESTO:DEP:V400:1" [label="IN_PORT"; weight=1]
+    "USCHI:ARR:V200:1" -> "USCHI:DEP:0200T:1" [label="TRANSFER"; weight=100]
+    "USCHI:ARR:V200:1" -> "USCHI:DEP:V200:2" [label="IN_PORT"; weight=1]
+    "JPTOK:ARR:V300:3" -> "JPTOK:DEP:V100:1" [label="TRANSFER"; weight=100]
+    "JPTOK:ARR:V300:3" -> "JPTOK:DEP:V200:0" [label="TRANSFER"; weight=100]
+    "JPTOK:ARR:V300:3" -> "JPTOK:DEP:V300:0" [label="TRANSFER"; weight=100]
+    "JPTOK:ARR:V300:3" -> "JPTOK:DEP:0100S:2" [label="TRANSFER"; weight=100]
+    "DEHAM:DEP:V300:2" -> "AUMEL:ARR:V300:2" [label="ONB:V300:2"; weight=1]
+    "SESTO:DEP:V400:1" -> "FIHEL:ARR:V400:1" [label="ONB:V400:1"; weight=1]
+    "USNYC:ARR:V200:0" -> "USNYC:DEP:V200:1" [label="IN_PORT"; weight=1]
+    "USNYC:ARR:V200:0" -> "USNYC:DEP:0200T:0" [label="TRANSFER"; weight=100]
+    "DEHAM:ARR:V300:1" -> "DEHAM:DEP:V400:0" [label="TRANSFER"; weight=100]
+    "DEHAM:ARR:V300:1" -> "DEHAM:DEP:V300:2" [label="IN_PORT"; weight=1]
+    "DEHAM:ARR:V300:1" -> "DEHAM:DEP:0300A:1" [label="TRANSFER"; weight=100]
+    "USNYC:DEP:V200:1" -> "USCHI:ARR:V200:1" [label="ONB:V200:1"; weight=1]
+    "CNHKG:ORG" -> "CNHKG:DEP:V100:0" [label="RECEIVE"; weight=1]
+    "CNHKG:ORG" -> "CNHKG:DEP:0100S:0" [label="RECEIVE"; weight=1]
+    "JPTOK:ARR:V100:0" -> "JPTOK:DEP:V100:1" [label="IN_PORT"; weight=1]
+    "JPTOK:ARR:V100:0" -> "JPTOK:DEP:V200:0" [label="TRANSFER"; weight=100]
+    "JPTOK:ARR:V100:0" -> "JPTOK:DEP:V300:0" [label="TRANSFER"; weight=100]
+    "JPTOK:ARR:V100:0" -> "JPTOK:DEP:0100S:2" [label="TRANSFER"; weight=100]
+    "CNHGH:ARR:0100S:0" -> "CNHGH:DEP:0100S:1" [label="IN_PORT"; weight=1]
+    "NLRTM:ARR:V300:0" -> "NLRTM:DEP:V300:1" [label="IN_PORT"; weight=1]
+    "NLRTM:ARR:V300:0" -> "NLRTM:DEP:0400S:1" [label="TRANSFER"; weight=100]
+    "DEHAM:DEP:V400:0" -> "SESTO:ARR:V400:0" [label="ONB:V400:0"; weight=1]
+    "JPTOK:DEP:V300:0" -> "NLRTM:ARR:V300:0" [label="ONB:V300:0"; weight=1]
+    "FIHEL:ARR:V400:1" -> "FIHEL:DEP:0400S:0" [label="TRANSFER"; weight=100]
+    "FIHEL:ARR:V400:1" -> "FIHEL:DEP:V400:2" [label="IN_PORT"; weight=1]
+    "JPTOK:DEP:0100S:2" -> "AUMEL:ARR:0100S:2" [label="ONB:0100S:2"; weight=1]
+    "FIHEL:ARR:0301S:0" -> "FIHEL:DEP:0400S:0" [label="TRANSFER"; weight=100]
+    "FIHEL:ARR:0301S:0" -> "FIHEL:DEP:V400:2" [label="TRANSFER"; weight=100]
+    "USNYC:ARR:V100:1" -> "USNYC:DEP:V200:1" [label="TRANSFER"; weight=100]
+    "USNYC:ARR:V100:1" -> "USNYC:DEP:0200T:0" [label="TRANSFER"; weight=100]
+    "USNYC:ARR:0100S:3" -> "USNYC:DEP:V200:1" [label="TRANSFER"; weight=100]
+    "USNYC:ARR:0100S:3" -> "USNYC:DEP:0200T:0" [label="TRANSFER"; weight=100]
+    "DEHAM:ARR:0300A:0" -> "DEHAM:DEP:V400:0" [label="TRANSFER"; weight=100]
+    "DEHAM:ARR:0300A:0" -> "DEHAM:DEP:V300:2" [label="TRANSFER"; weight=100]
+    "DEHAM:ARR:0300A:0" -> "DEHAM:DEP:0300A:1" [label="IN_PORT"; weight=1]
+    "CNHKG:DEP:V100:0" -> "JPTOK:ARR:V100:0" [label="ONB:V100:0"; weight=1]
+    "SESTO:DEP:0300A:2" -> "FIHEL:ARR:0300A:2" [label="ONB:0300A:2:LAST"; weight=1]
+    "JPTOK:DEP:V200:0" -> "USNYC:ARR:V200:0" [label="ONB:V200:0"; weight=1]
+    "CNHKG:DEP:0100S:0" -> "CNHGH:ARR:0100S:0" [label="ONB:0100S:0"; weight=1]
+    "USDAL:ARR:0200T:1" -> "USDAL:DEP:0300A:0" [label="TRANSFER"; weight=100]
+    "USDAL:ARR:0200T:1" -> "USDAL:DEP:0301S:0" [label="TRANSFER"; weight=100]
+    "USCHI:DEP:0200T:1" -> "USDAL:ARR:0200T:1" [label="ONB:0200T:1:LAST"; weight=1]
+    "USCHI:DEP:V200:2" -> "SESTO:ARR:V200:2" [label="ONB:V200:2:LAST"; weight=1]
+    "USCHI:ARR:0200T:0" -> "USCHI:DEP:0200T:1" [label="IN_PORT"; weight=1]
+    "USCHI:ARR:0200T:0" -> "USCHI:DEP:V200:2" [label="TRANSFER"; weight=100]
+    "CNSHA:ARR:0400S:1" -> "CNSHA:DST" [label="CLAIM"; weight=1]
+    "CNSHA:ARR:0400S:1" -> "CNSHA:DEP:0400S:2" [label="IN_PORT"; weight=1]
+    "CNHKG:ARR:0400S:2" -> "CNHKG:DEP:V100:0" [label="TRANSFER"; weight=100]
+    "CNHKG:ARR:0400S:2" -> "CNHKG:DEP:0100S:0" [label="TRANSFER"; weight=100]
+    "FIHEL:ARR:0300A:2" -> "FIHEL:DEP:0400S:0" [label="TRANSFER"; weight=100]
+    "FIHEL:ARR:0300A:2" -> "FIHEL:DEP:V400:2" [label="TRANSFER"; weight=100]
+    "NLRTM:DEP:V300:1" -> "DEHAM:ARR:V300:1" [label="ONB:V300:1"; weight=1]
+    "JPTOK:ARR:0100S:1" -> "JPTOK:DEP:V100:1" [label="TRANSFER"; weight=100]
+    "JPTOK:ARR:0100S:1" -> "JPTOK:DEP:V200:0" [label="TRANSFER"; weight=100]
+    "JPTOK:ARR:0100S:1" -> "JPTOK:DEP:V300:0" [label="TRANSFER"; weight=100]
+    "JPTOK:ARR:0100S:1" -> "JPTOK:DEP:0100S:2" [label="IN_PORT"; weight=1]
+    "NLRTM:DEP:0400S:1" -> "CNSHA:ARR:0400S:1" [label="ONB:0400S:1"; weight=1]
+    "AUMEL:DEP:0100S:3" -> "USNYC:ARR:0100S:3" [label="ONB:0100S:3:LAST"; weight=1]
+    "DEHAM:ARR:V400:2" -> "DEHAM:DEP:V400:0" [label="TRANSFER"; weight=100]
+    "DEHAM:ARR:V400:2" -> "DEHAM:DEP:V300:2" [label="TRANSFER"; weight=100]
+    "DEHAM:ARR:V400:2" -> "DEHAM:DEP:0300A:1" [label="TRANSFER"; weight=100]
+}

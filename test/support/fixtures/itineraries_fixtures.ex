@@ -1,5 +1,4 @@
 defmodule CargoShipping.ItinerariesFixtures do
-
   alias CargoShipping.VoyageService
 
   def jptok_deham_sesto_itinerary() do

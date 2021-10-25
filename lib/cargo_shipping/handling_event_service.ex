@@ -16,7 +16,11 @@ defmodule CargoShipping.HandlingEventService do
     case CargoBookings.create_handling_event_from_report(params) do
       {:ok, handling_event, params} ->
         # Publish an event stating that a cargo has been handled.
-        publish_event(:cargo_was_handled, Utils.from_struct(handling_event) |> Map.put(:tracking_id, params.tracking_id))
+        publish_event(
+          :cargo_was_handled,
+          Utils.from_struct(handling_event) |> Map.put(:tracking_id, params.tracking_id)
+        )
+
         {:ok, handling_event}
 
       {:error, changeset} ->

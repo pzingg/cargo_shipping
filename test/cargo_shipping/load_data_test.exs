@@ -8,7 +8,7 @@ defmodule CargoShipping.LoadDataTest do
   end
 
   describe "hibernate data" do
-    @tag hibernate_data: true
+    @tag hibernate_data: :all
     test "loads hibernate data" do
     end
   end

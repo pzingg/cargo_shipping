@@ -46,7 +46,7 @@ defmodule CargoShippingWeb.CargoLive.Search do
 
   @impl true
   def handle_info({:run_search, tracking_id}, socket) do
-    case CargoBookings.get_cargo_by_tracking_id!(tracking_id) do
+    case CargoBookings.get_cargo_by_tracking_id!(tracking_id, with_events: true) do
       [] ->
         socket =
           socket

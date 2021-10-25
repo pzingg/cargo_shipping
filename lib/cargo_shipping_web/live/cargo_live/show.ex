@@ -10,7 +10,7 @@ defmodule CargoShippingWeb.CargoLive.Show do
 
   @impl true
   def handle_params(%{"id" => id}, _, socket) do
-    cargo = CargoBookings.get_cargo_and_events!(id)
+    cargo = CargoBookings.get_cargo!(id, with_events: true)
 
     {:noreply,
      socket

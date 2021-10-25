@@ -8,7 +8,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
   import CargoShipping.ItinerariesFixtures
 
-  @tag hibernate_data: true
+  @tag hibernate_data: :all
   test "cargo undergoes lifecycle changes" do
     # Test setup: A cargo should be shipped from Hongkong to Stockholm,
     # and it should arrive in no more than two weeks.

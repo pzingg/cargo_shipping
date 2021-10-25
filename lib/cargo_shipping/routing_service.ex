@@ -4,7 +4,17 @@ defmodule CargoShipping.RoutingService do
   """
   require Logger
 
-  alias CargoShipping.{LocationService, Utils, VoyageService}
+  alias CargoShipping.{LocationService, Utils, VoyagePlans, VoyageService}
+
+  def find_itineraries(origin, destination, opts) do
+    if Keyword.get(opts, :algorithm, :random) == :random do
+      find_itineraries_random(origin, destination, opts)
+    else
+      find_itineraries_libgraph(origin, destination, opts)
+    end
+  end
+
+  ## Libgraph implementation
 
   defmodule TransitEdge do
     @moduledoc """
@@ -24,26 +34,14 @@ defmodule CargoShipping.RoutingService do
     end
   end
 
-  def find_itineraries(origin, destination, limitations) do
-    find_transit_paths(origin, destination, limitations)
+  defp find_itineraries_random(origin, destination, opts) do
+    find_transit_paths_random(origin, destination, opts)
     |> Enum.map(fn path ->
-      %{id: UUID.uuid4(), legs: Enum.map(path, &leg_from_edge/1)}
+      %{id: UUID.uuid4(), legs: Enum.map(path, &leg_from_transit_edge/1)}
     end)
   end
 
-  defp leg_from_edge(edge) do
-    voyage_id = VoyageService.get_voyage_id_for_number!(edge.id)
-
-    %{
-      voyage_id: voyage_id,
-      load_location: edge.from_node,
-      unload_location: edge.to_node,
-      load_time: edge.from_date,
-      unload_time: edge.to_date
-    }
-  end
-
-  defp find_transit_paths(origin, destination, _limitations) do
+  defp find_transit_paths_random(origin, destination, _limitations) do
     start_date = DateTime.utc_now()
     voyage_numbers = VoyageService.all_voyage_numbers()
     candidate_count = Enum.random(3..6)
@@ -61,7 +59,7 @@ defmodule CargoShipping.RoutingService do
     |> Enum.reject(fn path -> is_nil(path) end)
   end
 
-  def build_transit_path(vertices, start_date, voyage_numbers) do
+  defp build_transit_path(vertices, start_date, voyage_numbers) do
     init_acc = %{
       error: nil,
       voyage_numbers: voyage_numbers,
@@ -141,5 +139,202 @@ defmodule CargoShipping.RoutingService do
     |> Timex.beginning_of_day()
     |> Timex.to_datetime()
     |> DateTime.add(86_400 + rand_seconds, :second)
+  end
+
+  defp leg_from_transit_edge(edge) do
+    voyage_id = VoyageService.get_voyage_id_for_number!(edge.id)
+
+    %{
+      voyage_id: voyage_id,
+      load_location: edge.from_node,
+      unload_location: edge.to_node,
+      load_time: edge.from_date,
+      unload_time: edge.to_date
+    }
+  end
+
+  ## Libgraph implementation
+
+  defmodule Vertex do
+    @moduledoc """
+    Represents a vertex in a graph in Djikstra's algorithm.
+    `type` is :LOAD, :UNLOAD, :ORIGIN, :DESTINATION
+    """
+
+    use TypedStruct
+
+    typedstruct do
+      @typedoc "A vertex in a directed graph"
+
+      field :name, String.t(), enforce: true
+      field :type, atom(), enforce: true
+      field :location, String.t(), enforce: true
+      field :time, DateTime.t(), enforce: true
+      field :voyage_number, String.t() | nil
+      field :voyage_id, String.t() | nil
+      field :index, integer() | nil
+    end
+  end
+
+  def find_itineraries_libgraph(origin, destination, limitations) do
+    %{graph: _graph, path: vertices} =
+      build_world_graph(
+        origin,
+        destination,
+        Keyword.get(limitations, :origin_load_time, ~U[2000-01-01 00:00:00Z]),
+        Keyword.get(limitations, :arrival_deadline, ~U[2049-12-31 23:59:59Z])
+      )
+
+    # Skip 0 and Enum.count - 1
+    last_index = Enum.count(vertices) - 2
+
+    shortest_itinerary_legs =
+      Enum.map(1..last_index//2, fn i ->
+        v_load = Enum.at(vertices, i)
+        v_unload = Enum.at(vertices, i + 1)
+        leg_from_libgraph_edge(v_load, v_unload)
+      end)
+
+    [%{id: UUID.uuid4(), legs: shortest_itinerary_legs}]
+  end
+
+  defp leg_from_libgraph_edge(v_load, v_unload) do
+    %{
+      voyage_id: v_load.voyage_id,
+      load_location: v_load.location,
+      unload_location: v_unload.location,
+      load_time: v_load.time,
+      unload_time: v_unload.time
+    }
+  end
+
+  def build_world_graph(origin, destination, earliest_load_time, latest_unload_time) do
+    voyages = VoyagePlans.list_voyages()
+
+    v_origin = %Vertex{
+      name: "#{origin}:ORG",
+      type: :ORIGIN,
+      location: origin,
+      time: earliest_load_time
+    }
+
+    v_destination = %Vertex{
+      name: "#{destination}:DST",
+      type: :DESTINATION,
+      location: destination,
+      time: latest_unload_time
+    }
+
+    internal_edges =
+      Enum.reduce(voyages, [], fn voyage, acc ->
+        internal_voyage_edges(voyage, acc)
+      end)
+
+    graph = build_graph(internal_edges, v_origin, v_destination)
+    {:ok, dot} = Graph.Serializers.DOT.serialize(graph)
+    File.write("routes.dot", dot)
+
+    vertices = Graph.a_star(graph, v_origin, v_destination, fn _vertex -> 0 end)
+    %{graph: graph, path: vertices}
+  end
+
+  def internal_voyage_edges(voyage, acc_0) do
+    last_index = Enum.count(voyage.schedule_items) - 1
+
+    {edges, _count, _} =
+      Enum.reduce(voyage.schedule_items, {acc_0, 0, last_index}, fn leg, acc ->
+        internal_leg_edges(voyage, leg, acc)
+      end)
+
+    edges
+  end
+
+  def internal_leg_edges(voyage, leg, {edges, i, last}) do
+    v_load = %Vertex{
+      name: "#{leg.departure_location}:DEP:#{voyage.voyage_number}:#{i}",
+      type: :LOAD,
+      location: leg.departure_location,
+      time: leg.departure_time,
+      voyage_id: voyage.id,
+      voyage_number: voyage.voyage_number,
+      index: i
+    }
+
+    v_unload = %Vertex{
+      name: "#{leg.arrival_location}:ARR:#{voyage.voyage_number}:#{i}",
+      type: :UNLOAD,
+      location: leg.arrival_location,
+      time: leg.arrival_time,
+      voyage_id: voyage.id,
+      voyage_number: voyage.voyage_number,
+      index: i
+    }
+
+    is_last =
+      if i == last do
+        ":LAST"
+      else
+        ""
+      end
+
+    label = "ONB:#{voyage.voyage_number}:#{i}#{is_last}"
+    {[{v_load, v_unload, [label: label, weight: 1]} | edges], i + 1, last}
+  end
+
+  def build_graph(internal_edges, v_origin, v_destination) do
+    all_load_vertices = [
+      v_destination
+      | Enum.map(internal_edges, fn {v_load, _v_unload, _opts} -> v_load end)
+    ]
+
+    all_unload_vertices = [
+      v_origin
+      | Enum.map(internal_edges, fn {_v_load, v_unload, _opts} -> v_unload end)
+    ]
+
+    external_edges =
+      Enum.reduce(all_load_vertices, [], fn v_load, acc ->
+        load_location = v_load.location
+        at_destination? = v_load.type == :DESTINATION
+        load_voyage_number = v_load.voyage_number
+        load_index = v_load.index
+
+        Enum.reduce(all_unload_vertices, acc, fn v_unload, edges ->
+          # TODO match times
+          if v_unload.location == load_location do
+            {label, weight, color, style} =
+              cond do
+                v_unload.type == :ORIGIN ->
+                  {"RECEIVE", 1, "black", "bold"}
+
+                at_destination? ->
+                  {"CLAIM", 1, "black", "bold"}
+
+                v_unload.voyage_number == load_voyage_number &&
+                    v_unload.index + 1 == load_index ->
+                  {"IN_PORT", 1, "black", "bold"}
+
+                true ->
+                  {"TRANSFER", 100, "red", "dashed"}
+              end
+
+            [
+              {v_unload, v_load, [label: label, weight: weight, color: color, style: style]}
+              | edges
+            ]
+          else
+            edges
+          end
+        end)
+      end)
+
+    all_vertices = all_load_vertices ++ all_unload_vertices
+    all_edges = internal_edges ++ external_edges
+
+    all_vertices
+    |> Enum.reduce(Graph.new(), fn vertex, graph ->
+      Graph.add_vertex(graph, vertex, vertex.name)
+    end)
+    |> Graph.add_edges(all_edges)
   end
 end
