@@ -14,7 +14,7 @@ defmodule CargoShipping.VoyagePlansFixtures do
       },
       %{
         departure_location: "CNSHA",
-        arrival_location: "JPTOK",
+        arrival_location: "JPTYO",
         departure_time: ~U[2015-02-24 23:50:07Z],
         arrival_time: ~U[2015-03-23 23:50:07Z]
       }

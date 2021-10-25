@@ -238,9 +238,9 @@ defmodule CargoShipping.CargoBookings do
   end
 
   def get_remaining_route_specification(cargo) do
-    case {cargo.delivery.route_status, cargo.delivery.transport_status} do
+    case {cargo.delivery.routing_status, cargo.delivery.transport_status} do
       {:NOT_ROUTED, _} ->
-        cargo.route_specifiction
+        cargo.route_specification
 
       {_, :CLAIMED} ->
         nil
@@ -254,7 +254,7 @@ defmodule CargoShipping.CargoBookings do
         mabye_route_specification(cargo.route_specification, origin)
 
       {_, _} ->
-        cargo.route_specifiction
+        cargo.route_specification
     end
   end
 

@@ -78,7 +78,7 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   defp handle_event(:cargo_misdirected, _config, event) do
     # Payload is the cargo
-    Logger.error("[cargo_rejected] #{event.data.tracking_id}")
+    Logger.error("[cargo_misdirected] #{event.data.tracking_id}")
   end
 
   defp handle_event(:cargo_delivery_updated, _config, event) do
@@ -99,9 +99,7 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   defp handle_event(:cargo_handling_rejected, _config, event) do
     # Payload is the (error-containing) params
-    Logger.error(
-      "[cargo_handling_rejected] #{event.data.tracking_id} #{inspect(event.data.errors)}"
-    )
+    Logger.error("[cargo_handling_rejected] #{inspect(event.data.errors)}")
   end
 
   defp handle_event(:handling_report_received, _config, event) do
@@ -111,8 +109,6 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   defp handle_event(:handling_report_rejected, _config, event) do
     # Payload is the (error-containing) params
-    Logger.error(
-      "[handling_report_rejected] #{event.data.tracking_id} #{inspect(event.data.errors)}"
-    )
+    Logger.error("[handling_report_rejected] #{inspect(event.data.errors)}")
   end
 end

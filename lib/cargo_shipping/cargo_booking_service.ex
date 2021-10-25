@@ -69,8 +69,7 @@ defmodule CargoShipping.CargoBookingService do
 
       remaining_route_specification ->
         itineraries = routes_for_specification(remaining_route_specification)
-        Logger.info("possible_routes #{inspect(itineraries)}")
-        itineraries
+        Enum.map(itineraries, fn %{itinerary: itinerary} -> itinerary end)
     end
   end
 
@@ -78,14 +77,12 @@ defmodule CargoShipping.CargoBookingService do
   The RouteSpecification is picked apart and adapted to the external API.
   """
   def routes_for_specification(route_specification, opts \\ []) do
-    found_itineraries =
-      RoutingService.find_itineraries(
-        route_specification.origin,
-        route_specification.destination,
-        Keyword.put(opts, :arrival_deadline, route_specification.arrival_deadline)
-      )
-
-    Enum.filter(found_itineraries, fn itinerary ->
+    RoutingService.find_itineraries(
+      route_specification.origin,
+      route_specification.destination,
+      Keyword.put(opts, :arrival_deadline, route_specification.arrival_deadline)
+    )
+    |> Enum.filter(fn %{itinerary: itinerary} ->
       Itinerary.satisfies?(itinerary, route_specification)
     end)
   end

@@ -22,7 +22,7 @@ defmodule CargoShipping.CargoBookingsTest do
 
     test "create_cargo/1 with valid data creates a cargo" do
       valid_attrs = %{
-        "tracking_id" => "some tracking_id",
+        "tracking_id" => "TST042",
         "origin" => "DEHAM",
         "route_specification" => route_specification_fixture(),
         "itinerary" => itinerary_fixture(),
@@ -30,7 +30,7 @@ defmodule CargoShipping.CargoBookingsTest do
       }
 
       assert {:ok, %Cargo{} = cargo} = CargoBookings.create_cargo(valid_attrs)
-      assert cargo.tracking_id == "some tracking_id"
+      assert cargo.tracking_id == "TST042"
     end
 
     test "create_cargo/1 with invalid data returns error changeset" do

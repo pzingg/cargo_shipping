@@ -47,7 +47,7 @@ defmodule CargoShipping.CargoBookingsFixtures do
     {:ok, cargo} =
       attrs
       |> Enum.into(%{
-        "tracking_id" => "some tracking_id",
+        "tracking_id" => "TST042",
         "origin" => "DEHAM",
         "route_specification" => route_specification_fixture(),
         "itinerary" => itinerary_fixture(),

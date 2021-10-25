@@ -13,7 +13,7 @@ defmodule CargoShipping.LocationService do
     {"SESTO", "Stockholm"},
     {"FIHEL", "Helsinki"},
     {"USCHI", "Chicago"},
-    {"JPTOK", "Tokyo"},
+    {"JPTYO", "Tokyo"},
     {"DEHAM", "Hamburg"},
     {"CNSHA", "Shanghai"},
     {"NLRTM", "Rotterdam"},

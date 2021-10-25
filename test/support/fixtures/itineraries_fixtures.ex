@@ -9,7 +9,7 @@ defmodule CargoShipping.ItinerariesFixtures do
       legs: [
         %{
           voyage_id: v300,
-          load_location: "JPTOK",
+          load_location: "JPTYO",
           unload_location: "DEHAM",
           load_time: ~U[2009-03-08 00:00:00Z],
           unload_time: ~U[2009-03-12 00:00:00Z]

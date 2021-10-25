@@ -145,7 +145,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       completed_at: ~U[2009-03-05 00:00:00Z],
       tracking_id: tracking_id,
       voyage_number: voyage_number,
-      location: "JPTOK",
+      location: "JPTYO",
       event_type: :UNLOAD
     }
 
@@ -160,7 +160,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
     assert cargo.delivery.transport_status == :IN_PORT
     refute cargo.delivery.current_voyage_id
-    assert cargo.delivery.last_known_location == "JPTOK"
+    assert cargo.delivery.last_known_location == "JPTYO"
     assert cargo.delivery.misdirected?
     refute cargo.delivery.next_expected_activity
 
@@ -173,7 +173,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     # incorrectly unloaded) to Stockholm.
 
     from_tokyo = %{
-      origin: "JPTOK",
+      origin: "JPTYO",
       destination: "SESTO",
       arrival_deadline: arrival_deadline
     }
@@ -202,7 +202,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     # refute cargo.delivery.misdirected?
     # assert cargo.delivery.next_expected_activity.event_type == :LOAD
-    # assert cargo.delivery.next_expected_activity.location == "JPTOK"
+    # assert cargo.delivery.next_expected_activity.location == "JPTYO"
 
     ## Cargo has been rerouted, shipping continues
 
@@ -212,7 +212,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       completed_at: ~U[2009-03-08 00:00:00Z],
       tracking_id: tracking_id,
       voyage_number: "V300",
-      location: "JPTOK",
+      location: "JPTYO",
       event_type: :LOAD
     }
 
@@ -225,7 +225,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     v300 = VoyageService.get_voyage_id_for_number!("V300")
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
     assert cargo.delivery.current_voyage_id == v300
-    assert cargo.delivery.last_known_location == "JPTOK"
+    assert cargo.delivery.last_known_location == "JPTYO"
     assert cargo.delivery.transport_status == :ONBOARD_CARRIER
     refute cargo.delivery.misdirected?
     assert cargo.delivery.next_expected_activity.event_type == :UNLOAD

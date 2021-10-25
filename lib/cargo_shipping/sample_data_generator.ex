@@ -16,7 +16,7 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.add_movement("FIHEL", ts(1), ts(2))
     |> VoyageBuilder.add_movement("DEHAM", ts(1), ts(2))
     |> VoyageBuilder.add_movement("CNHKG", ts(1), ts(2))
-    |> VoyageBuilder.add_movement("JPTOK", ts(1), ts(2))
+    |> VoyageBuilder.add_movement("JPTYO", ts(1), ts(2))
     |> VoyageBuilder.add_movement("AUMEL", ts(1), ts(2))
     |> VoyageBuilder.build()
   end
@@ -37,7 +37,7 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.add_movement("DEHAM", ts(1), ts(2))
     |> VoyageBuilder.add_movement("SESTO", ts(1), ts(2))
     |> VoyageBuilder.add_movement("USCHI", ts(1), ts(2))
-    |> VoyageBuilder.add_movement("JPTOK", ts(1), ts(2))
+    |> VoyageBuilder.add_movement("JPTYO", ts(1), ts(2))
     |> VoyageBuilder.build()
   end
 
@@ -88,7 +88,7 @@ defmodule CargoShipping.SampleDataGenerator do
       %{
         voyage_id: voyage_id,
         load_location: "USCHI",
-        unload_location: "JPTOK",
+        unload_location: "JPTYO",
         load_time: ts(5),
         unload_time: ts(6)
       }
@@ -239,7 +239,7 @@ defmodule CargoShipping.SampleDataGenerator do
         origin: "DEHAM",
         route_specification: %{
           origin: "DEHAM",
-          destination: "JPTOK",
+          destination: "JPTYO",
           arrival_deadline: ts(60)
         },
         itinerary: Map.fetch!(itineraries, :itinerary_jkl),
@@ -267,7 +267,7 @@ defmodule CargoShipping.SampleDataGenerator do
 
   def load_handling_event_data(voyages, cargos) do
     [
-      # XYZ (SESTO - FIHEL - DEHAM - CNHKG - JPTOK - AUMEL)
+      # XYZ (SESTO - FIHEL - DEHAM - CNHKG - JPTYO - AUMEL)
       {ts(0), ts(0), "RECEIVE", "SESTO", nil, :cargo_xyz},
       {ts(4), ts(5), "LOAD", "SESTO", :voyage_0101, :cargo_xyz},
       {ts(14), ts(14), "UNLOAD", "FIHEL", :voyage_0101, :cargo_xyz},
@@ -276,8 +276,8 @@ defmodule CargoShipping.SampleDataGenerator do
       {ts(33), ts(33), "LOAD", "DEHAM", :voyage_0101, :cargo_xyz},
       {ts(34), ts(34), "UNLOAD", "CNHKG", :voyage_0101, :cargo_xyz},
       {ts(60), ts(60), "LOAD", "CNHKG", :voyage_0101, :cargo_xyz},
-      {ts(70), ts(71), "UNLOAD", "JPTOK", :voyage_0101, :cargo_xyz},
-      {ts(75), ts(75), "LOAD", "JPTOK", :voyage_0101, :cargo_xyz},
+      {ts(70), ts(71), "UNLOAD", "JPTYO", :voyage_0101, :cargo_xyz},
+      {ts(75), ts(75), "LOAD", "JPTYO", :voyage_0101, :cargo_xyz},
       {ts(88), ts(88), "UNLOAD", "AUMEL", :voyage_0101, :cargo_xyz},
       {ts(100), ts(102), "CLAIM", "AUMEL", nil, :cargo_xyz},
 
@@ -501,7 +501,7 @@ defmodule CargoShipping.SampleDataGenerator do
   def voyage_v100() do
     VoyageBuilder.init("V100", "CNHKG")
     |> VoyageBuilder.add_movement(
-      "JPTOK",
+      "JPTYO",
       ~U[2009-03-03 00:00:00Z],
       ~U[2008-03-06 00:00:00Z]
     )
@@ -514,7 +514,7 @@ defmodule CargoShipping.SampleDataGenerator do
   end
 
   def voyage_v200() do
-    VoyageBuilder.init("V200", "JPTOK")
+    VoyageBuilder.init("V200", "JPTYO")
     |> VoyageBuilder.add_movement(
       "USNYC",
       ~U[2008-03-06 00:00:00Z],
@@ -534,7 +534,7 @@ defmodule CargoShipping.SampleDataGenerator do
   end
 
   def voyage_v300() do
-    VoyageBuilder.init("V300", "JPTOK")
+    VoyageBuilder.init("V300", "JPTYO")
     |> VoyageBuilder.add_movement(
       "NLRTM",
       ~U[2009-03-08 00:00:00Z],
@@ -551,7 +551,7 @@ defmodule CargoShipping.SampleDataGenerator do
       ~U[2008-03-18 00:00:00Z]
     )
     |> VoyageBuilder.add_movement(
-      "JPTOK",
+      "JPTYO",
       ~U[2008-03-19 00:00:00Z],
       ~U[2009-03-21 00:00:00Z]
     )
@@ -588,7 +588,7 @@ defmodule CargoShipping.SampleDataGenerator do
       ~U[2008-10-03 14:30:00Z]
     )
     |> VoyageBuilder.add_movement(
-      "JPTOK",
+      "JPTYO",
       ~U[2008-10-03 21:00:00Z],
       ~U[2008-10-06 06:15:00Z]
     )

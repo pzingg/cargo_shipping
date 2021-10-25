@@ -2,6 +2,8 @@ defmodule CargoShipping.RoutingService do
   @moduledoc """
   A module that builds new routes.
   """
+  import Graph.Utils, only: [vertex_id: 1, edge_weight: 3]
+
   require Logger
 
   alias CargoShipping.{LocationService, Utils, VoyagePlans, VoyageService}
@@ -37,7 +39,7 @@ defmodule CargoShipping.RoutingService do
   defp find_itineraries_random(origin, destination, opts) do
     find_transit_paths_random(origin, destination, opts)
     |> Enum.map(fn path ->
-      %{id: UUID.uuid4(), legs: Enum.map(path, &leg_from_transit_edge/1)}
+      %{itinerary: %{id: UUID.uuid4(), legs: Enum.map(path, &leg_from_transit_edge/1)}, cost: 0}
     end)
   end
 
@@ -157,7 +159,7 @@ defmodule CargoShipping.RoutingService do
 
   defmodule Vertex do
     @moduledoc """
-    Represents a vertex in a graph in Djikstra's algorithm.
+    Represents a vertex in a graph in Dijkstra's algorithm.
     `type` is :LOAD, :UNLOAD, :ORIGIN, :DESTINATION
     """
 
@@ -177,39 +179,8 @@ defmodule CargoShipping.RoutingService do
   end
 
   def find_itineraries_libgraph(origin, destination, limitations) do
-    %{graph: _graph, path: vertices} =
-      build_world_graph(
-        origin,
-        destination,
-        Keyword.get(limitations, :origin_load_time, ~U[2000-01-01 00:00:00Z]),
-        Keyword.get(limitations, :arrival_deadline, ~U[2049-12-31 23:59:59Z])
-      )
-
-    # Skip 0 and Enum.count - 1
-    last_index = Enum.count(vertices) - 2
-
-    shortest_itinerary_legs =
-      Enum.map(1..last_index//2, fn i ->
-        v_load = Enum.at(vertices, i)
-        v_unload = Enum.at(vertices, i + 1)
-        leg_from_libgraph_edge(v_load, v_unload)
-      end)
-
-    [%{id: UUID.uuid4(), legs: shortest_itinerary_legs}]
-  end
-
-  defp leg_from_libgraph_edge(v_load, v_unload) do
-    %{
-      voyage_id: v_load.voyage_id,
-      load_location: v_load.location,
-      unload_location: v_unload.location,
-      load_time: v_load.time,
-      unload_time: v_unload.time
-    }
-  end
-
-  def build_world_graph(origin, destination, earliest_load_time, latest_unload_time) do
-    voyages = VoyagePlans.list_voyages()
+    earliest_load_time = Keyword.get(limitations, :origin_load_time, ~U[2000-01-01 00:00:00Z])
+    latest_unload_time = Keyword.get(limitations, :arrival_deadline, ~U[2049-12-31 23:59:59Z])
 
     v_origin = %Vertex{
       name: "#{origin}:ORG",
@@ -225,63 +196,84 @@ defmodule CargoShipping.RoutingService do
       time: latest_unload_time
     }
 
+    graph = build_world_graph(v_origin, v_destination, earliest_load_time, latest_unload_time)
+
+    # {:ok, dot} = Graph.Serializers.DOT.serialize(graph)
+    # File.write("routes.dot", dot)
+
+    case Keyword.get(limitations, :find, :shortest) do
+      :shortest ->
+        case find_shortest_path(graph, v_origin, v_destination) do
+          nil ->
+            []
+
+          path ->
+            [%{itinerary: itinerary_from_path(path), cost: 100}]
+        end
+
+      :all ->
+        find_all_paths(graph, v_origin, v_destination)
+        |> Enum.map(fn path -> {path, cost_for_path(graph, path)} end)
+        |> Enum.sort(fn {_path_1, cost_1}, {_path_2, cost_2} -> cost_1 <= cost_2 end)
+        |> Enum.map(fn {path, cost} ->
+          %{itinerary: itinerary_from_path(path), cost: cost}
+        end)
+    end
+  end
+
+  defp cost_for_path(graph, vertices) do
+    {_last_id, total_cost} =
+      Enum.reduce(vertices, {nil, 0}, fn v2, {v1_id, acc} ->
+        v2_id = vertex_id(v2)
+
+        if is_nil(v1_id) do
+          {v2_id, 0}
+        else
+          {v2_id, acc + cost(graph, v1_id, v2_id, v2)}
+        end
+      end)
+
+    total_cost
+  end
+
+  defp cost(%Graph{} = g, v1_id, v2_id, v2) do
+    edge_weight(g, v1_id, v2_id) + vertex_cost(v2)
+  end
+
+  defp vertex_cost(_vertex), do: 0
+
+  defp itinerary_from_path(vertices) do
+    # Skip 0 and Enum.count - 1
+    last_index = Enum.count(vertices) - 2
+
+    legs =
+      Enum.map(1..last_index//2, fn i ->
+        v_load = Enum.at(vertices, i)
+        v_unload = Enum.at(vertices, i + 1)
+        leg_from_libgraph_edge(v_load, v_unload)
+      end)
+
+    %{id: UUID.uuid4(), legs: legs}
+  end
+
+  defp leg_from_libgraph_edge(v_load, v_unload) do
+    %{
+      voyage_id: v_load.voyage_id,
+      load_location: v_load.location,
+      unload_location: v_unload.location,
+      load_time: v_load.time,
+      unload_time: v_unload.time
+    }
+  end
+
+  def build_world_graph(v_origin, v_destination, _earliest_load_time, _latest_unload_time) do
+    voyages = VoyagePlans.list_voyages()
+
     internal_edges =
       Enum.reduce(voyages, [], fn voyage, acc ->
         internal_voyage_edges(voyage, acc)
       end)
 
-    graph = build_graph(internal_edges, v_origin, v_destination)
-    {:ok, dot} = Graph.Serializers.DOT.serialize(graph)
-    File.write("routes.dot", dot)
-
-    vertices = Graph.a_star(graph, v_origin, v_destination, fn _vertex -> 0 end)
-    %{graph: graph, path: vertices}
-  end
-
-  def internal_voyage_edges(voyage, acc_0) do
-    last_index = Enum.count(voyage.schedule_items) - 1
-
-    {edges, _count, _} =
-      Enum.reduce(voyage.schedule_items, {acc_0, 0, last_index}, fn leg, acc ->
-        internal_leg_edges(voyage, leg, acc)
-      end)
-
-    edges
-  end
-
-  def internal_leg_edges(voyage, leg, {edges, i, last}) do
-    v_load = %Vertex{
-      name: "#{leg.departure_location}:DEP:#{voyage.voyage_number}:#{i}",
-      type: :LOAD,
-      location: leg.departure_location,
-      time: leg.departure_time,
-      voyage_id: voyage.id,
-      voyage_number: voyage.voyage_number,
-      index: i
-    }
-
-    v_unload = %Vertex{
-      name: "#{leg.arrival_location}:ARR:#{voyage.voyage_number}:#{i}",
-      type: :UNLOAD,
-      location: leg.arrival_location,
-      time: leg.arrival_time,
-      voyage_id: voyage.id,
-      voyage_number: voyage.voyage_number,
-      index: i
-    }
-
-    is_last =
-      if i == last do
-        ":LAST"
-      else
-        ""
-      end
-
-    label = "ONB:#{voyage.voyage_number}:#{i}#{is_last}"
-    {[{v_load, v_unload, [label: label, weight: 1]} | edges], i + 1, last}
-  end
-
-  def build_graph(internal_edges, v_origin, v_destination) do
     all_load_vertices = [
       v_destination
       | Enum.map(internal_edges, fn {v_load, _v_unload, _opts} -> v_load end)
@@ -336,5 +328,55 @@ defmodule CargoShipping.RoutingService do
       Graph.add_vertex(graph, vertex, vertex.name)
     end)
     |> Graph.add_edges(all_edges)
+  end
+
+  def find_shortest_path(graph, v_origin, v_destination) do
+    Graph.a_star(graph, v_origin, v_destination, &vertex_cost/1)
+  end
+
+  def find_all_paths(graph, v_origin, v_destination),
+    do: Graph.get_paths(graph, v_origin, v_destination)
+
+  def internal_voyage_edges(voyage, acc_0) do
+    last_index = Enum.count(voyage.schedule_items) - 1
+
+    {edges, _count, _} =
+      Enum.reduce(voyage.schedule_items, {acc_0, 0, last_index}, fn leg, acc ->
+        internal_leg_edges(voyage, leg, acc)
+      end)
+
+    edges
+  end
+
+  def internal_leg_edges(voyage, leg, {edges, i, last}) do
+    v_load = %Vertex{
+      name: "#{leg.departure_location}:DEP:#{voyage.voyage_number}:#{i}",
+      type: :LOAD,
+      location: leg.departure_location,
+      time: leg.departure_time,
+      voyage_id: voyage.id,
+      voyage_number: voyage.voyage_number,
+      index: i
+    }
+
+    v_unload = %Vertex{
+      name: "#{leg.arrival_location}:ARR:#{voyage.voyage_number}:#{i}",
+      type: :UNLOAD,
+      location: leg.arrival_location,
+      time: leg.arrival_time,
+      voyage_id: voyage.id,
+      voyage_number: voyage.voyage_number,
+      index: i
+    }
+
+    is_last =
+      if i == last do
+        ":LAST"
+      else
+        ""
+      end
+
+    label = "ONB:#{voyage.voyage_number}:#{i}#{is_last}"
+    {[{v_load, v_unload, [label: label, weight: 1]} | edges], i + 1, last}
   end
 end
