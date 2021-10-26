@@ -30,7 +30,9 @@
       id: :completed_at, selected_date: @completed_at %>
 
     <div>
-      <%= submit "Save", phx_disable_with: "Saving..." %>
+      <%= submit "Submit Report", phx_disable_with: "Processing..." %>
     </div>
   </.form>
+
+<%= live_redirect "Cancel", to: @return_to, class: "button", type: "button" %>
 </div>

@@ -1,9 +1,11 @@
 <h1><%= @header %></h1>
 
+<%= live_redirect "Submit a handling report", to: Routes.handling_report_edit_path(@socket, :new), class: "button", type: "button" %>
+
 <form phx-submit="search" phx-change="suggest">
-  <label>Enter your tracking id:</label>
+  <label>Search for cargo by tracking id:</label>
   <%= if !@cargo && @matches == [] do %>
-    <em>Hint: try tracking "ABC123" or "JKL567".</em><br/>
+    <em>Hint: Try "ABC123" or "JKL567"</em><br/>
   <% end %>
   <input
     type="text"
