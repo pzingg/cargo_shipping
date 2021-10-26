@@ -14,9 +14,10 @@
     <%= error_tag f, :destination %>
 
     <%= label f, :arrival_deadline %>
-    <%= hidden_input f, :arrival_deadline %>
-    <%= live_component CargoShippingWeb.SharedComponents.Datepicker,
-      id: :arrival_deadline, selected_date: @arrival_deadline %>
+    <.live_component module={Datepicker}
+      id="arrival_deadline" prefix="edit_destination" selected_date={@arrival_deadline}>
+      <%= error_tag f, :arrival_deadline %>
+    </.live_component>
 
     <div>
       <%= submit "Save", phx_disable_with: "Saving..." %>

@@ -1,10 +1,9 @@
 defmodule CargoShippingWeb.CargoLive.EditDestination do
   use CargoShippingWeb, :live_view
 
-  require Logger
-
   alias Ecto.Changeset
   alias CargoShipping.CargoBookings
+  alias CargoShippingWeb.SharedComponents.Datepicker
 
   @impl true
   def mount(_params, _session, socket) do
@@ -15,7 +14,7 @@ defmodule CargoShippingWeb.CargoLive.EditDestination do
   def handle_params(%{"id" => id}, _, socket) do
     cargo = CargoBookings.get_cargo!(id)
     changeset = CargoBookings.change_cargo_destination(cargo)
-    arrival_deadline = cargo.route_specification.arrival_deadline |> DateTime.to_date()
+    arrival_deadline = cargo.route_specification.arrival_deadline
 
     {:noreply,
      socket
@@ -32,17 +31,15 @@ defmodule CargoShippingWeb.CargoLive.EditDestination do
   end
 
   @impl true
-  def handle_info({:update_selected_date, _datepicker_id, selected_date}, socket) do
-    {:ok, arrival_deadline} = DateTime.new(selected_date, ~T[00:00:00], "Etc/UTC")
+  def handle_event("validate", raw_params, socket) do
+    params =
+      Datepicker.handle_form_change(
+        "edit_destination",
+        "arrival_deadline",
+        raw_params,
+        &update_datepicker/2
+      )
 
-    changeset =
-      Ecto.Changeset.put_change(socket.assigns.changeset, :arrival_deadline, arrival_deadline)
-
-    {:noreply, assign(socket, :changeset, changeset)}
-  end
-
-  @impl true
-  def handle_event("validate", %{"edit_destination" => params}, socket) do
     changeset =
       socket.assigns.cargo
       |> CargoBookings.change_cargo_destination(params)
@@ -51,8 +48,20 @@ defmodule CargoShippingWeb.CargoLive.EditDestination do
     {:noreply, assign(socket, :changeset, changeset)}
   end
 
-  def handle_event("save", %{"edit_destination" => ed_params}, socket) do
-    save_cargo_destination(socket, socket.assigns.action, ed_params)
+  def handle_event("save", raw_params, socket) do
+    params =
+      Datepicker.handle_form_change(
+        "edit_destination",
+        "arrival_deadline",
+        raw_params,
+        &update_datepicker/2
+      )
+
+    save_cargo_destination(socket, socket.assigns.action, params)
+  end
+
+  def update_datepicker(id, dt) do
+    send_update(Datepicker, id: id, selected_date: dt)
   end
 
   defp save_cargo_destination(
@@ -60,24 +69,18 @@ defmodule CargoShippingWeb.CargoLive.EditDestination do
          :edit,
          %{"arrival_deadline" => arrival_deadline, "destination" => destination} = params
        ) do
-    Logger.info("save_cargo_destination #{inspect(params)}")
-
     case CargoBookings.update_cargo_for_new_destination(
            socket.assigns.cargo,
            destination,
            arrival_deadline
          ) do
       {:ok, _cargo} ->
-        Logger.info("save_cargo_destination succeeded")
-
         {:noreply,
          socket
          |> put_flash(:info, "Cargo updated successfully")
          |> push_redirect(to: socket.assigns.return_to)}
 
       {:error, %Ecto.Changeset{} = cargo_changeset} ->
-        Logger.error("save_cargo_destination failed #{inspect(cargo_changeset)}")
-
         changeset =
           socket.assigns.cargo
           |> CargoBookings.change_cargo_destination(params)

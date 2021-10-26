@@ -1,16 +1,26 @@
 <div class="datepicker">
-  <input
-    type="text"
-    readonly
-    placeholder="Select date"
-    value={humanize_date(@selected_date)}
-    phx-click="datepicker-clicked"
-    phx-target={@myself} />
-  <div class="icon">
-    <svg class="h-5 w-5 text-gray-400"  fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-    </svg>
+  <div>
+    <input
+      name={"datepicker[#{@id}][iso]"}
+      type="hidden"
+      value={@selected_date} />
+    <input
+      name={"datepicker[#{@id}][alt]"}
+      type="text"
+      readonly
+      placeholder="Select date"
+      value={humanize_date(@selected_date)}
+      phx-click="datepicker-clicked"
+      phx-target={@myself} />
+    <div class="icon">
+      <svg class="h-5 w-5 text-gray-400"  fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+    </div>
   </div>
+
+  <%= render_slot(@inner_block) %>
+
   <div class={calendar_class(@state)}>
     <div class="header">
       <div>
@@ -21,14 +31,14 @@
         <button
           type="button"
           style="margin-right: 10px;"
-          phx-click="click_prev"
+          phx-click="prev-clicked"
           phx-target={@myself} >
           Prev
         </button>
         <button
           class={unless @next_month_selectable, do: "disabled"}
           type="button"
-          phx-click="click_next"
+          phx-click="next-clicked"
           phx-target={@myself} >
           Next
         </button>
@@ -65,24 +75,48 @@
         <div style="width: 14.26%" class="day"></div>
       <% end %>
 
-      <%# Day cells %>
-      <%= for i <- 1..selectable_cells(@visible_month_year) do %>
-        <div
-          style="width: 14.26%"
-          class={selectable_cell_class(@visible_month_year, i, @selected_date)}
-          phx-click="date-clicked"
-          phx-value-date={selectable_cell_value(@visible_month_year, i)}
-          phx-target={@myself} >
-          <%= i %>
-        </div>
+      <%= if selectable_cells(@visible_month_year, @max_date) > 0 do %>
+        <%# Day cells %>
+        <%= for i <- 1..selectable_cells(@visible_month_year, @max_date) do %>
+          <div
+            style="width: 14.26%"
+            class={selectable_cell_class(@visible_month_year, i, @selected_date)}
+            phx-click="date-clicked"
+            phx-value-date={selectable_cell_value(@visible_month_year, i)}
+            phx-target={@myself} >
+            <%= i %>
+          </div>
+        <% end %>
       <% end %>
 
-      <%# Days in future %>
-      <%= if unselectable_cells(@visible_month_year) > 0 do %>
-        <%= for i <- Range.new(selectable_cells(@visible_month_year) + 1, unselectable_cells(@visible_month_year)) do %>
+      <%= if unselectable_cells(@visible_month_year, @max_date) > 0 do %>
+        <%# Days in future %>
+        <%= for i <- Range.new(selectable_cells(@visible_month_year, @max_date) + 1, unselectable_cells(@visible_month_year, @max_date)) do %>
           <div style="width: 14.26%" class="day unselectable"><%= i %></div>
         <% end %>
       <% end %>
+    </div>
+
+    <div class="time-footer">
+      <div style="width: 14.26%">&nbsp;</div>
+      <div style="width: 28.52%" class="time-input">
+        <select name={"datepicker[#{@id}][hour]"}>
+          <%= for hour <- @hour_options do %>
+          <option value={hour} selected={hour_selected(hour, @selected_hour)}><%= hour %></option>
+          <% end %>
+        </select>
+      </div>
+      <div style="width: 14.26%">
+        <span>&nbsp;:&nbsp;</span>
+      </div>
+      <div style="width: 28.52%" class="time-input">
+        <select name={"datepicker[#{@id}][minute]"}>
+          <%= for minute <- @minute_options do %>
+          <option value={minute} selected={minute_selected(minute, @selected_minute)}><%= minute %></option>
+          <% end %>
+        </select>
+      </div>
+      <div style="width: 14.26%">&nbsp;</div>
     </div>
   </div>
 </div>

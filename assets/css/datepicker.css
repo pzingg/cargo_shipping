@@ -91,6 +91,16 @@
           cursor: not-allowed;
 }
 
+.datepicker .calendar .time-footer {
+      display: flex;
+      flex-wrap: wrap;
+      margin-top: 4px;
+}
+
+.datepicker .calendar .time-footer div {
+      text-align: center
+}
+
 .datepicker .icon {
     position: absolute;
     top: 6px;

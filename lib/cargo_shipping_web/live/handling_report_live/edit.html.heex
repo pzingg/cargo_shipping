@@ -25,9 +25,10 @@
     <%= error_tag f, :location %>
 
     <%= label f, :completed_at %>
-    <%= hidden_input f, :completed_at %>
-    <%= live_component CargoShippingWeb.SharedComponents.Datepicker,
-      id: :completed_at, selected_date: @completed_at %>
+    <.live_component module={Datepicker}
+      id="completed_at" prefix="handling_report" selected_date={@completed_at}>
+      <%= error_tag f, :completed_at %>
+    </.live_component>
 
     <div>
       <%= submit "Submit Report", phx_disable_with: "Processing..." %>

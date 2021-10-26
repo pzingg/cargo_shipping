@@ -2,6 +2,7 @@ defmodule CargoShippingWeb.HandlingReportLive.Edit do
   use CargoShippingWeb, :live_view
 
   alias CargoShipping.Reports
+  alias CargoShippingWeb.SharedComponents.Datepicker
 
   @impl true
   def mount(_params, _session, socket) do
@@ -24,22 +25,21 @@ defmodule CargoShippingWeb.HandlingReportLive.Edit do
        cargo_options: all_cargo_options(),
        voyage_options: all_voyage_options(),
        location_options: all_location_options(),
-       completed_at: DateTime.to_date(completed_at),
+       completed_at: completed_at,
        return_to: Routes.cargo_search_path(socket, :index)
      )}
   end
 
   @impl true
-  def handle_info({:update_selected_date, _datepicker_id, selected_date}, socket) do
-    {:ok, completed_at} = DateTime.new(selected_date, ~T[00:00:00], "Etc/UTC")
+  def handle_event("validate", raw_params, socket) do
+    params =
+      Datepicker.handle_form_change(
+        "handling_report",
+        "completed_at",
+        raw_params,
+        &update_datepicker/2
+      )
 
-    changeset = Ecto.Changeset.put_change(socket.assigns.changeset, :completed_at, completed_at)
-
-    {:noreply, assign(socket, :changeset, changeset)}
-  end
-
-  @impl true
-  def handle_event("validate", %{"handling_report" => params}, socket) do
     changeset =
       Reports.change_handling_report(params)
       |> Map.put(:action, :validate)
@@ -50,7 +50,15 @@ defmodule CargoShippingWeb.HandlingReportLive.Edit do
     {:noreply, assign(socket, :changeset, changeset)}
   end
 
-  def handle_event("save", %{"handling_report" => params}, socket) do
+  def handle_event("save", raw_params, socket) do
+    params =
+      Datepicker.handle_form_change(
+        "handling_report",
+        "completed_at",
+        raw_params,
+        &update_datepicker/2
+      )
+
     case Reports.create_handling_report(params) do
       {:ok, _handling_report} ->
         {:noreply,
@@ -61,6 +69,10 @@ defmodule CargoShippingWeb.HandlingReportLive.Edit do
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :changeset, changeset)}
     end
+  end
+
+  def update_datepicker(id, dt) do
+    send_update(Datepicker, id: id, selected_date: dt)
   end
 
   defp page_title(:new), do: "Submit a Handling Report"
