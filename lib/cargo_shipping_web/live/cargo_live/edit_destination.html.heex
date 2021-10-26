@@ -1,14 +1,6 @@
 <div>
   <h2><%= @page_title %></h2>
-
-  <ul>
-    <li>
-      Change destination for cargo <%= @tracking_id %>
-    </li>
-    <li>
-      <strong>Current destination: <%= cargo_destination(@cargo) %></strong>
-    </li>
-  </ul>
+  <p>Change destination for cargo <%= @tracking_id %></p>
 
   <.form
     let={f}
@@ -17,12 +9,20 @@
     phx-change="validate"
     phx-submit="save">
 
-    <%= label f, :destination, "New destination" %>
+    <%= label f, :destination %>
     <%= select f, :destination, @location_options %>
     <%= error_tag f, :destination %>
+
+    <%= label f, :arrival_deadline %>
+    <%= hidden_input f, :arrival_deadline %>
+    <%= live_component CargoShippingWeb.SharedComponents.Datepicker,
+      id: :arrival_deadline, selected_date: @arrival_deadline %>
 
     <div>
       <%= submit "Save", phx_disable_with: "Saving..." %>
     </div>
   </.form>
+
+  <span><%= live_redirect "Cancel", to: Routes.cargo_show_path(@socket, :show, @cargo) %></span>
 </div>
+

@@ -8,7 +8,6 @@
   </li>
   <li><strong>Destination:</strong>
     <%= cargo_destination(@cargo) %>
-    <span><%= live_redirect "Change destination", to: Routes.cargo_edit_destination_path(@socket, :edit, @cargo) %></span>
   </li>
   <li>
     <strong>Arrival deadline:</strong>
@@ -16,15 +15,17 @@
   </li>
 </ul>
 
+<%= live_redirect "Change destination", to: Routes.cargo_edit_destination_path(@socket, :edit, @cargo), class: "button", type: "button" %>
+
 <h2>Itinerary</h2>
 
 <%= if cargo_misrouted?(@cargo) do %>
 <ul>
   <li>
     <strong>Cargo is misrouted!</strong>
-    <span><%= live_redirect "Reroute this cargo", to: Routes.cargo_edit_route_path(@socket, :edit, @cargo) %></span>
   </li>
 </ul>
+<%= live_redirect "Select new route", to: Routes.cargo_edit_route_path(@socket, :edit, @cargo), class: "button", type: "button" %>
 <% end %>
 
 <table>
@@ -54,9 +55,9 @@
 <ul>
   <li>
     <strong>Cargo has not been routed!</strong>
-    <span><%= live_redirect "Select a route", to: Routes.cargo_edit_route_path(@socket, :edit, @cargo) %></span>
   </li>
 </ul>
+<%= live_redirect "Select a route", to: Routes.cargo_edit_route_path(@socket, :edit, @cargo), class: "button", type: "button" %>
 <% end %>
 
 <%= link "Back", to: Routes.cargo_index_path(@socket, :index) %>

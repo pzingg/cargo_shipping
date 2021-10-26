@@ -4,14 +4,14 @@
     readonly
     placeholder="Select date"
     value={humanize_date(@selected_date)}
-    phx-click="click_datepicker",
+    phx-click="datepicker-clicked"
     phx-target={@myself} />
   <div class="icon">
     <svg class="h-5 w-5 text-gray-400"  fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
     </svg>
   </div>
-  <div class="calendar" class={if @state == "closed", do: "hidden"}>
+  <div class={calendar_class(@state)}>
     <div class="header">
       <div>
         <strong><%= full_month_name(@visible_month_year) %></strong>
@@ -69,9 +69,9 @@
       <%= for i <- 1..selectable_cells(@visible_month_year) do %>
         <div
           style="width: 14.26%"
-          class="day selectable"
-          phx-click="click_date"
-          phx-value-date={%{@visible_month_year | day: i}}"
+          class={selectable_cell_class(@visible_month_year, i, @selected_date)}
+          phx-click="date-clicked"
+          phx-value-date={selectable_cell_value(@visible_month_year, i)}
           phx-target={@myself} >
           <%= i %>
         </div>

@@ -9,6 +9,7 @@
     border: 0.1rem solid #d1d1d1;
     border-radius: 5px;
     padding: 1rem;
+    margin-bottom: 1rem;
     transition-property: opacity;
     transition-duration: 75ms;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -68,11 +69,16 @@
         padding-bottom: 4px;
 }
 
-
 .datepicker .calendar .monthdays .day.selectable {
           cursor: pointer;
 }
 
+.datepicker .calendar .monthdays .day.selectable.selected {
+      border-color: #0069D9;
+      border-radius: 5px;
+      border-width: 1px;
+      border-style: solid;
+}
 
 .datepicker .calendar .monthdays .day.selectable:hover {
             background-color: #0069D9;

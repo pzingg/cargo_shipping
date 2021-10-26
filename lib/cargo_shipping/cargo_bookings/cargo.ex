@@ -67,11 +67,12 @@ defmodule CargoShipping.CargoBookings.Cargo do
       plugin(TypedStructEctoChangeset)
 
       field :destination, :string
+      field :arrival_deadline, :utc_datetime
     end
 
     def changeset(destination, attrs) do
       destination
-      |> cast(attrs, [:destination])
+      |> cast(attrs, [:destination, :arrival_deadline])
       |> RouteSpecification.validate_location_code(:destination)
     end
   end
@@ -110,6 +111,10 @@ defmodule CargoShipping.CargoBookings.Cargo do
 
   def destination(cargo) do
     cargo.route_specification.destination
+  end
+
+  def arrival_deadline(cargo) do
+    cargo.route_specification.arrival_deadline
   end
 
   def routing_status(cargo) do

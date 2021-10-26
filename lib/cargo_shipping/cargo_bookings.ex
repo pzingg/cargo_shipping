@@ -181,8 +181,17 @@ defmodule CargoShipping.CargoBookings do
   has a different destination.  The origin and arrival_deadline are
   not changed.
   """
-  def update_cargo_for_new_destination(%Cargo{} = cargo, destination) do
-    new_route_specification = %{cargo.route_specification | destination: destination}
+  def update_cargo_for_new_destination(%Cargo{} = cargo, destination, arrival_deadline \\ nil) do
+    route_specification =
+      Utils.from_struct(cargo.route_specification)
+      |> Map.put(:destination, destination)
+
+    new_route_specification =
+      if is_nil(arrival_deadline) do
+        route_specification
+      else
+        Map.put(route_specification, :arrival_deadline, arrival_deadline)
+      end
 
     update_cargo_for_new_route(cargo, new_route_specification)
   end
@@ -300,7 +309,10 @@ defmodule CargoShipping.CargoBookings do
   of a Cargo's RouteSpecification
   """
   def change_cargo_destination(%Cargo{} = cargo, attrs \\ %{}) do
-    %Cargo.EditDestination{destination: Cargo.destination(cargo)}
+    %Cargo.EditDestination{
+      destination: Cargo.destination(cargo),
+      arrival_deadline: Cargo.arrival_deadline(cargo)
+    }
     |> Cargo.EditDestination.changeset(attrs)
   end
 

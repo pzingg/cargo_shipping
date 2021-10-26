@@ -20,6 +20,9 @@ defmodule CargoShippingWeb.DatepickerHelpers do
     end
   end
 
+  def calendar_class("closed"), do: "calendar hidden"
+  def calendar_class(_state), do: "calendar"
+
   def selectable_cells(%Date{day: 1} = date) do
     today = Date.utc_today()
     if same_month?(today, date), do: today.day, else: Date.days_in_month(date)
@@ -28,6 +31,20 @@ defmodule CargoShippingWeb.DatepickerHelpers do
   def unselectable_cells(%Date{day: 1} = date) do
     today = Date.utc_today()
     if same_month?(today, date), do: Date.days_in_month(date) - date.day, else: 0
+  end
+
+  def selectable_cell_value(visible_month_year, i) do
+    %{visible_month_year | day: i}
+  end
+
+  def selectable_cell_class(_visible_month_year, _i, nil), do: "day selectable"
+
+  def selectable_cell_class(visible_month_year, i, selected_date) do
+    if selectable_cell_value(visible_month_year, i) == selected_date do
+      "day selectable selected"
+    else
+      "day selectable"
+    end
   end
 
   defp same_month?(%{month: m, year: y}, %{month: m, year: y}), do: true

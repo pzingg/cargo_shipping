@@ -69,7 +69,9 @@ defmodule CargoShipping.CargoBookingService do
         []
 
       remaining_route_specification ->
-        itineraries = routes_for_specification(remaining_route_specification)
+        itineraries =
+          routes_for_specification(remaining_route_specification, algorithm: :libgraph)
+
         Enum.map(itineraries, fn %{itinerary: itinerary} -> itinerary end)
     end
   end

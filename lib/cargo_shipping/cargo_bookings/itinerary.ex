@@ -52,7 +52,6 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     end
   end
 
-
   def final_leg(itinerary), do: List.last(itinerary.legs)
 
   def final_arrival_location(itinerary) do

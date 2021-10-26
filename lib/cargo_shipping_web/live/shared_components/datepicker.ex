@@ -19,11 +19,11 @@ defmodule CargoShippingWeb.SharedComponents.Datepicker do
     Map.put(assigns, :visible_month_year, %{Date.utc_today() | day: 1})
   end
 
-  defp set_visible_month_year(%{selected_date: d} = assigns),
-    do: Map.put(assigns, :visible_month_year, d)
+  defp set_visible_month_year(%{selected_date: %Date{} = d} = assigns),
+    do: Map.put(assigns, :visible_month_year, %Date{d | day: 1})
 
-  def handle_event("click_datepicker", _, socket) do
-    {:noreply, assign(socket, :state, next_state(socket.assigns.state))}
+  def handle_event("datepicker-clicked", _, socket) do
+    {:noreply, assign(socket, :state, toggle_state(socket.assigns.state))}
   end
 
   def handle_event("click_prev", _, socket) do
@@ -55,17 +55,22 @@ defmodule CargoShippingWeb.SharedComponents.Datepicker do
     {:noreply, assign(socket, assigns)}
   end
 
-  def handle_event("click_date", %{"date" => date}, socket) do
+  def handle_event("date-clicked", %{"date" => date}, socket) do
+    selected_date = Date.from_iso8601!(date)
+
     assigns =
       Map.new()
       |> Map.put(:state, "closed")
-      |> Map.put(:selected_date, Date.from_iso8601!(date))
+      |> Map.put(:selected_date, selected_date)
+
+    # Update parent live view
+    _ = send(self(), {:update_selected_date, socket.assigns.id, selected_date})
 
     {:noreply, assign(socket, assigns)}
   end
 
-  defp next_state("open"), do: "closed"
-  defp next_state("closed"), do: "open"
+  defp toggle_state("open"), do: "closed"
+  defp toggle_state("closed"), do: "open"
 
   defp put_next_month_selectable(%{visible_month_year: d} = assigns) do
     Map.put(assigns, :next_month_selectable, next_month_selectable?(d))
