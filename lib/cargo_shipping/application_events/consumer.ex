@@ -6,7 +6,7 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   require Logger
 
-  alias CargoShipping.CargoInspectionService
+  alias CargoShipping.{CargoInspectionService, HandlingEventService}
   alias CargoShipping.CargoBookings.{Cargo, Delivery}
 
   ## GenServer public API
@@ -104,7 +104,12 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   defp handle_event(:handling_report_received, _config, event) do
     # Payload is handling report
-    Logger.error("[handling_report_received] #{event.data.tracking_id} #{event.data.event_type}")
+    Logger.error(
+      "[handling_report_received] #{event.data.tracking_id} #{event.data.event_type} at {event.data.location}"
+    )
+
+    # Turn around and create a handling event.
+    HandlingEventService.register_handling_event(event.data)
   end
 
   defp handle_event(:handling_report_rejected, _config, event) do

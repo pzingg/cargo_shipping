@@ -1,7 +1,7 @@
 defmodule CargoShippingWeb.LiveHelpers do
   import Phoenix.LiveView.Helpers
 
-  alias CargoShipping.{CargoBookings, VoyageService, LocationService}
+  alias CargoShipping.{CargoBookings, VoyagePlans, VoyageService, LocationService}
   alias CargoShipping.CargoBookings.Cargo
 
   @doc """
@@ -32,11 +32,42 @@ defmodule CargoShippingWeb.LiveHelpers do
     LocationService.get_by_locode(location).name
   end
 
+  def event_type_options() do
+    [
+      {"Cargo received", "RECEIVE"},
+      {"Cargo loaded", "LOAD"},
+      {"Cargo unloaded", "UNLOAD"},
+      {"Cargo in customs", "CUSTOMS"},
+      {"Cargo claimed", "CLAIM"}
+    ]
+  end
+
   def all_location_options() do
-    Enum.map(LocationService.all(), fn %{port_code: port_code, name: name} ->
+    LocationService.all()
+    |> Enum.map(fn %{port_code: port_code, name: name} ->
       # First element is the option label
       # Second element is the option value
       {name, port_code}
+    end)
+    |> Enum.sort()
+  end
+
+  def all_voyage_options() do
+    VoyagePlans.list_voyages()
+    |> Enum.map(fn voyage ->
+      label =
+        "#{voyage.voyage_number} from #{voyage_origin(voyage)} to #{voyage_destination(voyage)}"
+
+      {label, voyage.voyage_number}
+    end)
+    |> Enum.sort()
+  end
+
+  def all_cargo_options() do
+    CargoBookings.list_cargos()
+    |> Enum.map(fn cargo ->
+      label = "#{cargo.tracking_id} from #{cargo_origin(cargo)} to #{cargo_destination(cargo)}"
+      {label, cargo.tracking_id}
     end)
     |> Enum.sort()
   end
@@ -134,6 +165,20 @@ defmodule CargoShippingWeb.LiveHelpers do
     case leg.voyage_id do
       nil -> ""
       voyage_id -> VoyageService.get_voyage_number_for_id!(voyage_id)
+    end
+  end
+
+  def voyage_origin(voyage) do
+    case List.first(voyage.schedule_items) do
+      nil -> "_"
+      carrier_movement -> carrier_movement.departure_location |> location_name()
+    end
+  end
+
+  def voyage_destination(voyage) do
+    case List.last(voyage.schedule_items) do
+      nil -> "_"
+      carrier_movement -> carrier_movement.arrival_location |> location_name()
     end
   end
 

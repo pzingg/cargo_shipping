@@ -21,6 +21,7 @@ defmodule CargoShippingWeb.Router do
     pipe_through :browser
 
     live "/", CargoLive.Search, :index
+    live "/reports/new", HandlingReportLive.Edit, :new
   end
 
   scope "/managers", CargoShippingWeb do

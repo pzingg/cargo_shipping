@@ -49,11 +49,7 @@ defmodule CargoShipping.Reports do
 
   """
   def create_handling_report(attrs \\ %{}) do
-    changeset =
-      %HandlingReport{}
-      |> HandlingReport.changeset(attrs)
-
-    result = Repo.insert(changeset)
+    result = change_handling_report(attrs) |> Repo.insert()
     HandlingReportService.register_handling_report_attempt(result, attrs)
     result
   end
@@ -72,5 +68,18 @@ defmodule CargoShipping.Reports do
   """
   def delete_handling_report(%HandlingReport{} = handling_report) do
     Repo.delete(handling_report)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for creating handling reports.
+
+  ## Examples
+
+      iex> change_handling_report(attrs)
+      %Ecto.Changeset{data: %HandlingReport{}}
+  """
+  def change_handling_report(attrs \\ %{}) do
+    %HandlingReport{}
+    |> HandlingReport.changeset(attrs)
   end
 end

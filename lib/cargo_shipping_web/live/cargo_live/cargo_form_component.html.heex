@@ -17,6 +17,8 @@
     <%= text_input f, :destination %>
     <%= error_tag f, :destination %>
 
+    <%= label f, :arrival_deadline %>
+    <%= hidden_input f, :arrival_deadline %>
     <%= live_component CargoShippingWeb.SharedComponents.Datepicker,
       id: :arrival_deadline %>
 

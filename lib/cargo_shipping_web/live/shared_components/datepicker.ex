@@ -4,6 +4,8 @@ defmodule CargoShippingWeb.SharedComponents.Datepicker do
   """
   use CargoShippingWeb, :live_component
 
+  # TODO: Allow picking future dates with an option.
+
   def update(assigns, socket) do
     assigns =
       assigns

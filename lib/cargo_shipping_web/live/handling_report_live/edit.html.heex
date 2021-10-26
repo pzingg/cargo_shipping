@@ -1,0 +1,36 @@
+<div>
+  <h2><%= @page_title %></h2>
+
+  <.form
+    let={f}
+    for={@changeset}
+    id="handling-report-form"
+    phx-change="validate"
+    phx-submit="save">
+
+    <%= label f, :event_type %>
+    <%= select f, :event_type, @event_type_options %>
+    <%= error_tag f, :event_type %>
+
+    <%= label f, :tracking_id, "Tracking id" %>
+    <%= select f, :tracking_id, @cargo_options %>
+    <%= error_tag f, :tracking_id %>
+
+    <%= label f, :voyage_number %>
+    <%= select f, :voyage_number, @voyage_options %>
+    <%= error_tag f, :voyage_number %>
+
+    <%= label f, :location %>
+    <%= select f, :location, @location_options %>
+    <%= error_tag f, :location %>
+
+    <%= label f, :completed_at %>
+    <%= hidden_input f, :completed_at %>
+    <%= live_component CargoShippingWeb.SharedComponents.Datepicker,
+      id: :completed_at, selected_date: @completed_at %>
+
+    <div>
+      <%= submit "Save", phx_disable_with: "Saving..." %>
+    </div>
+  </.form>
+</div>
