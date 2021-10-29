@@ -56,7 +56,7 @@
   <tbody id="itinerary-legs">
     <%= for leg <- @cargo.itinerary.legs do %>
       <tr id={"leg-#{leg.load_location}-#{leg.unload_location}"}>
-        <td><%= leg_voyage_number(leg) %></td>
+        <td><%= voyage_number_for(leg) %></td>
         <td><%= location_name(leg.load_location) %></td>
         <td><%= event_time(leg, :load_time) %></td>
         <td><%= location_name(leg.unload_location) %></td>

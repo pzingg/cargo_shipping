@@ -21,6 +21,7 @@ defmodule CargoShippingWeb.Router do
     pipe_through :browser
 
     live "/", CargoLive.Search, :index
+    live "/events/:tracking_id", HandlingEventLive.Index, :index
     live "/reports/new", HandlingReportLive.Edit, :new
   end
 
@@ -28,11 +29,11 @@ defmodule CargoShippingWeb.Router do
     pipe_through :browser
 
     live "/", CargoLive.Index, :index
+    live "/events", HandlingEventLive.Index, :all
+    live "/events/:tracking_id", HandlingEventLive.Index, :index
     live "/:id", CargoLive.Show, :show
     live "/:id/destination/edit", CargoLive.EditDestination, :edit
     live "/:id/route/edit", CargoLive.EditRoute, :edit
-    live "/events", HandlingEventLive.Index, :index
-    live "/events/:id", HandlingEventLive.Show, :show
   end
 
   ## This scope handles JSON requests and responses

@@ -1,20 +1,25 @@
-<h1>Handling Events</h1>
+<h1><%= @page_title %></h1>
 
 <table>
   <thead>
     <tr>
-      <th>Name</th>
-      <th></th>
+      <th>Event type</th>
+      <th>Tracking id</th>
+      <th>Voyage</th>
+      <th>Location</th>
+      <th>Completed at</th>
+      <th>Registered at</th>
     </tr>
   </thead>
   <tbody id="handling_events">
     <%= for handling_event <- @handling_events do %>
       <tr id={"handling_event-#{handling_event.id}"}>
-        <td><%= handling_event.name %></td>
-
-        <td>
-          <span><%= live_redirect "Show", to: Routes.handling_event_show_path(@socket, :show, handling_event) %></span>
-        </td>
+        <td><%= handling_event.event_type %></td>
+        <td><%= handling_event.tracking_id %></td>
+        <td><%= voyage_number_for(handling_event) %></td>
+        <td><%= location_name(handling_event.location) %></td>
+        <td><%= event_time(handling_event, :completed_at) %></td>
+        <td><%= event_time(handling_event, :registered_at) %></td>
       </tr>
     <% end %>
   </tbody>

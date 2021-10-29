@@ -161,8 +161,8 @@ defmodule CargoShippingWeb.LiveHelpers do
     end
   end
 
-  def leg_voyage_number(leg) do
-    case leg.voyage_id do
+  def voyage_number_for(leg_or_event) do
+    case leg_or_event.voyage_id do
       nil -> ""
       voyage_id -> VoyageService.get_voyage_number_for_id!(voyage_id)
     end

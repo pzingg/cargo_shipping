@@ -328,7 +328,14 @@ defmodule CargoShipping.CargoBookings do
 
   """
   def list_handling_events do
-    Repo.all(HandlingEvent)
+    query =
+      from he in HandlingEvent,
+        left_join: c in Cargo,
+        on: c.id == he.cargo_id,
+        select_merge: %{tracking_id: c.tracking_id},
+        order_by: [desc: he.completed_at]
+
+    Repo.all(query)
   end
 
   @doc """
@@ -338,8 +345,9 @@ defmodule CargoShipping.CargoBookings do
   def lookup_handling_history(tracking_id) when is_binary(tracking_id) do
     query =
       from he in HandlingEvent,
-        join: c in Cargo,
+        left_join: c in Cargo,
         on: c.id == he.cargo_id,
+        select_merge: %{tracking_id: c.tracking_id},
         where: c.tracking_id == ^tracking_id,
         order_by: [desc: he.completed_at]
 
