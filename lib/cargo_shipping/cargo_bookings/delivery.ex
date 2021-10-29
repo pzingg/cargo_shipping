@@ -74,6 +74,13 @@ defmodule CargoShipping.CargoBookings.Delivery do
       end
     end
 
+    if delivery.last_event_id do
+      last_event = CargoShipping.CargoBookings.get_handling_event!(delivery.last_event_id)
+      Logger.error("  last event #{last_event.event_type} at #{last_event.location}")
+    else
+      Logger.error("  no events yet")
+    end
+
     if delivery.next_expected_activity do
       Logger.error(
         "  next #{delivery.next_expected_activity.event_type} at #{delivery.next_expected_activity.location}"
@@ -227,15 +234,13 @@ defmodule CargoShipping.CargoBookings.Delivery do
 
   defp calculate_next_expected_activity(_route_specification, itinerary, last_event, _on_track) do
     case last_event.event_type do
-      :LOAD ->
-        case Enum.find(itinerary.legs, fn leg -> leg.load_location == last_event.location end) do
-          nil ->
-            nil
+      :RECEIVE ->
+        Itinerary.find_leg(:LOAD, itinerary, last_event.location)
+        |> activity_from_leg(:LOAD)
 
-          found_leg ->
-            found_leg
-            |> activity_from_leg(:UNLOAD)
-        end
+      :LOAD ->
+        Itinerary.find_leg(:LOAD, itinerary, last_event.location)
+        |> activity_from_leg(:UNLOAD)
 
       :UNLOAD ->
         case Enum.find_index(itinerary.legs, fn leg ->
@@ -254,14 +259,16 @@ defmodule CargoShipping.CargoBookings.Delivery do
             end
         end
 
-      :RECIEVE ->
-        hd(itinerary.legs)
-        |> activity_from_leg(:LOAD)
+      :CUSTOMS ->
+        Itinerary.find_leg(:UNLOAD, itinerary, last_event.location)
+        |> activity_from_leg(:CLAIM)
 
       _ ->
         nil
     end
   end
+
+  def activity_from_leg(nil, _event_type), do: nil
 
   def activity_from_leg(leg, event_type) do
     location =

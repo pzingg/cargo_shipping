@@ -5,9 +5,9 @@
     <thead>
       <tr>
         <th>Voyage</th>
-        <th>Load in</th>
+        <th>Load at</th>
         <th>Date</th>
-        <th>Unload in</th>
+        <th>Unload at</th>
         <th>Date</th>
       </tr>
     </thead>
@@ -26,8 +26,8 @@
 
   <div id="route-form-#{@index}">
     <button type="button"
-      phx-target={@myself}
       phx-click="save"
+      phx-value-index={@index}
       phx-disable-with="Processing...">
       Assign cargo to this route
     </button>

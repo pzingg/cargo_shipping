@@ -22,7 +22,7 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
   alias CargoShipping.{CargoBookings, LocationService, Utils, VoyageService}
   alias CargoShipping.CargoBookings.Cargo
 
-  @event_type_values [:LOAD, :UNLOAD, :RECEIVE, :CLAIM, :CUSTOMS]
+  @event_type_values [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id

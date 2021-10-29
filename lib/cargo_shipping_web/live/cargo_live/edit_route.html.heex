@@ -34,6 +34,8 @@
 
 <h1><%= @page_title %></h1>
 
+<p>Rerouting will be applied from <%= location_name(@remaining_route_spec.origin) %>...</p>
+
 <%= if !@route_candidates do %>
 
 <p>No routes were found that satisfy the route specification. Try setting an arrival
@@ -45,11 +47,8 @@ deadline futher into the future (a few weeks at least).</p>
 <p>Select a new route from these candidates:</p>
 
 <%= for {itinerary, index} <- @route_candidates do %>
-  <%= live_component CargoShippingWeb.CargoLive.RouteFormComponent,
-    id: "candidate-#{index}",
-    itinerary: itinerary,
-    index: index,
-    cargo: @cargo,
-    return_to: Routes.cargo_show_path(@socket, :show, @cargo) %>
+  <.live_component module={RouteFormComponent}
+    itinerary={itinerary} index={index} cargo={@cargo}
+    return_to={Routes.cargo_show_path(@socket, :show, @cargo)} />
   <% end %>
 <% end %>

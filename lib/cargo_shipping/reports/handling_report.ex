@@ -4,7 +4,7 @@ defmodule CargoShipping.Reports.HandlingReport do
 
   alias CargoShipping.{CargoBookings, LocationService, VoyageService}
 
-  @event_type_values [:LOAD, :UNLOAD, :RECEIVE, :CLAIM, :CUSTOMS]
+  @event_type_values [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id

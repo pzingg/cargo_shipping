@@ -12,16 +12,8 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
   def handle_params(%{"tracking_id" => tracking_id}, _uri, socket) do
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
 
-    itineraries =
+    {remaining_route_spec, indexed_itineraries} =
       CargoBookingService.possible_routes_for_cargo(cargo)
-      |> Enum.with_index(fn itinerary, index -> {itinerary, index + 1} end)
-
-    route_candidates =
-      if Enum.empty?(itineraries) do
-        nil
-      else
-        itineraries
-      end
 
     {:noreply,
      socket
@@ -29,8 +21,31 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
      |> assign(
        tracking_id: cargo.tracking_id,
        cargo: cargo,
-       route_candidates: route_candidates
+       remaining_route_spec: remaining_route_spec,
+       route_candidates: indexed_itineraries
      )}
+  end
+
+  @impl true
+  @doc """
+  Fired by click in stateless RouteFormComponent.
+  """
+  def handle_event("save", %{"index" => index} = _params, socket) do
+    selected_itinerary = Enum.at(socket.assigns.route_candidates, index - 1)
+
+    case CargoBookings.update_cargo_for_new_itinerary(
+           socket.assigns.cargo,
+           selected_itinerary
+         ) do
+      {:ok, _cargo} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Cargo assigned to route successfully")
+         |> push_redirect(to: socket.assigns.return_to)}
+
+      {:error, %Ecto.Changeset{} = _changeset} ->
+        {:noreply, socket |> put_flash(:error, "Could not assign route")}
+    end
   end
 
   defp page_title(:edit), do: "Select a Route"

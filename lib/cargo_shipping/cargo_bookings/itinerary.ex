@@ -28,8 +28,6 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     |> cast_embed(:legs, with: &Leg.changeset/2)
   end
 
-  def debug_itinerary(itinerary), do: debug_legs(itinerary.legs)
-
   def initial_leg(itinerary), do: List.first(itinerary.legs)
 
   def initial_departure_location(itinerary) do
@@ -208,6 +206,11 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
       {:error, "claim destination mismatch"}
     end
+  end
+
+  def debug_itinerary(itinerary) do
+    Logger.error("itinerary")
+    debug_legs(itinerary.legs)
   end
 
   defp debug_legs(legs) do

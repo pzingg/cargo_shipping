@@ -10,7 +10,7 @@ defmodule CargoShipping.CargoBookings.HandlingActivity do
 
   import Ecto.Changeset
 
-  @event_type_values [:LOAD, :UNLOAD, :RECEIVE, :CLAIM, :CUSTOMS]
+  @event_type_values [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
 
   embedded_schema do
     field :event_type, Ecto.Enum, values: @event_type_values

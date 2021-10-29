@@ -9,6 +9,8 @@ defmodule CargoShipping.CargoBookings.RouteSpecification do
 
   import Ecto.Changeset
 
+  require Logger
+
   alias CargoShipping.Locations
 
   @primary_key false
@@ -49,5 +51,10 @@ defmodule CargoShipping.CargoBookings.RouteSpecification do
     else
       put_change(changeset, :earliest_departure, ~U[2000-01-01 00:00:00Z])
     end
+  end
+
+  def debug_route_specification(route_specification) do
+    Logger.error("route")
+    Logger.error("   from #{route_specification.origin} to #{route_specification.destination}")
   end
 end

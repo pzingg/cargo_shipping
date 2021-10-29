@@ -220,17 +220,17 @@ defmodule CargoShipping.CargoBookings do
   Synchronously updates the Cargo aggregate with a new Itinerary after
   re-routing.
   """
-  def update_cargo_for_new_itinerary(cargo, itinerary) do
-    params = cargo_params_for_new_itinerary(cargo, itinerary)
+  def update_cargo_for_new_itinerary(cargo, itinerary, remaining_route_spec \\ nil) do
+    params = cargo_params_for_new_itinerary(cargo, itinerary, remaining_route_spec)
     update_cargo(cargo, params)
   end
 
   # Argument `cargo` can be a map (when creating cargos), or an existing Cargo struct.
-  defp cargo_params_for_new_itinerary(
-         %{route_specification: route_specification} = cargo,
-         itinerary
-       )
-       when is_map(itinerary) do
+  defp cargo_params_for_new_itinerary(cargo, new_itinerary, patch_route_spec \\ nil)
+       when is_map(new_itinerary) do
+    {route_specification, itinerary} =
+      patch_route_specification_and_itinerary(cargo, patch_route_spec, new_itinerary)
+
     # Handling consistency within the Cargo aggregate synchronously
     maybe_delivery = Map.get(cargo, :delivery) || Map.get(cargo, "delivery")
 
@@ -246,32 +246,92 @@ defmodule CargoShipping.CargoBookings do
     })
   end
 
+  def patch_route_specification_and_itinerary(cargo, nil, new_itinerary) do
+    {cargo.route_specification, new_itinerary}
+  end
+
+  def patch_route_specification_and_itinerary(cargo, patch_route_spec, patch_itinerary) do
+    if cargo.route_specification == patch_route_spec do
+      {cargo.route_specification, patch_itinerary}
+    else
+      # This is probably a no-op
+      new_route_spec = %{
+        cargo.route_specification
+        | destination: patch_route_spec.destination,
+          arrival_deadline: patch_route_spec.arrival_deadline
+      }
+
+      new_itinerary = merge_itinerary(cargo.itinerary, patch_itinerary, patch_route_spec.origin)
+
+      Logger.error("original route spec #{inspect(cargo.route_specification)}")
+      Logger.error("patched route spec #{inspect(new_route_spec)}")
+      Logger.error("original itinerary #{inspect(cargo.itinerary)}")
+      Logger.error("patched itinerary #{inspect(new_itinerary)}")
+      {new_route_spec, new_itinerary}
+    end
+  end
+
+  def merge_itinerary(itinerary, patch_itinerary, origin) do
+    if Enum.empty?(patch_itinerary.legs) do
+      raise "patched itinerary has no legs"
+    end
+
+    itinerary_departure = Itinerary.initial_departure_location(patch_itinerary)
+
+    if itinerary_departure != origin do
+      raise "patched itinerary expected departure #{origin}, was #{itinerary_departure}"
+    end
+
+    first_legs =
+      itinerary.legs
+      |> Enum.take_while(fn leg -> leg.load_location != origin end)
+
+    first_arrival = Itinerary.final_arrival_location(%{legs: first_legs})
+
+    if first_arrival != origin do
+      raise "first part itinerary expected arrival #{origin}, was #{first_arrival}"
+    end
+
+    %{legs: first_legs ++ patch_itinerary.legs}
+  end
+
   def get_remaining_route_specification(cargo) do
     case {cargo.delivery.routing_status, cargo.delivery.transport_status} do
       {:NOT_ROUTED, _} ->
+        Logger.error("Cargo not routed, rrs is original route specification")
         cargo.route_specification
 
       {_, :CLAIMED} ->
+        Logger.error("Cargo has been claimed, rrs is nil")
         nil
 
       {_, :IN_PORT} ->
         origin = cargo.delivery.last_known_location
-        mabye_route_specification(cargo.route_specification, origin)
+        maybe_route_specification(cargo.route_specification, origin, "Cargo is in port at")
 
       {_, :ONBOARD_CARRIER} ->
         origin = cargo.delivery.next_expected_activity.location
-        mabye_route_specification(cargo.route_specification, origin)
+        maybe_route_specification(cargo.route_specification, origin, "Cargo is onboard to")
 
-      {_, _} ->
+      {_, other} ->
+        Logger.error("Cargo transport is #{other}, rrs is original route specification")
         cargo.route_specification
     end
   end
 
-  defp mabye_route_specification(route_specification, new_origin) do
-    if new_origin == route_specification.destination do
-      nil
-    else
-      %{route_specification | origin: new_origin}
+  defp maybe_route_specification(route_specification, new_origin, status) do
+    cond do
+      new_origin == route_specification.origin ->
+        Logger.error("#{status} origin, rrs is original route specification")
+        route_specification
+
+      new_origin == route_specification.destination ->
+        Logger.error("#{status} final destination, rrs is nil")
+        nil
+
+      true ->
+        Logger.error("#{status} rrs set with this location as origin")
+        %{route_specification | origin: new_origin}
     end
   end
 

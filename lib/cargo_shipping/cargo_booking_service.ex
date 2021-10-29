@@ -57,22 +57,37 @@ defmodule CargoShipping.CargoBookingService do
     end
   end
 
+  @doc """
+  Returns a tuple with the remaining route specification for the Cargo,
+  and the possible itineraries.
+
+  If there are no remaining ports for the Cargo, nil is returned.
+  If there are no found itineraries, nil is returned.
+  """
   def possible_routes_for_cargo(tracking_id) when is_binary(tracking_id) do
     CargoBookings.get_cargo_by_tracking_id!(tracking_id)
     |> possible_routes_for_cargo()
   end
 
   def possible_routes_for_cargo(%Cargo{} = cargo) do
-    case CargoBookings.get_remaining_route_specification(cargo) do
-      nil ->
-        # We are at our destination
-        []
+    remaining_route_spec = CargoBookings.get_remaining_route_specification(cargo)
 
-      remaining_route_specification ->
-        itineraries =
-          routes_for_specification(remaining_route_specification, algorithm: :libgraph)
+    if is_nil(remaining_route_spec) do
+      # We are at our destination
+      {nil, nil}
+    else
+      itineraries = routes_for_specification(remaining_route_spec, algorithm: :libgraph)
 
-        Enum.map(itineraries, fn %{itinerary: itinerary} -> itinerary end)
+      if Enum.empty?(itineraries) do
+        {remaining_route_spec, nil}
+      else
+        indexed_itineraries =
+          Enum.with_index(itineraries, fn %{itinerary: itinerary}, index ->
+            {itinerary, index + 1}
+          end)
+
+        {remaining_route_spec, indexed_itineraries}
+      end
     end
   end
 
