@@ -1,0 +1,19 @@
+<h1>Clerks Page</h1>
+
+<p>This section is for shipping clerks.</p>
+
+<section class="row">
+  <article class="column">
+    <h2>Navigation</h2>
+    <ul>
+      <li>
+        <%= link "Track cargos", to: Routes.cargo_search_path(@conn, :index) %>
+      </li>
+      <li>
+        <%= link "Log out", to: "/" %>
+      </li>
+    </ul>
+  </article>
+</section>
+
+

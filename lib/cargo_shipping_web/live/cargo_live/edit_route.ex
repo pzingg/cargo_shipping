@@ -9,12 +9,19 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
   end
 
   @impl true
-  def handle_params(%{"id" => id}, _, socket) do
-    cargo = CargoBookings.get_cargo!(id)
+  def handle_params(%{"tracking_id" => tracking_id}, _uri, socket) do
+    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
 
     itineraries =
       CargoBookingService.possible_routes_for_cargo(cargo)
       |> Enum.with_index(fn itinerary, index -> {itinerary, index + 1} end)
+
+    route_candidates =
+      if Enum.empty?(itineraries) do
+        nil
+      else
+        itineraries
+      end
 
     {:noreply,
      socket
@@ -22,7 +29,7 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
      |> assign(
        tracking_id: cargo.tracking_id,
        cargo: cargo,
-       route_candidates: itineraries
+       route_candidates: route_candidates
      )}
   end
 

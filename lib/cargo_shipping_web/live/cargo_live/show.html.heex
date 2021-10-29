@@ -1,3 +1,20 @@
+<section class="row">
+  <article class="column">
+    <h2>Navigation</h2>
+    <ul>
+      <li>
+        <%= link "All cargos", to: Routes.cargo_index_path(@socket, :index) %>
+      </li>
+      <li>
+        <%= link "Managers page", to: "/managers" %>
+      </li>
+      <li>
+        <%= link "Log out", to: "/" %>
+      </li>
+    </ul>
+  </article>
+</section>
+
 <h1>Details for cargo <%= @cargo.tracking_id %></h1>
 
 <h2><%= cargo_transport_status(@cargo) %></h2>
@@ -14,6 +31,8 @@
     <%= event_time(@cargo.route_specification, :arrival_deadline) %>
   </li>
 </ul>
+
+<%= live_redirect "Handling history", to: Routes.handling_event_index_path(@socket, :index, @cargo), class: "button", type: "button" %>
 
 <%= live_redirect "Change destination", to: Routes.cargo_edit_destination_path(@socket, :edit, @cargo), class: "button", type: "button" %>
 
@@ -59,6 +78,4 @@
 </ul>
 <%= live_redirect "Select a route", to: Routes.cargo_edit_route_path(@socket, :edit, @cargo), class: "button", type: "button" %>
 <% end %>
-
-<%= link "Back", to: Routes.cargo_index_path(@socket, :index) %>
 

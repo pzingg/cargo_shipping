@@ -1,35 +1,48 @@
 defmodule CargoShippingWeb.HandlingEventLive.Index do
   use CargoShippingWeb, :live_view
 
-  require Logger
-
   alias CargoShipping.CargoBookings
 
   @impl true
-  def mount(params, session, socket) do
-    Logger.error("HandlingEventLive.mount #{inspect(params)} #{inspect(session)}")
+  def mount(_params, _session, socket) do
+    subscribe_to_application_events(self(), "handling_event_*")
     {:ok, socket |> default_assigns()}
   end
 
   @impl true
-  def handle_params(params, _url, socket) do
-    Logger.error("HandlingEventLive.handle_params #{inspect(params)}")
-
+  def handle_params(params, _uri, socket) do
     tracking_id = Map.get(params, "tracking_id")
 
-    handling_events =
+    {cargo, handling_events} =
       if is_nil(tracking_id) do
-        CargoBookings.list_handling_events()
+        {nil, CargoBookings.list_handling_events()}
       else
-        CargoBookings.lookup_handling_history(tracking_id)
+        {CargoBookings.get_cargo_by_tracking_id!(tracking_id),
+         CargoBookings.lookup_handling_history(tracking_id) |> Enum.take(25)}
       end
 
     {:noreply,
      socket
-     |> assign(:handling_events, handling_events)
-     |> assign(:page_title, page_title(tracking_id))}
+     |> assign(
+       cargo: cargo,
+       handling_events: handling_events,
+       page_title: page_title(tracking_id)
+     )}
   end
 
-  defp page_title(nil), do: "All Handling Events"
-  defp page_title(tracking_id), do: "Handling Events for Cargo #{tracking_id}"
+  @impl true
+  def handle_info({:app_event, subscriber, topic, id}, socket) do
+    event = EventBus.fetch_event({topic, id})
+    next_socket = add_event_bulletin(socket, topic, event)
+    EventBus.mark_as_completed({subscriber, topic})
+    {:noreply, next_socket}
+  end
+
+  @impl true
+  def handle_event("clear-bulletin", %{"id" => bulletin_id}, socket) do
+    clear_bulletin(bulletin_id, socket)
+  end
+
+  defp page_title(nil), do: "Recent handling events"
+  defp page_title(tracking_id), do: "Handling events for #{tracking_id}"
 end

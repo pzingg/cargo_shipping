@@ -10,7 +10,7 @@ defmodule CargoShippingWeb.HandlingReportLive.Edit do
   end
 
   @impl true
-  def handle_params(_, _, socket) do
+  def handle_params(_params, _uri, socket) do
     completed_at = DateTime.utc_now()
 
     # TODO: Filter the choices for voyage_number and location based
@@ -26,7 +26,7 @@ defmodule CargoShippingWeb.HandlingReportLive.Edit do
        voyage_options: all_voyage_options(),
        location_options: all_location_options(),
        completed_at: completed_at,
-       return_to: Routes.cargo_search_path(socket, :index)
+       return_to: Routes.handling_event_index_path(socket, :all)
      )}
   end
 
@@ -60,10 +60,13 @@ defmodule CargoShippingWeb.HandlingReportLive.Edit do
       )
 
     case Reports.create_handling_report(params) do
-      {:ok, _handling_report} ->
+      {:ok, handling_report} ->
+        Process.sleep(100)
+        received_at = event_time(handling_report, :received_at)
+
         {:noreply,
          socket
-         |> put_flash(:info, "Handing report submitted")
+         |> put_flash(:info, "Handling report was received at #{received_at}. You may need to refresh the handling events page to see the event that the report generated.")
          |> push_redirect(to: socket.assigns.return_to)}
 
       {:error, %Ecto.Changeset{} = changeset} ->

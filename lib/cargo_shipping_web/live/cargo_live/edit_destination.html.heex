@@ -1,7 +1,23 @@
-<div>
-  <h2><%= @page_title %></h2>
-  <p>Change destination for cargo <%= @tracking_id %></p>
+<section class="row">
+  <article class="column">
+    <h2>Navigation</h2>
+    <ul>
+      <li>
+        <%= live_redirect "Cancel edits and return to #{@tracking_id}", to: Routes.cargo_show_path(@socket, :show, @cargo) %>
+      </li>
+      <li>
+        <%= link "Managers page", to: "/managers" %>
+      </li>
+      <li>
+        <%= link "Log out", to: "/" %>
+      </li>
+    </ul>
+  </article>
+</section>
 
+<h1><%= @page_title %></h1>
+
+<div>
   <.form
     let={f}
     for={@changeset}
@@ -23,7 +39,5 @@
       <%= submit "Save", phx_disable_with: "Saving..." %>
     </div>
   </.form>
-
-  <span><%= live_redirect "Cancel", to: Routes.cargo_show_path(@socket, :show, @cargo) %></span>
 </div>
 

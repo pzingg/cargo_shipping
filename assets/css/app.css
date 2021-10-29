@@ -88,3 +88,16 @@
   text-decoration: none;
   cursor: pointer;
 }
+
+.banner {
+  font-weight: 300;
+  letter-spacing: -.1rem;
+  margin-bottom: 0;
+  margin-top: 0;
+  font-size: 4rem;
+  line-height: 1.2;
+}
+
+.banner span {
+  vertical-align: 2rem;
+}

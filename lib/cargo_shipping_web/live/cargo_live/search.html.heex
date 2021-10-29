@@ -1,6 +1,15 @@
-<h1><%= @header %></h1>
+<section class="row">
+  <article class="column">
+    <h2>Navigation</h2>
+    <ul>
+      <li>
+        <%= link "Clerks home page", to: "/clerks" %>
+      </li>
+    </ul>
+  </article>
+</section>
 
-<%= live_redirect "Submit a handling report", to: Routes.handling_report_edit_path(@socket, :new), class: "button", type: "button" %>
+<h1><%= @header %></h1>
 
 <form phx-submit="search" phx-change="suggest">
   <label>Search for cargo by tracking id:</label>

@@ -3,6 +3,7 @@ defmodule CargoShippingWeb.LiveHelpers do
 
   alias CargoShipping.{CargoBookings, VoyagePlans, VoyageService, LocationService}
   alias CargoShipping.CargoBookings.Cargo
+  alias CargoShippingWeb.SharedComponents.Bulletin
 
   @doc """
   Renders a component inside the `Example16Web.ModalComponent` component.
@@ -24,8 +25,52 @@ defmodule CargoShippingWeb.LiveHelpers do
     live_component(CargoShippingWeb.ModalComponent, modal_opts)
   end
 
+  @doc """
+  Set up assigns at mount time for every live view.
+  """
   def default_assigns(socket) do
-    socket
+    Phoenix.LiveView.assign(socket, :bulletins, nil)
+  end
+
+  def add_event_bulletin(socket, topic, _event \\ nil) do
+    bulletin = %Bulletin{id: UUID.uuid4(), level: :info, body: "A #{topic} event happened."}
+
+    case socket.assigns.bulletins do
+      nil ->
+        Phoenix.LiveView.assign(socket, :bulletins, [bulletin])
+
+      rest ->
+        Phoenix.LiveView.assign(socket, :bulletins, [bulletin | rest])
+    end
+  end
+
+  def clear_bulletin(socket, bulletin_id) do
+    case socket.assigns.bulletins do
+      nil ->
+        socket
+
+      bulletins ->
+        Phoenix.LiveView.assign(
+          socket,
+          :bulletins,
+          Enum.reject(bulletins, fn %{id: id} -> id == bulletin_id end)
+        )
+    end
+  end
+
+  @doc """
+  Subscribe to EventBus application event topics. If a live view
+  calls this method in its `mount` method, it must implement:
+
+  * a `handle_info` callback with a `msg` argument
+    signature of `{:app_event, subscriber, topic, id}`.
+  * a `handle_event` callback with an `event` argument
+    of "clear-bulletin" and a `params` argument signature
+    of `%{"id" => bulletin_id}`.
+  """
+  def subscribe_to_application_events(pid, topics \\ ".*") do
+    subscriber = {ApplicationEvents.Forwarder, pid}
+    EventBus.subscribe({subscriber, List.wrap(topics)})
   end
 
   def location_name(location) do
@@ -141,23 +186,23 @@ defmodule CargoShippingWeb.LiveHelpers do
           cargo.delivery.last_known_location
           |> location_name()
 
-        "Cargo #{cargo.tracking_id} is now in port at #{location}"
+        "#{cargo.tracking_id} is now in port at #{location}"
 
       :ONBOARD_CARRIER ->
         voyage_number =
           cargo.delivery.current_voyage_id
           |> VoyageService.get_voyage_number_for_id!()
 
-        "Cargo #{cargo.tracking_id} is now onboard carrier in voyage #{voyage_number}"
+        "#{cargo.tracking_id} is now onboard carrier in voyage #{voyage_number}"
 
       :CLAIMED ->
-        "Cargo #{cargo.tracking_id} has been claimed"
+        "#{cargo.tracking_id} has been claimed"
 
       :NOT_RECEIVED ->
-        "Cargo #{cargo.tracking_id} has not been received"
+        "#{cargo.tracking_id} has not been received"
 
       _ ->
-        "Cargo #{cargo.tracking_id} has an unknown status"
+        "#{cargo.tracking_id} has an unknown status"
     end
   end
 

@@ -7,5 +7,13 @@
     phx-click="lv:clear-flash"
     phx-value-key="error"><%= live_flash(@flash, :error) %></p>
 
+  <%= if @bulletins do %>
+  <%= for bulletin <- @bulletins do %>
+  <p class={"bulletin alert alert-#{bulletin.level}"} role="alert"
+    phx-click="clear-bulletin"
+    phx-value-id={bulletin.id}><%= bulletin.message %></p>
+  <% end %>
+  <% end %>
+
   <%= @inner_content %>
 </main>

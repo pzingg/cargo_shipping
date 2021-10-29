@@ -9,8 +9,8 @@ defmodule CargoShippingWeb.CargoLive.Show do
   end
 
   @impl true
-  def handle_params(%{"id" => id}, _, socket) do
-    cargo = CargoBookings.get_cargo!(id, with_events: true)
+  def handle_params(%{"tracking_id" => tracking_id}, _uri, socket) do
+    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id, with_events: true)
 
     {:noreply,
      socket

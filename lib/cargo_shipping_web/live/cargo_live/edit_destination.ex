@@ -11,14 +11,14 @@ defmodule CargoShippingWeb.CargoLive.EditDestination do
   end
 
   @impl true
-  def handle_params(%{"id" => id}, _, socket) do
-    cargo = CargoBookings.get_cargo!(id)
+  def handle_params(%{"tracking_id" => tracking_id}, _uri, socket) do
+    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
     changeset = CargoBookings.change_cargo_destination(cargo)
     arrival_deadline = cargo.route_specification.arrival_deadline
 
     {:noreply,
      socket
-     |> assign(:page_title, page_title(socket.assigns.live_action))
+     |> assign(:page_title, page_title(socket.assigns.live_action, tracking_id))
      |> assign(
        action: :edit,
        changeset: changeset,
@@ -94,5 +94,5 @@ defmodule CargoShippingWeb.CargoLive.EditDestination do
     end
   end
 
-  defp page_title(:edit), do: "Select New Destination"
+  defp page_title(:edit, tracking_id), do: "Select a new destination for #{tracking_id}"
 end

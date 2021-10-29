@@ -17,23 +17,24 @@ defmodule CargoShippingWeb.Router do
 
   ## The following scopes are organized by application user
 
-  scope "/tracking", CargoShippingWeb do
+  scope "/clerks", CargoShippingWeb do
     pipe_through :browser
 
-    live "/", CargoLive.Search, :index
-    live "/events/:tracking_id", HandlingEventLive.Index, :index
-    live "/reports/new", HandlingReportLive.Edit, :new
+    get "/", PageController, :clerks
+    live "/tracking", CargoLive.Search, :index
   end
 
   scope "/managers", CargoShippingWeb do
     pipe_through :browser
 
-    live "/", CargoLive.Index, :index
+    get "/", PageController, :managers
+    live "/cargos", CargoLive.Index, :index
+    live "/cargos/:tracking_id", CargoLive.Show, :show
+    live "/cargos/:tracking_id/destination/edit", CargoLive.EditDestination, :edit
+    live "/cargos/:tracking_id/route/edit", CargoLive.EditRoute, :edit
     live "/events", HandlingEventLive.Index, :all
     live "/events/:tracking_id", HandlingEventLive.Index, :index
-    live "/:id", CargoLive.Show, :show
-    live "/:id/destination/edit", CargoLive.EditDestination, :edit
-    live "/:id/route/edit", CargoLive.EditRoute, :edit
+    live "/reports/new", HandlingReportLive.Edit, :new
   end
 
   ## This scope handles JSON requests and responses

@@ -30,7 +30,7 @@ for re-routing.
 To start your Phoenix server:
 
   * Install dependencies with `mix deps.get`
-  * Create and migrate your database with `mix ecto.setup`
+  * Create, migrate and seed your database with `mix do ecto.reset, run priv/repo/seeds.exs`
   * Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
@@ -59,32 +59,32 @@ There are three Phoenix router scopes in the web application:
 
 * `live "/", CargoLive.Search, :index` (from track.html, to get information on
   an existing cargo booking)
-* `live "/reports/new", HandlingReportLive.Edit, :new` (to file a cargo handling
-  report directly)
-* `live "/events/:tracking_id", HandlingEventLive.Index, :index` (to
-  list handling events for a cargo booking)
 
 ### Operation manager web interface at /managers
 
 Implemented:
 
-* `live "/", CargoLive.Index, :index` (from admin/list.html, to list all available
+* `live "/cargos", CargoLive.Index, :index` (from admin/list.html, to list all available
   cargo bookings)
-* `live "/:id", CargoLive.Show, :show` (from admin/show.html, to show detailed
+* `live "/cargos/:id", CargoLive.Show, :show` (from admin/show.html, to show detailed
   information on a cargo booking)
-* `live "/:id/destination/edit", CargoLive.EditDestination, :edit` (from
+* `live "/cargos/:id/destination/edit", CargoLive.EditDestination, :edit` (from
   admin/pickNewDestination.html, to change the final destination for a cargo booking)
-* `live "/:id/route/edit", CargoLive.EditRoute, :edit` (from
+* `live "/cargos/:id/route/edit", CargoLive.EditRoute, :edit` (from
   admin/selectItinerary.html, to re-route a cargo booking)
+* `live "/events", HandlingEventLive.Index, :all` (to list all recent handling events)
+* `live "/events/:tracking_id", HandlingEventLive.Index, :index` (to
+  list handling events for a cargo booking)
+* `live "/reports/new", HandlingReportLive.Edit, :new` (to file a cargo handling
+  report directly)
 
 TODO:
 
-* `live "/new", CargoLive.Index, :new` (from admin/registrationForm.html, to create
-  a new cargo)
-* `live "/events", HandlingEventLive.Index, :all` (to
-  list handling events for all cargos)
-* `live "/events/:tracking_id", HandlingEventLive.Index, :index` (to
-  list handling events for a specific cargo booking)
+* `live "/cargos/new", CargoLive.Index, :new` (from admin/registrationForm.html, to create
+  a new cargo booking)
+* `live "/voyages", VoyageLive.Search, :index` (to list all voyages or voyages by ports)
+* `live "/voyages/new", VoyageLive.Index, :new` (to create a new voyage)
+
 
 ### Handling Report REST API web interface at /api
 

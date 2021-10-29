@@ -1,0 +1,26 @@
+<h1>Managers Page</h1>
+
+<p>This section is for operations managers.</p>
+
+<section class="row">
+  <article class="column">
+    <h2>Navigation</h2>
+    <ul>
+      <li>
+        <%= link "List all cargos", to: Routes.cargo_index_path(@conn, :index) %>
+      </li>
+      <li>
+        <%= link "Book new cargo", to: "#" %>
+      </li>
+      <li>
+        <%= link "List recent handling events", to: Routes.handling_event_index_path(@conn, :all) %>
+      </li>
+      <li>
+        <%= link "Submit a handling report", to: Routes.handling_report_edit_path(@conn, :new) %>
+      </li>
+      <li>
+        <%= link "Log out", to: "/" %>
+      </li>
+    </ul>
+  </article>
+</section>

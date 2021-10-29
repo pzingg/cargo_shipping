@@ -1,6 +1,20 @@
 <section class="phx-hero">
-  <h1><%= gettext "Welcome to %{name}!", name: "Phoenix" %></h1>
-  <p>Peace of mind from prototype to production</p>
+  <h1><%= gettext "Welcome to %{name}!", name: "Phoenix Cargo Shipping" %></h1>
+  <p>Peace of mind from origin to destination</p>
+</section>
+
+<section class="row">
+  <article class="column">
+    <h2>Log in</h2>
+    <ul>
+      <li>
+        <%= link "Log in as a clerk", to: "/clerks" %>
+      </li>
+      <li>
+        <%= link "Log in as a manager", to: "/managers" %>
+      </li>
+    </ul>
+  </article>
 </section>
 
 <section class="row">

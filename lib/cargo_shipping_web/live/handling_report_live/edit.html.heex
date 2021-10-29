@@ -1,39 +1,50 @@
-<div>
-  <h2><%= @page_title %></h2>
+<section class="row">
+  <article class="column">
+    <h2>Navigation</h2>
+    <ul>
+      <li>
+        <%= link "Cancel edits and return to Managers page", to: "/managers" %>
+      </li>
+      <li>
+        <%= link "Log out", to: "/" %>
+      </li>
+    </ul>
+  </article>
+</section>
 
-  <.form
-    let={f}
-    for={@changeset}
-    id="handling-report-form"
-    phx-change="validate"
-    phx-submit="save">
+<h1><%= @page_title %></h1>
 
-    <%= label f, :event_type %>
-    <%= select f, :event_type, @event_type_options %>
-    <%= error_tag f, :event_type %>
+<.form
+  let={f}
+  for={@changeset}
+  id="handling-report-form"
+  phx-change="validate"
+  phx-submit="save">
 
-    <%= label f, :tracking_id, "Tracking id" %>
-    <%= select f, :tracking_id, @cargo_options %>
-    <%= error_tag f, :tracking_id %>
+  <%= label f, :event_type %>
+  <%= select f, :event_type, @event_type_options %>
+  <%= error_tag f, :event_type %>
 
-    <%= label f, :voyage_number %>
-    <%= select f, :voyage_number, @voyage_options %>
-    <%= error_tag f, :voyage_number %>
+  <%= label f, :tracking_id, "Tracking id" %>
+  <%= select f, :tracking_id, @cargo_options %>
+  <%= error_tag f, :tracking_id %>
 
-    <%= label f, :location %>
-    <%= select f, :location, @location_options %>
-    <%= error_tag f, :location %>
+  <%= label f, :voyage_number %>
+  <%= select f, :voyage_number, @voyage_options %>
+  <%= error_tag f, :voyage_number %>
 
-    <%= label f, :completed_at %>
-    <.live_component module={Datepicker}
-      id="completed_at" prefix="handling_report" selected_date={@completed_at}>
-      <%= error_tag f, :completed_at %>
-    </.live_component>
+  <%= label f, :location %>
+  <%= select f, :location, @location_options %>
+  <%= error_tag f, :location %>
 
-    <div>
-      <%= submit "Submit Report", phx_disable_with: "Processing..." %>
-    </div>
-  </.form>
+  <%= label f, :completed_at %>
+  <.live_component module={Datepicker}
+    id="completed_at" prefix="handling_report" selected_date={@completed_at}>
+    <%= error_tag f, :completed_at %>
+  </.live_component>
 
-<%= live_redirect "Cancel", to: @return_to, class: "button", type: "button" %>
-</div>
+  <div>
+    <%= submit "Submit Report", phx_disable_with: "Processing..." %>
+  </div>
+</.form>
+

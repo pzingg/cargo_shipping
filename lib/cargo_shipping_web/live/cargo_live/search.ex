@@ -9,10 +9,10 @@ defmodule CargoShippingWeb.CargoLive.Search do
   end
 
   @impl true
-  def handle_params(_, _, socket) do
+  def handle_params(_params, _uri, socket) do
     {:noreply,
      socket
-     |> assign(:header, "Tracking cargos")
+     |> assign(:header, "Track cargos")
      |> assign(:page_title, page_title(socket.assigns.live_action))
      |> assign(
        cargo: nil,
@@ -63,5 +63,5 @@ defmodule CargoShippingWeb.CargoLive.Search do
     end
   end
 
-  defp page_title(:index), do: "Tracking cargo"
+  defp page_title(:index), do: "Track cargos"
 end

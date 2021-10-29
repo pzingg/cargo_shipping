@@ -41,6 +41,7 @@ defmodule CargoShipping.CargoBookings.Cargo do
 
   alias CargoShipping.CargoBookings.{Delivery, HandlingEvent, Itinerary, RouteSpecification}
 
+  @derive {Phoenix.Param, key: :tracking_id}
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   @timestamps_opts [type: :utc_datetime]
