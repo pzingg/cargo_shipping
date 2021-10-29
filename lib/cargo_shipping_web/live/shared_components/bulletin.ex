@@ -8,6 +8,6 @@ defmodule CargoShippingWeb.SharedComponents.Bulletin do
     @typedoc "A bulletin"
     field :id, String.t(), enforce: true
     field :level, String.t(), enforce: true
-    field :body, String.t(), enforce: true
+    field :message, String.t(), enforce: true
   end
 end

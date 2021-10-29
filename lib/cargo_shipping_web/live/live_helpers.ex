@@ -1,6 +1,8 @@
 defmodule CargoShippingWeb.LiveHelpers do
   import Phoenix.LiveView.Helpers
 
+  require Logger
+
   alias CargoShipping.{CargoBookings, VoyagePlans, VoyageService, LocationService}
   alias CargoShipping.CargoBookings.Cargo
   alias CargoShippingWeb.SharedComponents.Bulletin
@@ -32,10 +34,10 @@ defmodule CargoShippingWeb.LiveHelpers do
     Phoenix.LiveView.assign(socket, :bulletins, nil)
   end
 
-  def add_event_bulletin(socket, topic, _event \\ nil) do
-    bulletin = %Bulletin{id: UUID.uuid4(), level: :info, body: "A #{topic} event happened."}
+  def add_event_bulletin(%{assigns: assigns} = socket, topic, _event \\ nil) do
+    bulletin = %Bulletin{id: UUID.uuid4(), level: :info, message: "A #{topic} event happened."}
 
-    case socket.assigns.bulletins do
+    case Map.get(assigns, :bulletins) do
       nil ->
         Phoenix.LiveView.assign(socket, :bulletins, [bulletin])
 
@@ -44,8 +46,8 @@ defmodule CargoShippingWeb.LiveHelpers do
     end
   end
 
-  def clear_bulletin(socket, bulletin_id) do
-    case socket.assigns.bulletins do
+  def clear_bulletin(%{assigns: assigns} = socket, bulletin_id) do
+    case Map.get(assigns, :bulletins) do
       nil ->
         socket
 
@@ -68,9 +70,16 @@ defmodule CargoShippingWeb.LiveHelpers do
     of "clear-bulletin" and a `params` argument signature
     of `%{"id" => bulletin_id}`.
   """
-  def subscribe_to_application_events(pid, topics \\ ".*") do
-    subscriber = {ApplicationEvents.Forwarder, pid}
-    EventBus.subscribe({subscriber, List.wrap(topics)})
+  def subscribe_to_application_events(module, pid, topics \\ ".*") do
+    subscriber = {CargoShipping.ApplicationEvents.Forwarder, pid}
+    topics = List.wrap(topics)
+    result = EventBus.subscribe({subscriber, topics})
+
+    Logger.error(
+      "#{module} #{inspect(pid)} forwarder subscribed to #{inspect(topics)} -> #{inspect(result)}"
+    )
+
+    result
   end
 
   def location_name(location) do

@@ -6,19 +6,31 @@
 }
 
 .datepicker .calendar {
+    display: block;
     border: 0.1rem solid #d1d1d1;
     border-radius: 5px;
     padding: 1rem;
     margin-bottom: 1rem;
+}
+
+/*
+.datepicker .calendar {
     transition-property: opacity;
     transition-duration: 75ms;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
+*/
 
 .datepicker .calendar.hidden {
-      opacity: 0;
+      display: none;
       pointer-events: none;
-    }
+}
+
+/*
+.datepicker .calendar.hidden {
+      opacity: 0;
+}
+*/
 
 .datepicker .calendar .header {
       display: flex;

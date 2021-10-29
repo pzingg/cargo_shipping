@@ -66,7 +66,10 @@ defmodule CargoShippingWeb.HandlingReportLive.Edit do
 
         {:noreply,
          socket
-         |> put_flash(:info, "Handling report was received at #{received_at}. You may need to refresh the handling events page to see the event that the report generated.")
+         |> put_flash(
+           :info,
+           "Handling report was received at #{received_at}. You may need to refresh the handling events page to see the event that the report generated."
+         )
          |> push_redirect(to: socket.assigns.return_to)}
 
       {:error, %Ecto.Changeset{} = changeset} ->

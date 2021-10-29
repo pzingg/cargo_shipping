@@ -2,7 +2,6 @@ defmodule CargoShipping.ApplicationEvents.Forwarder do
   @moduledoc """
   Forwards
   """
-  require Logger
 
   @doc false
   def process({config, topic, id}) when is_pid(config) do
@@ -11,8 +10,7 @@ defmodule CargoShipping.ApplicationEvents.Forwarder do
     :ok
   end
 
-  def process({_config, topic, _id}) do
-    Logger.error("ApplicationEvents.forwarder #{topic}: config is not a pid")
+  def process(_) do
     raise "Forwarder config is not a pid"
   end
 end

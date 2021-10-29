@@ -5,7 +5,10 @@ defmodule CargoShippingWeb.CargoLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    subscribe_to_application_events(self(), "cargo_*")
+    if connected?(socket) do
+      subscribe_to_application_events(__MODULE__, self(), "cargo_*")
+    end
+
     {:ok, socket |> default_assigns()}
   end
 
@@ -22,13 +25,13 @@ defmodule CargoShippingWeb.CargoLive.Index do
   def handle_info({:app_event, subscriber, topic, id}, socket) do
     event = EventBus.fetch_event({topic, id})
     next_socket = add_event_bulletin(socket, topic, event)
-    EventBus.mark_as_completed({subscriber, topic})
+    EventBus.mark_as_completed({subscriber, topic, id})
     {:noreply, next_socket}
   end
 
   @impl true
   def handle_event("clear-bulletin", %{"id" => bulletin_id}, socket) do
-    clear_bulletin(bulletin_id, socket)
+    {:noreply, clear_bulletin(socket, bulletin_id)}
   end
 
   defp page_title(:index), do: "Cargos"

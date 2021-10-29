@@ -52,7 +52,7 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
     # Create the EventBus subscriber config with the name of the server.
     config = %{name: name}
     subscriber = {__MODULE__, config}
-    topics = Keyword.get(arg, :topics, [".*"])
+    topics = Keyword.get(arg, :topics, ".*") |> List.wrap()
     result = EventBus.subscribe({subscriber, topics})
 
     Logger.error("Consumer #{name} subscribed to #{inspect(topics)} -> #{inspect(result)}")
