@@ -28,4 +28,18 @@ defmodule CargoShipping.VoyagePlans.Voyage do
     |> validate_required([:voyage_number])
     |> cast_embed(:schedule_items, with: &CarrierMovement.changeset/2)
   end
+
+  def validate_contiguous_items(changeset) do
+    {next_changeset, _} =
+      get_field(changeset, :schedule_items)
+      |> Enum.reduce_while({changeset, nil}, fn item, {cs, last_item} ->
+        if is_nil(last_item) || last_item.arrival_location == item.departure_location do
+          {:cont, {cs, item}}
+        else
+          {:halt, {add_error(cs, :schedule_items, "are not contiguous"), item}}
+        end
+      end)
+
+    next_changeset
+  end
 end

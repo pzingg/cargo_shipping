@@ -5,6 +5,7 @@ defmodule CargoShipping.SampleDataGenerator do
   require Logger
 
   alias CargoShipping.{CargoBookings, VoyagePlans}
+  alias CargoShipping.CargoBookings.Delivery
   alias CargoShipping.VoyagePlans.VoyageBuilder
 
   @base_time DateTime.utc_now() |> Timex.beginning_of_day() |> Timex.to_datetime()
@@ -360,6 +361,7 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, cargo_abc123} = CargoBookings.create_cargo(attrs)
+    cargo_id = cargo_abc123.id
 
     attrs = %{
       event_type: "RECEIVE",
@@ -369,6 +371,8 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, _event1} = CargoBookings.create_handling_event(cargo_abc123, attrs)
+    Process.sleep(500)
+    cargo_abc123 = CargoBookings.get_cargo!(cargo_id)
 
     attrs = %{
       event_type: "LOAD",
@@ -378,6 +382,8 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, _event2} = CargoBookings.create_handling_event(cargo_abc123, attrs)
+    Process.sleep(500)
+    cargo_abc123 = CargoBookings.get_cargo!(cargo_id)
 
     attrs = %{
       event_type: "UNLOAD",
@@ -387,6 +393,8 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, _event3} = CargoBookings.create_handling_event(cargo_abc123, attrs)
+    Process.sleep(500)
+    cargo_abc123 = CargoBookings.get_cargo!(cargo_id)
 
     handling_history = CargoBookings.lookup_handling_history(cargo_abc123.tracking_id)
     delivery = CargoBookings.derive_delivery_progress(cargo_abc123, handling_history)
@@ -436,6 +444,7 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, cargo_jkl567} = CargoBookings.create_cargo(attrs)
+    cargo_id = cargo_jkl567.id
 
     attrs = %{
       event_type: "RECEIVE",
@@ -445,6 +454,8 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, _event1} = CargoBookings.create_handling_event(cargo_jkl567, attrs)
+    Process.sleep(500)
+    cargo_jkl567 = CargoBookings.get_cargo!(cargo_id)
 
     attrs = %{
       event_type: "LOAD",
@@ -454,6 +465,8 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, _event2} = CargoBookings.create_handling_event(cargo_jkl567, attrs)
+    Process.sleep(500)
+    cargo_jkl567 = CargoBookings.get_cargo!(cargo_id)
 
     attrs = %{
       event_type: "UNLOAD",
@@ -463,6 +476,8 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, _event3} = CargoBookings.create_handling_event(cargo_jkl567, attrs)
+    Process.sleep(500)
+    cargo_jkl567 = CargoBookings.get_cargo!(cargo_id)
 
     attrs = %{
       event_type: "LOAD",
@@ -472,6 +487,8 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, _event4} = CargoBookings.create_handling_event(cargo_jkl567, attrs)
+    Process.sleep(500)
+    cargo_jkl567 = CargoBookings.get_cargo!(cargo_id)
 
     handling_history = CargoBookings.lookup_handling_history(cargo_jkl567.tracking_id)
     delivery = CargoBookings.derive_delivery_progress(cargo_jkl567, handling_history)

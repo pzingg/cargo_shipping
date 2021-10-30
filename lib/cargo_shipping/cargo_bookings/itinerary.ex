@@ -26,6 +26,21 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     itinerary
     |> cast(attrs, [])
     |> cast_embed(:legs, with: &Leg.changeset/2)
+    |> validate_contiguous_legs()
+  end
+
+  def validate_contiguous_legs(changeset) do
+    {next_changeset, _} =
+      get_field(changeset, :legs)
+      |> Enum.reduce_while({changeset, nil}, fn leg, {cs, last_leg} ->
+        if is_nil(last_leg) || last_leg.unload_location == leg.load_location do
+          {:cont, {cs, leg}}
+        else
+          {:halt, {add_error(cs, :legs, "are not contiguous"), leg}}
+        end
+      end)
+
+    next_changeset
   end
 
   def initial_leg(itinerary), do: List.first(itinerary.legs)

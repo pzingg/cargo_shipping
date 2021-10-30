@@ -204,8 +204,9 @@ defmodule CargoShipping.CargoBookings do
     update_cargo(cargo, params)
   end
 
-  defp new_route_params(%{itinerary: itinerary} = cargo, route_specification) do
-    delivery = Delivery.params_derived_from_routing(nil, route_specification, itinerary)
+  defp new_route_params(%{delivery: delivery, itinerary: itinerary} = cargo, route_specification) do
+    # Use the cargo's delivery to preserve the last_event
+    delivery = Delivery.params_derived_from_routing(delivery, route_specification, itinerary)
 
     cargo
     |> Utils.from_struct()
@@ -464,28 +465,30 @@ defmodule CargoShipping.CargoBookings do
 
   """
   def create_handling_event(cargo, attrs \\ %{}) do
-    cargo_id_key =
-      if Utils.atom_keys?(attrs) do
-        :cargo_id
-      else
-        "cargo_id"
-      end
-
-    create_attrs = Map.put(attrs, cargo_id_key, cargo.id)
-
-    %HandlingEvent{}
-    |> HandlingEvent.changeset(create_attrs)
-    |> Repo.insert()
+    create_attrs = Cargo.set_cargo_id(cargo, attrs)
+    changeset = HandlingEvent.changeset(create_attrs)
+    create_and_publish_handling_event(changeset)
   end
 
   def create_handling_event_from_report(attrs \\ %{}) do
     changeset = HandlingEvent.handling_report_changeset(attrs)
+    create_and_publish_handling_event(changeset)
+  end
+
+  defp create_and_publish_handling_event(changeset) do
+    tracking_id = Ecto.Changeset.get_field(changeset, :tracking_id)
 
     case Repo.insert(changeset) do
       {:ok, handling_event} ->
-        {:ok, handling_event, attrs}
+        # Publish an event stating that a cargo has been handled.
+        payload = Utils.from_struct(handling_event) |> Map.put(:tracking_id, tracking_id)
+        publish_event(:cargo_was_handled, payload)
+
+        {:ok, handling_event}
 
       {:error, changeset} ->
+        # Publish an event stating that the event was rejected.
+        publish_event(:cargo_handling_rejected, changeset)
         {:error, changeset}
     end
   end
@@ -504,5 +507,9 @@ defmodule CargoShipping.CargoBookings do
   """
   def delete_handling_event(%HandlingEvent{} = handling_event) do
     Repo.delete(handling_event)
+  end
+
+  def publish_event(topic, payload) do
+    CargoShipping.ApplicationEvents.Producer.publish_event(topic, "CargoBookings", payload)
   end
 end

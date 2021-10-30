@@ -35,9 +35,10 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     assert cargo
     assert cargo.delivery.transport_status == :NOT_RECEIVED
     assert cargo.delivery.routing_status == :NOT_ROUTED
+    refute cargo.delivery.last_event_id
     refute cargo.delivery.misdirected?
-    assert is_nil(cargo.delivery.eta)
-    assert is_nil(cargo.delivery.next_expected_activity)
+    refute cargo.delivery.eta
+    refute cargo.delivery.next_expected_activity
 
     ## Use case 2: routing
 
@@ -61,12 +62,17 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       CargoBookings.update_cargo_for_new_itinerary(cargo, itinerary, remaining_route_spec)
 
     Logger.error("63 after routing")
+
+    # Wait for event bus
+    Process.sleep(500)
+    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
     RouteSpecification.debug_route_specification(cargo.route_specification)
     Itinerary.debug_itinerary(cargo.itinerary)
     Delivery.debug_delivery(cargo.delivery)
 
     assert cargo.delivery.transport_status == :NOT_RECEIVED
     assert cargo.delivery.routing_status == :ROUTED
+    refute cargo.delivery.last_event_id
     assert cargo.delivery.eta
     assert cargo.delivery.next_expected_activity
     assert cargo.delivery.next_expected_activity.event_type == :RECEIVE
@@ -96,11 +102,10 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     # Wait for event bus
     Process.sleep(500)
-
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
-    assert cargo
     assert cargo.delivery.transport_status == :IN_PORT
     assert cargo.delivery.last_known_location == "CNHKG"
+    assert cargo.delivery.last_event_id
 
     ## Next event: Load onto voyage in Hong Kong
 
@@ -120,11 +125,11 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     # Wait for event bus
     Process.sleep(500)
-
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
     assert cargo.delivery.transport_status == :ONBOARD_CARRIER
     assert cargo.delivery.current_voyage_id == current_leg.voyage_id
     assert cargo.delivery.last_known_location == "CNHKG"
+    assert cargo.delivery.last_event_id
     refute cargo.delivery.misdirected?
     assert cargo.delivery.next_expected_activity
     assert cargo.delivery.next_expected_activity.event_type == :UNLOAD
@@ -163,14 +168,13 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     # Wait for event bus
     Process.sleep(500)
-
-    # TODO: Verify that :cargo_misdirected event was received
+    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
 
     # Check current state - cargo is misdirected!
-    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
     assert cargo.delivery.transport_status == :IN_PORT
     refute cargo.delivery.current_voyage_id
     assert cargo.delivery.last_known_location == "CNSHA"
+    assert cargo.delivery.last_event_id
     assert cargo.delivery.misdirected?
     refute cargo.delivery.next_expected_activity
 
@@ -186,9 +190,14 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       arrival_deadline: arrival_deadline
     }
 
+    Logger.error("reroute 193")
     {:ok, cargo} = CargoBookings.update_cargo_for_new_route(cargo, from_shanghai)
 
+    # Wait for EventBus
+    Process.sleep(500)
+    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
     assert cargo.delivery.routing_status == :MISROUTED
+    assert cargo.delivery.last_event_id
     refute cargo.delivery.next_expected_activity
 
     # Repeat procedure of selecting one out of a number of possible
@@ -207,12 +216,18 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       CargoBookings.update_cargo_for_new_itinerary(cargo, itinerary, remaining_route_spec)
 
     Logger.error("208 after routing")
+
+    # Wait for EventBus
+    Process.sleep(500)
+    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
     RouteSpecification.debug_route_specification(cargo.route_specification)
     Itinerary.debug_itinerary(cargo.itinerary)
     Delivery.debug_delivery(cargo.delivery)
 
     # New itinerary should satisfy new route
     assert cargo.delivery.routing_status == :ROUTED
+    assert cargo.delivery.transport_status != :NOT_RECEIVED
+    assert cargo.delivery.last_event_id
 
     # TODO: We aren't properly handling the fact that after a reroute,
     # the cargo isn't misdirected anymore.
