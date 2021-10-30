@@ -238,8 +238,8 @@ defmodule CargoShippingWeb.LiveHelpers do
 
   def handling_event_expected_text(cargo, handling_event) do
     case CargoBookings.handling_event_expected(cargo, handling_event) do
-      :ok -> "Yes"
       {:error, reason} -> reason
+      :ok -> "Yes"
     end
   end
 

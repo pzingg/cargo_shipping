@@ -12,8 +12,8 @@ defmodule CargoShipping.CargoInspectionService do
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
     handling_history = CargoBookings.lookup_handling_history(tracking_id)
 
-    delivery = CargoBookings.derive_delivery_progress(cargo, handling_history)
-    {:ok, inspected_cargo} = CargoBookings.update_cargo(cargo, %{delivery: delivery})
+    params = CargoBookings.derive_delivery_progress(cargo, handling_history)
+    {:ok, inspected_cargo} = CargoBookings.update_cargo(cargo, params)
 
     if cargo.delivery.misdirected? do
       publish_event(:cargo_misdirected, inspected_cargo)

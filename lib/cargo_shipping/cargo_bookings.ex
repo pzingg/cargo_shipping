@@ -183,8 +183,9 @@ defmodule CargoShipping.CargoBookings do
   """
   def update_cargo_for_new_destination(%Cargo{} = cargo, destination, arrival_deadline \\ nil) do
     route_specification =
-      Utils.from_struct(cargo.route_specification)
+      cargo.route_specification
       |> Map.put(:destination, destination)
+      |> Utils.from_struct()
 
     new_route_specification =
       if is_nil(arrival_deadline) do
@@ -206,15 +207,12 @@ defmodule CargoShipping.CargoBookings do
 
   defp new_route_params(%{delivery: delivery, itinerary: itinerary} = cargo, route_specification) do
     # Use the cargo's delivery to preserve the last_event
-    delivery = Delivery.params_derived_from_routing(delivery, route_specification, itinerary)
+    params = Delivery.params_derived_from_routing(delivery, route_specification, itinerary)
 
     cargo
+    |> Map.put(:route_specification, route_specification)
+    |> Map.merge(params)
     |> Utils.from_struct()
-    |> Map.merge(%{
-      route_specification: route_specification,
-      itinerary: Utils.from_struct(itinerary),
-      delivery: delivery
-    })
   end
 
   @doc """
@@ -235,16 +233,12 @@ defmodule CargoShipping.CargoBookings do
     # Handling consistency within the Cargo aggregate synchronously
     maybe_delivery = Map.get(cargo, :delivery) || Map.get(cargo, "delivery")
 
-    delivery =
-      Delivery.params_derived_from_routing(maybe_delivery, route_specification, itinerary)
+    params = Delivery.params_derived_from_routing(maybe_delivery, route_specification, itinerary)
 
     cargo
+    |> Map.put(:route_specification, route_specification)
+    |> Map.merge(params)
     |> Utils.from_struct()
-    |> Map.merge(%{
-      route_specification: Utils.from_struct(route_specification),
-      itinerary: itinerary,
-      delivery: delivery
-    })
   end
 
   def patch_route_specification_and_itinerary(cargo, nil, new_itinerary) do
@@ -420,11 +414,14 @@ defmodule CargoShipping.CargoBookings do
   Returns true if the Cargo's Itinerary is expecting the HandlingEvent.
   """
   def handling_event_expected(cargo, handling_event) do
-    Itinerary.handling_event_expected(cargo.itinerary, handling_event)
+    case Itinerary.matches_handling_event(cargo.itinerary, handling_event) do
+      {:error, reason} -> {:error, reason}
+      _ -> :ok
+    end
   end
 
   @doc """
-  Returns params that can be used to update a Cargo's delivery status.
+  Returns params that can be used to update a Cargo's itinerary and delivery.
   """
   def derive_delivery_progress(%Cargo{} = cargo, handling_history) do
     # The `Delivery` is a value object, so we can simply discard the old one
@@ -481,7 +478,7 @@ defmodule CargoShipping.CargoBookings do
     case Repo.insert(changeset) do
       {:ok, handling_event} ->
         # Publish an event stating that a cargo has been handled.
-        payload = Utils.from_struct(handling_event) |> Map.put(:tracking_id, tracking_id)
+        payload = Map.put(handling_event, :tracking_id, tracking_id) |> Utils.from_struct()
         publish_event(:cargo_was_handled, payload)
 
         {:ok, handling_event}

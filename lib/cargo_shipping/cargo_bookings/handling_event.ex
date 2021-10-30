@@ -19,7 +19,9 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
 
   import Ecto.Changeset
 
-  alias CargoShipping.{CargoBookings, LocationService, Utils, VoyageService}
+  require Logger
+
+  alias CargoShipping.{CargoBookings, LocationService, VoyageService}
   alias CargoShipping.CargoBookings.Cargo
 
   @event_type_values [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
@@ -204,5 +206,22 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
           c -> {:ok, c}
         end
     end
+  end
+
+  def debug_handling_event(handling_event) do
+    voyage_number =
+      case handling_event.voyage_id do
+        nil ->
+          ""
+
+        voyage_id ->
+          " on voyage " <> VoyageService.get_voyage_number_for_id!(voyage_id)
+      end
+
+    Logger.error("handling_event")
+
+    Logger.error(
+      "   #{handling_event.tracking_id} #{handling_event.event_type} at #{handling_event.location}#{voyage_number}"
+    )
   end
 end

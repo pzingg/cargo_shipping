@@ -8,7 +8,7 @@ defmodule CargoShipping.CargoBookings.Leg do
 
   import Ecto.Changeset
 
-  @status_values [:NOT_LOADED, :ONBOARD, :COMPLETED, :SKIPPED]
+  @status_values [:NOT_LOADED, :ONBOARD_CARRIER, :COMPLETED, :SKIPPED]
 
   embedded_schema do
     field :status, Ecto.Enum, values: @status_values
@@ -19,28 +19,36 @@ defmodule CargoShipping.CargoBookings.Leg do
     field :unload_time, :utc_datetime
   end
 
+  @cast_fields [
+    :status,
+    :voyage_id,
+    :load_location,
+    :unload_location,
+    :load_time,
+    :unload_time
+  ]
+
+  @required_fields [
+    :voyage_id,
+    :load_location,
+    :unload_location,
+    :load_time,
+    :unload_time
+  ]
+
   @doc false
   def changeset(leg, attrs) do
     leg
-    |> cast(attrs, [
-      :status,
-      :voyage_id,
-      :load_location,
-      :unload_location,
-      :load_time,
-      :unload_time
-    ])
-    |> validate_required([:voyage_id, :load_time, :unload_time])
-    |> validate_status()
+    |> cast(attrs, @cast_fields)
+    |> validate_required(@required_fields)
+    |> ensure_status()
+    |> validate_inclusion(:status, @status_values)
   end
 
-  def validate_status(changeset) do
-    if get_field(changeset, :status) do
-      changeset
-      |> validate_inclusion(:status, @status_values)
-    else
-      changeset
-      |> put_change(:status, :NOT_LOADED)
+  defp ensure_status(changeset) do
+    case get_field(changeset, :status) do
+      nil -> put_change(changeset, :status, :NOT_LOADED)
+      _status -> changeset
     end
   end
 end

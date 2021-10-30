@@ -5,7 +5,6 @@ defmodule CargoShipping.SampleDataGenerator do
   require Logger
 
   alias CargoShipping.{CargoBookings, VoyagePlans}
-  alias CargoShipping.CargoBookings.Delivery
   alias CargoShipping.VoyagePlans.VoyageBuilder
 
   @base_time DateTime.utc_now() |> Timex.beginning_of_day() |> Timex.to_datetime()
@@ -397,8 +396,8 @@ defmodule CargoShipping.SampleDataGenerator do
     cargo_abc123 = CargoBookings.get_cargo!(cargo_id)
 
     handling_history = CargoBookings.lookup_handling_history(cargo_abc123.tracking_id)
-    delivery = CargoBookings.derive_delivery_progress(cargo_abc123, handling_history)
-    CargoBookings.update_cargo(cargo_abc123, %{delivery: delivery})
+    params = CargoBookings.derive_delivery_progress(cargo_abc123, handling_history)
+    CargoBookings.update_cargo(cargo_abc123, params)
   end
 
   def cargo_abc123_legs(voyages) do
@@ -481,7 +480,7 @@ defmodule CargoShipping.SampleDataGenerator do
 
     attrs = %{
       event_type: "LOAD",
-      voyage_id: voyage_id_for(voyages, :voyage_cnhkg_usnyc),
+      voyage_id: voyage_id_for(voyages, :voyage_usnyc_usdal),
       location: "USNYC",
       completed_at: ~U[2009-03-06 00:00:00Z]
     }
@@ -491,8 +490,8 @@ defmodule CargoShipping.SampleDataGenerator do
     cargo_jkl567 = CargoBookings.get_cargo!(cargo_id)
 
     handling_history = CargoBookings.lookup_handling_history(cargo_jkl567.tracking_id)
-    delivery = CargoBookings.derive_delivery_progress(cargo_jkl567, handling_history)
-    CargoBookings.update_cargo(cargo_jkl567, %{delivery: delivery})
+    params = CargoBookings.derive_delivery_progress(cargo_jkl567, handling_history)
+    CargoBookings.update_cargo(cargo_jkl567, params)
   end
 
   def cargo_jkl567_legs(voyages) do

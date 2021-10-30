@@ -3,7 +3,6 @@ defmodule CargoShippingWeb.CargoLive.RouteFormComponent do
 
   require Logger
 
-  alias CargoShipping.CargoBookings
   alias CargoShipping.CargoBookings.Cargo
 
   @impl true

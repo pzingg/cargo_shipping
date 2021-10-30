@@ -6,8 +6,6 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
   alias CargoShipping.{CargoBookings, CargoBookingService, HandlingEventService, VoyageService}
   alias CargoShipping.CargoBookings.{Delivery, Itinerary, RouteSpecification}
 
-  import CargoShipping.ItinerariesFixtures
-
   @tag hibernate_data: :all
   test "cargo undergoes lifecycle changes" do
     # Test setup: A cargo should be shipped from Hongkong to Stockholm,
@@ -58,7 +56,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     assert indexed_itineraries
     itinerary = select_prefered_itinerary(indexed_itineraries)
 
-    {:ok, cargo} =
+    {:ok, _cargo} =
       CargoBookings.update_cargo_for_new_itinerary(cargo, itinerary, remaining_route_spec)
 
     Logger.error("63 after routing")
@@ -191,7 +189,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     }
 
     Logger.error("reroute 193")
-    {:ok, cargo} = CargoBookings.update_cargo_for_new_route(cargo, from_shanghai)
+    {:ok, _cargo} = CargoBookings.update_cargo_for_new_route(cargo, from_shanghai)
 
     # Wait for EventBus
     Process.sleep(500)
@@ -212,7 +210,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     assert indexed_itineraries
     itinerary = select_prefered_itinerary(indexed_itineraries)
 
-    {:ok, cargo} =
+    {:ok, _cargo} =
       CargoBookings.update_cargo_for_new_itinerary(cargo, itinerary, remaining_route_spec)
 
     Logger.error("208 after routing")

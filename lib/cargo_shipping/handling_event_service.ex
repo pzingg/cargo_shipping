@@ -6,7 +6,7 @@ defmodule CargoShipping.HandlingEventService do
   for creating a new handling event for the cargo in the report.
   """
 
-  alias CargoShipping.{CargoBookings, Utils}
+  alias CargoShipping.CargoBookings
 
   @doc """
   Store the new handling event, which updates the persistent

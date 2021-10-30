@@ -11,7 +11,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
 
   require Logger
 
-  alias CargoShipping.VoyageService
+  alias CargoShipping.{Utils, VoyageService}
   alias CargoShipping.CargoBookings.{HandlingActivity, Itinerary}
 
   @transport_status_values [:NOT_RECEIVED, :IN_PORT, :ONBOARD_CARRIER, :CLAIMED, :UNKNOWN]
@@ -113,6 +113,10 @@ defmodule CargoShipping.CargoBookings.Delivery do
     |> cast_embed(:next_expected_activity, with: &HandlingActivity.changeset/2)
   end
 
+  @doc """
+  Returns a params map with new itinerary and delivery snapshots based on the current
+  routing and delivery information.
+  """
   def params_derived_from_routing(nil, route_specification, itinerary) do
     recalculated_params(route_specification, itinerary, nil)
   end
@@ -131,7 +135,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
   end
 
   @doc """
-  Returns a params Map for a new delivery snapshot based on the complete handling
+  Returns a params map with new itinerary and delivery snapshots based on the complete handling
   history of a cargo, as well as its route specification and itinerary.
   """
   def params_derived_from_history(route_specification, itinerary, handling_history) do
@@ -145,6 +149,11 @@ defmodule CargoShipping.CargoBookings.Delivery do
   end
 
   defp recalculated_params(route_specification, itinerary, last_event) do
+    transport_status = calculate_transport_status(last_event)
+    routing_status = calculate_routing_status(itinerary, route_specification)
+    {next_itinerary, misdirected} = calculate_misdirection_status(itinerary, last_event)
+    on_track = on_track?(routing_status, misdirected)
+
     last_event_id =
       case last_event do
         nil ->
@@ -154,23 +163,22 @@ defmodule CargoShipping.CargoBookings.Delivery do
           event.id
       end
 
-    transport_status = calculate_transport_status(last_event)
-    routing_status = calculate_routing_status(itinerary, route_specification)
-    misdirected = calculate_misdirection_status(itinerary, last_event)
-    on_track = on_track?(routing_status, misdirected)
-
     %{
-      calculated_at: DateTime.utc_now(),
-      last_event_id: last_event_id,
-      misdirected?: misdirected,
-      routing_status: routing_status,
-      transport_status: transport_status,
-      eta: calculate_eta(itinerary, on_track),
-      last_known_location: calculate_last_known_location(last_event),
-      current_voyage_id: calculate_current_voyage(transport_status, last_event),
-      next_expected_activity:
-        calculate_next_expected_activity(route_specification, itinerary, last_event, on_track),
-      unloaded_at_destination?: calculate_unloaded_at_destination(route_specification, last_event)
+      itinerary: Utils.from_struct(next_itinerary),
+      delivery: %{
+        calculated_at: DateTime.utc_now(),
+        last_event_id: last_event_id,
+        misdirected?: misdirected,
+        routing_status: routing_status,
+        transport_status: transport_status,
+        eta: calculate_eta(itinerary, on_track),
+        last_known_location: calculate_last_known_location(last_event),
+        current_voyage_id: calculate_current_voyage(transport_status, last_event),
+        next_expected_activity:
+          calculate_next_expected_activity(route_specification, itinerary, last_event, on_track),
+        unloaded_at_destination?:
+          calculate_unloaded_at_destination(route_specification, last_event)
+      }
     }
   end
 
@@ -212,10 +220,13 @@ defmodule CargoShipping.CargoBookings.Delivery do
     end
   end
 
-  defp calculate_misdirection_status(_itinerary, nil), do: false
+  defp calculate_misdirection_status(itinerary, nil), do: {itinerary, false}
 
   defp calculate_misdirection_status(itinerary, last_event) do
-    :ok != Itinerary.handling_event_expected(itinerary, last_event)
+    case Itinerary.matches_handling_event(itinerary, last_event) do
+      {:error, _reason} -> {itinerary, true}
+      {:ok, next_itinerary, _found} -> {next_itinerary, false}
+    end
   end
 
   defp calculate_eta(_itinerary, false), do: @eta_unknown
