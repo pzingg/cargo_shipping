@@ -76,23 +76,6 @@ defmodule CargoShipping.CargoBookings.Cargo do
     end
   end
 
-  defmodule EditRoute do
-    @moduledoc """
-    Use a schemaless changeset to build edit route form.
-    """
-    use Ecto.Schema
-
-    @primary_key {:id, :binary_id, autogenerate: true}
-    embedded_schema do
-      # Nothing but an id
-    end
-
-    def changeset(itinerary, attrs) do
-      itinerary
-      |> cast(attrs, [])
-    end
-  end
-
   @doc false
   def changeset(cargo, attrs) do
     cargo

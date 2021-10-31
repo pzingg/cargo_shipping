@@ -305,8 +305,21 @@ defmodule CargoShipping.CargoBookings do
         maybe_route_specification(cargo.route_specification, origin, "Cargo is in port at")
 
       {_, :ONBOARD_CARRIER} ->
-        origin = cargo.delivery.next_expected_activity.location
-        maybe_route_specification(cargo.route_specification, origin, "Cargo is onboard to")
+        case cargo.delivery.next_expected_activity do
+          nil ->
+            Logger.error(
+              "No expected activity while ONBOARD, rrs is original route specification"
+            )
+
+            cargo.route_specification
+
+          activity ->
+            maybe_route_specification(
+              cargo.route_specification,
+              activity.location,
+              "Cargo is onboard to"
+            )
+        end
 
       {_, other} ->
         Logger.debug("Cargo transport is #{other}, rrs is original route specification")
@@ -415,11 +428,11 @@ defmodule CargoShipping.CargoBookings do
   """
   def handling_event_expected(cargo, handling_event) do
     case Itinerary.matches_handling_event(cargo.itinerary, handling_event) do
-      {:error, message} ->
+      {:error, message, _movement_info} ->
         Logger.error(message)
         {:error, message}
 
-      _ ->
+      {:ok, _updated_itinerary} ->
         :ok
     end
   end

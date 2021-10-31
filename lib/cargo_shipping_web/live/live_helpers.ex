@@ -172,6 +172,10 @@ defmodule CargoShippingWeb.LiveHelpers do
     cargo.origin |> location_name()
   end
 
+  def cargo_last_known_location(cargo) do
+    cargo.delivery.last_known_location |> location_name()
+  end
+
   def cargo_destination(cargo) do
     Cargo.destination(cargo) |> location_name()
   end
@@ -191,11 +195,7 @@ defmodule CargoShippingWeb.LiveHelpers do
   def cargo_transport_status(cargo) do
     case cargo.delivery.transport_status do
       :IN_PORT ->
-        location =
-          cargo.delivery.last_known_location
-          |> location_name()
-
-        "#{cargo.tracking_id} is now in port at #{location}"
+        "#{cargo.tracking_id} is now in port at #{cargo_last_known_location(cargo)}"
 
       :ONBOARD_CARRIER ->
         voyage_number =

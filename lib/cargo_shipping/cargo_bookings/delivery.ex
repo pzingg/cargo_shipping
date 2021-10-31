@@ -224,12 +224,12 @@ defmodule CargoShipping.CargoBookings.Delivery do
 
   defp calculate_misdirection_status(itinerary, last_event) do
     case Itinerary.matches_handling_event(itinerary, last_event) do
-      {:error, message} ->
+      {:error, message, _movement_info} ->
         Logger.error(message)
         {itinerary, true}
 
-      {:ok, next_itinerary, _found} ->
-        {next_itinerary, false}
+      {:ok, updated_itinerary} ->
+        {updated_itinerary, false}
     end
   end
 

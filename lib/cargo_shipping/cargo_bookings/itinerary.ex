@@ -163,29 +163,42 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     if Enum.empty?(itinerary.legs) do
       {:error, "invalid itinerary"}
     else
-      find_leg_for_event(
-        handling_event.event_type,
-        itinerary,
-        handling_event.location,
-        handling_event.voyage_id
-      )
+      case find_match_for_event(
+             itinerary,
+             handling_event.event_type,
+             handling_event.location,
+             handling_event.voyage_id
+           ) do
+        {:ok, updated_itinerary} ->
+          {:ok, updated_itinerary}
+
+        {:error, message} ->
+          movement_info =
+            find_matching_voyage_movement(
+              handling_event.event_type,
+              handling_event.location,
+              handling_event.voyage_id
+            )
+
+          {:error, message, movement_info}
+      end
     end
   end
 
-  defp find_leg_for_event(event_type, itinerary, location, voyage_id)
+  defp find_match_for_event(itinerary, event_type, location, voyage_id)
 
-  defp find_leg_for_event(:RECEIVE, %{legs: legs} = itinerary, location, _voyage_id) do
+  defp find_match_for_event(%{legs: legs} = itinerary, :RECEIVE, location, _voyage_id) do
     # Check that the first leg's origin is the event's location
     first_leg = List.first(legs)
 
     if first_leg.load_location == location && first_leg.status == :NOT_LOADED do
-      {:ok, itinerary, first_leg}
+      {:ok, itinerary}
     else
       {:error, ":RECEIVE at #{location} does not match origin #{first_leg.load_location}"}
     end
   end
 
-  defp find_leg_for_event(:LOAD, %{legs: legs} = itinerary, location, voyage_id) do
+  defp find_match_for_event(%{legs: legs} = itinerary, :LOAD, location, voyage_id) do
     # Check that the there is one leg with same load location and voyage
     {reversed_legs, found} =
       Enum.reduce(legs, {[], nil}, fn leg, {acc, f} ->
@@ -209,7 +222,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
       end)
 
     if found && found.voyage_id == voyage_id do
-      {:ok, %{itinerary | legs: Enum.reverse(reversed_legs)}, found}
+      {:ok, %{itinerary | legs: Enum.reverse(reversed_legs)}}
     else
       voyage_number = VoyageService.get_voyage_number_for_id!(voyage_id)
 
@@ -224,7 +237,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     end
   end
 
-  defp find_leg_for_event(:UNLOAD, %{legs: legs} = itinerary, location, voyage_id) do
+  defp find_match_for_event(%{legs: legs} = itinerary, :UNLOAD, location, voyage_id) do
     # Check that the there is one leg with same unload location and voyage
     {reversed_legs, found} =
       Enum.reduce(legs, {[], nil}, fn leg, {acc, f} ->
@@ -248,7 +261,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
       end)
 
     if found && found.voyage_id == voyage_id do
-      {:ok, %{itinerary | legs: Enum.reverse(reversed_legs)}, found}
+      {:ok, %{itinerary | legs: Enum.reverse(reversed_legs)}}
     else
       voyage_number = VoyageService.get_voyage_number_for_id!(voyage_id)
 
@@ -263,7 +276,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     end
   end
 
-  defp find_leg_for_event(:CUSTOMS, %{legs: legs} = itinerary, location, _voyage_id) do
+  defp find_match_for_event(%{legs: legs} = itinerary, :CUSTOMS, location, _voyage_id) do
     # Check that the there is one leg with same unload location and voyage
     {reversed_legs, found} =
       Enum.reduce(legs, {[], nil}, fn leg, {acc, f} ->
@@ -287,13 +300,13 @@ defmodule CargoShipping.CargoBookings.Itinerary do
       end)
 
     if found do
-      {:ok, %{itinerary | legs: Enum.reverse(reversed_legs)}, found}
+      {:ok, %{itinerary | legs: Enum.reverse(reversed_legs)}}
     else
       {:error, ":CUSTOMS at #{location} does not match any unload location"}
     end
   end
 
-  defp find_leg_for_event(:CLAIM, %{legs: legs} = itinerary, location, _voyage_id) do
+  defp find_match_for_event(%{legs: legs} = itinerary, :CLAIM, location, _voyage_id) do
     # Check that the last leg's destination is from the event's location
     last_leg = List.last(legs)
 
@@ -319,11 +332,22 @@ defmodule CargoShipping.CargoBookings.Itinerary do
       end)
 
     if found do
-      {:ok, %{itinerary | legs: Enum.reverse(reversed_legs)}, found}
+      {:ok, %{itinerary | legs: Enum.reverse(reversed_legs)}}
     else
       {:error, ":CLAIM at #{location} does not match final unload location"}
     end
   end
+
+  defp find_matching_voyage_movement(:LOAD, location, voyage_id) do
+    VoyageService.find_departure_from(voyage_id, location)
+  end
+
+  defp find_matching_voyage_movement(:UNLOAD, location, voyage_id) do
+    VoyageService.find_arrival_at(voyage_id, location)
+  end
+
+  # :RECEIVE, :CUSTOMS, :CLAIM
+  defp find_matching_voyage_movement(_event_type, _location, _voyage_id), do: nil
 
   def debug_itinerary(itinerary) do
     Logger.debug("itinerary")

@@ -45,7 +45,30 @@ defmodule CargoShipping.VoyageService do
 
   def voyage_number_exists?(number), do: !is_nil(get_voyage_id_for_number!(number))
 
-  def check_leg_in_voyage(id, load_location, unload_location) do
+  def find_departure_from(id, location) do
+    find_movement_by_location(id, location, :departure_location)
+  end
+
+  def find_arrival_at(id, location) do
+    find_movement_by_location(id, location, :arrival_location)
+  end
+
+  def find_movement_by_location(id, location, key) do
+    Agent.get(__MODULE__, & &1)
+    |> Enum.find(fn %{id: voyage_id} -> voyage_id == id end)
+    |> case do
+      nil ->
+        nil
+
+      %{schedule_items: items} = voyage ->
+        case Enum.find(items, fn item -> Map.get(item, key, "_") == location end) do
+          nil -> nil
+          movement -> %{voyage: voyage, movement: movement}
+        end
+    end
+  end
+
+  def find_items_satisfying_route_specification(id, route_specification) do
     Agent.get(__MODULE__, & &1)
     |> Enum.find(fn %{id: voyage_id} -> voyage_id == id end)
     |> case do
@@ -53,29 +76,31 @@ defmodule CargoShipping.VoyageService do
         {:error, :voyage_id, "is invalid"}
 
       %{voyage_number: voyage_number, schedule_items: items} ->
-        departure_index =
+        origin_index =
           Enum.find_index(items, fn %{departure_location: location} ->
-            location == load_location
+            location == route_specification.origin
           end)
 
-        arrival_index_from_end =
-          Enum.reverse(items)
-          |> Enum.find_index(fn %{arrival_location: location} ->
-            location == unload_location
+        destination_index =
+          Enum.find_index(items, fn %{arrival_location: location} ->
+            location == route_specification.destination
           end)
 
         cond do
-          is_nil(departure_index) ->
-            {:error, :load_location, "is not contained in #{voyage_number}"}
+          is_nil(origin_index) ->
+            {:error, :origin, "is not contained in #{voyage_number}"}
 
-          is_nil(arrival_index_from_end) ->
-            {:error, :unload_location, "is not contained in #{voyage_number}"}
+          is_nil(destination_index) ->
+            {:error, :destination, "is not contained in #{voyage_number}"}
 
-          departure_index > Enum.count(items) - arrival_index_from_end - 1 ->
-            {:error, :voyage_id, "does not contain this load-unload location pair"}
+          destination_index - origin_index < 0 ->
+            {:error, :voyage_id, "does not contain this origin-destination pair"}
 
           true ->
-            :ok
+            {:ok,
+             items
+             |> Enum.drop(origin_index)
+             |> Enum.take(destination_index - origin_index + 1)}
         end
     end
   end

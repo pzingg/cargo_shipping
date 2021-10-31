@@ -308,55 +308,6 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     assert cargo.delivery.transport_status == :ONBOARD_CARRIER
     refute cargo.delivery.misdirected?
     assert cargo.delivery.next_expected_activity.event_type == :UNLOAD
-    assert cargo.delivery.next_expected_activity.location == "JPTYO"
-    assert cargo.delivery.next_expected_activity.voyage_id == v100
-
-    # Unload in Tokyo
-
-    handling_params = %{
-      completed_at: ~U[2009-03-15 00:00:00Z],
-      tracking_id: tracking_id,
-      voyage_number: "V100",
-      location: "JPTYO",
-      event_type: :UNLOAD
-    }
-
-    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
-
-    # Wait for event bus
-    Process.sleep(500)
-
-    # Check current state - should be ok
-    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
-    refute cargo.delivery.current_voyage_id
-    assert cargo.delivery.last_known_location == "JPTYO"
-    assert cargo.delivery.transport_status == :IN_PORT
-    refute cargo.delivery.misdirected?
-    assert cargo.delivery.next_expected_activity.event_type == :LOAD
-    assert cargo.delivery.next_expected_activity.location == "JPTYO"
-
-    # Load in Tokyo
-
-    handling_params = %{
-      completed_at: ~U[2009-03-17 00:00:00Z],
-      tracking_id: tracking_id,
-      voyage_number: "V100",
-      location: "JPTYO",
-      event_type: :LOAD
-    }
-
-    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
-
-    # Wait for event bus
-    Process.sleep(500)
-
-    # Check current state - should be ok
-    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
-    assert cargo.delivery.current_voyage_id == v100
-    assert cargo.delivery.last_known_location == "JPTYO"
-    assert cargo.delivery.transport_status == :ONBOARD_CARRIER
-    refute cargo.delivery.misdirected?
-    assert cargo.delivery.next_expected_activity.event_type == :UNLOAD
     assert cargo.delivery.next_expected_activity.location == "USNYC"
     assert cargo.delivery.next_expected_activity.voyage_id == v100
 
@@ -404,55 +355,6 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
     assert cargo.delivery.current_voyage_id == v200
     assert cargo.delivery.last_known_location == "USNYC"
-    assert cargo.delivery.transport_status == :ONBOARD_CARRIER
-    refute cargo.delivery.misdirected?
-    assert cargo.delivery.next_expected_activity.event_type == :UNLOAD
-    assert cargo.delivery.next_expected_activity.location == "USCHI"
-    assert cargo.delivery.next_expected_activity.voyage_id == v200
-
-    # Unload in Chicago
-
-    handling_params = %{
-      completed_at: ~U[2009-03-23 00:00:00Z],
-      tracking_id: tracking_id,
-      voyage_number: "V200",
-      location: "USCHI",
-      event_type: :UNLOAD
-    }
-
-    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
-
-    # Wait for event bus
-    Process.sleep(500)
-
-    # Check current state - should be ok
-    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
-    refute cargo.delivery.current_voyage_id
-    assert cargo.delivery.last_known_location == "USCHI"
-    assert cargo.delivery.transport_status == :IN_PORT
-    refute cargo.delivery.misdirected?
-    assert cargo.delivery.next_expected_activity.event_type == :LOAD
-    assert cargo.delivery.next_expected_activity.location == "USCHI"
-
-    # Load in Chicago
-
-    handling_params = %{
-      completed_at: ~U[2009-03-25 00:00:00Z],
-      tracking_id: tracking_id,
-      voyage_number: "V200",
-      location: "USCHI",
-      event_type: :LOAD
-    }
-
-    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
-
-    # Wait for event bus
-    Process.sleep(500)
-
-    # Check current state - should be ok
-    cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
-    assert cargo.delivery.current_voyage_id == v200
-    assert cargo.delivery.last_known_location == "USCHI"
     assert cargo.delivery.transport_status == :ONBOARD_CARRIER
     refute cargo.delivery.misdirected?
     assert cargo.delivery.next_expected_activity.event_type == :UNLOAD

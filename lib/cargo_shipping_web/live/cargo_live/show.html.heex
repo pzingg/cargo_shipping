@@ -27,8 +27,11 @@
     <%= cargo_destination(@cargo) %>
   </li>
   <li>
-    <strong>Arrival deadline:</strong>
+    <strong>Arrival deadline at destination:</strong>
     <%= event_time(@cargo.route_specification, :arrival_deadline) %>
+  </li>
+  <li><strong>Last known location:</strong>
+    <%= cargo_destination(@cargo) %>
   </li>
 </ul>
 
