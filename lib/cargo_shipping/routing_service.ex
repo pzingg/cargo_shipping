@@ -35,13 +35,6 @@ defmodule CargoShipping.RoutingService do
     end
   end
 
-  defp find_itineraries_random(origin, destination, opts) do
-    find_transit_paths_random(origin, destination, opts)
-    |> Enum.map(fn path ->
-      %{itinerary: Enum.map(path, &leg_from_transit_edge/1) |> Itinerary.new(), cost: 0}
-    end)
-  end
-
   defp find_transit_paths_random(origin, destination, _limitations) do
     start_date = DateTime.utc_now()
     voyage_numbers = VoyageService.all_voyage_numbers()
@@ -140,6 +133,15 @@ defmodule CargoShipping.RoutingService do
     |> Timex.beginning_of_day()
     |> Timex.to_datetime()
     |> DateTime.add(86_400 + rand_seconds, :second)
+  end
+
+  defp find_itineraries_random(origin, destination, opts) do
+    find_transit_paths_random(origin, destination, opts)
+    |> Enum.map(fn path -> %{itinerary: itinerary_from_transit_path(path), cost: 0} end)
+  end
+
+  defp itinerary_from_transit_path(vertices) do
+    Enum.map(vertices, &leg_from_transit_edge/1) |> Itinerary.new()
   end
 
   defp leg_from_transit_edge(edge) do
@@ -245,14 +247,12 @@ defmodule CargoShipping.RoutingService do
     # Skip 0 and Enum.count - 1
     last_index = Enum.count(vertices) - 2
 
-    legs =
-      Enum.map(1..last_index//2, fn i ->
-        v_depart = Enum.at(vertices, i)
-        v_arrive = Enum.at(vertices, i + 1)
-        leg_from_libgraph_edge(v_depart, v_arrive)
-      end)
-
-    %{id: UUID.uuid4(), legs: legs}
+    Enum.map(1..last_index//2, fn i ->
+      v_depart = Enum.at(vertices, i)
+      v_arrive = Enum.at(vertices, i + 1)
+      leg_from_libgraph_edge(v_depart, v_arrive)
+    end)
+    |> Itinerary.new()
   end
 
   defp leg_from_libgraph_edge(v_depart, v_arrive) do
@@ -261,7 +261,8 @@ defmodule CargoShipping.RoutingService do
       load_location: v_depart.location,
       unload_location: v_arrive.location,
       load_time: v_depart.time,
-      unload_time: v_arrive.time
+      unload_time: v_arrive.time,
+      status: :NOT_LOADED
     }
   end
 

@@ -78,14 +78,7 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   defp handle_event(:cargo_misdirected, _config, event) do
     # Payload is the cargo
-    Logger.info("[cargo_misdirected] #{event.data.tracking_id}")
-  end
-
-  defp handle_event(:cargo_delivery_updated, _config, event) do
-    # Payload is the cargo
-    Logger.info("[cargo_delivery_updated] #{event.data.tracking_id}")
-    Itinerary.debug_itinerary(event.data.itinerary)
-    Delivery.debug_delivery(event.data.delivery)
+    Logger.error("[cargo_misdirected] #{event.data.tracking_id}")
   end
 
   defp handle_event(:cargo_was_handled, _config, event) do
@@ -98,13 +91,25 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
   end
 
   defp handle_event(:cargo_handling_rejected, _config, event) do
-    # Payload is the (error-containing) params
-    Logger.info("[cargo_handling_rejected] #{inspect(event.data.errors)}")
+    # Payload is the error changeset
+    Logger.error("[cargo_handling_rejected] #{inspect(event.data.errors)}")
+  end
+
+  defp handle_event(:cargo_delivery_updated, _config, event) do
+    # Payload is the cargo
+    Logger.info("[cargo_delivery_updated] #{event.data.tracking_id}")
+    Itinerary.debug_itinerary(event.data.itinerary)
+    Delivery.debug_delivery(event.data.delivery)
+  end
+
+  defp handle_event(:cargo_delivery_update_failed, _config, event) do
+    # Payload is the error changeset
+    Logger.error("[cargo_delivery_update_failed] #{inspect(event.data.errors)}")
   end
 
   defp handle_event(:handling_report_received, _config, event) do
     # Payload is handling report
-    Logger.error(
+    Logger.info(
       "[handling_report_received] #{event.data.tracking_id} #{event.data.event_type} at {event.data.location}"
     )
 
@@ -113,7 +118,7 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
   end
 
   defp handle_event(:handling_report_rejected, _config, event) do
-    # Payload is the (error-containing) params
-    Logger.info("[handling_report_rejected] #{inspect(event.data.errors)}")
+    # Payload is the error changeset
+    Logger.error("[handling_report_rejected] #{inspect(event.data.errors)}")
   end
 end

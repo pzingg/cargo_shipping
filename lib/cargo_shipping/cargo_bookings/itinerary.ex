@@ -23,8 +23,40 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
   def new(legs) do
     %__MODULE__{}
-    |> changeset(%{legs: legs})
+    |> changeset(%{legs: coalesce_legs(legs)})
     |> apply_changes()
+  end
+
+  def coalesce_legs(legs) do
+    Logger.error("starting legs")
+    debug_legs(legs)
+
+    {reversed_legs, _last} =
+      Enum.reduce(legs, {[], nil}, fn leg, {acc, previous_leg} ->
+        if is_nil(previous_leg) || leg.voyage_id != previous_leg.voyage_id do
+          {[leg | acc], leg}
+        else
+          case List.pop_at(acc, 0) do
+            {acc_leg, rest} when is_map(acc_leg) ->
+              coalesced =
+                acc_leg
+                |> Map.put(:unload_location, leg.unload_location)
+                |> Map.put(:unload_time, leg.unload_time)
+
+              {[coalesced | rest], leg}
+
+            _ ->
+              {acc, leg}
+          end
+        end
+      end)
+
+    coalesced_legs = Enum.reverse(reversed_legs)
+
+    Logger.error("coalesced legs")
+    debug_legs(coalesced_legs)
+
+    coalesced_legs
   end
 
   @doc false
@@ -279,7 +311,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
               {Map.put(leg, :status, :SKIPPED), nil}
 
             true ->
-              matched_leg = Map.put(leg, :status, :COMPLETED)
+              matched_leg = Map.put(leg, :status, :CLAIMED)
               {matched_leg, matched_leg}
           end
 

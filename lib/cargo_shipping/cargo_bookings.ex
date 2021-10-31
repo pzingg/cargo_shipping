@@ -466,7 +466,7 @@ defmodule CargoShipping.CargoBookings do
 
   """
   def create_handling_event(cargo, attrs \\ %{}) do
-    create_attrs = Cargo.set_cargo_id(cargo, attrs)
+    create_attrs = set_cargo_id(cargo, attrs)
     changeset = HandlingEvent.changeset(create_attrs)
     create_and_publish_handling_event(changeset)
   end
@@ -510,7 +510,38 @@ defmodule CargoShipping.CargoBookings do
     Repo.delete(handling_event)
   end
 
+  ## Utility functions
+
   def publish_event(topic, payload) do
     CargoShipping.ApplicationEvents.Producer.publish_event(topic, "CargoBookings", payload)
+  end
+
+  def set_cargo_id_from_tracking_id(attrs) do
+    tracking_id = Map.get(attrs, :tracking_id) || Map.get(attrs, "tracking_id")
+
+    if is_nil(tracking_id) do
+      {:error, "can't be blank"}
+    else
+      case get_cargo_by_tracking_id!(tracking_id) do
+        nil ->
+          {:error, "is_invalid"}
+
+        cargo ->
+          {:ok, set_cargo_id(cargo, attrs)}
+      end
+    end
+  end
+
+  def set_cargo_id(cargo, attrs) do
+    {cargo_id_key, tracking_id_key} =
+      if Utils.atom_keys?(attrs) do
+        {:cargo_id, :tracking_id}
+      else
+        {"cargo_id", "tracking_id"}
+      end
+
+    attrs
+    |> Map.put(cargo_id_key, cargo.id)
+    |> Map.put(tracking_id_key, cargo.tracking_id)
   end
 end

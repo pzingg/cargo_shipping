@@ -8,6 +8,8 @@ defmodule CargoShipping.CargoBookings.Leg do
 
   import Ecto.Changeset
 
+  alias CargoShipping.VoyageService
+
   @status_values [:NOT_LOADED, :SKIPPED, :ONBOARD_CARRIER, :COMPLETED, :CLAIMED]
 
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -30,6 +32,7 @@ defmodule CargoShipping.CargoBookings.Leg do
   ]
 
   @required_fields [
+    :status,
     :voyage_id,
     :load_location,
     :unload_location,
@@ -42,14 +45,21 @@ defmodule CargoShipping.CargoBookings.Leg do
     leg
     |> cast(attrs, @cast_fields)
     |> validate_required(@required_fields)
-    |> ensure_status()
     |> validate_inclusion(:status, @status_values)
+    |> validate_voyage_item()
   end
 
-  defp ensure_status(changeset) do
-    case get_field(changeset, :status) do
-      nil -> put_change(changeset, :status, :NOT_LOADED)
-      _status -> changeset
+  def validate_voyage_item(changeset) do
+    voyage_id = get_field(changeset, :voyage_id)
+    load_location = get_field(changeset, :load_location)
+    unload_location = get_field(changeset, :unload_location)
+
+    case VoyageService.check_leg_in_voyage(voyage_id, load_location, unload_location) do
+      :ok ->
+        changeset
+
+      {:error, key, message} ->
+        add_error(changeset, key, message)
     end
   end
 end

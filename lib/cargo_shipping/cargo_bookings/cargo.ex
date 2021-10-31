@@ -39,7 +39,6 @@ defmodule CargoShipping.CargoBookings.Cargo do
 
   import Ecto.Changeset
 
-  alias CargoShipping.Utils
   alias CargoShipping.CargoBookings.{Delivery, HandlingEvent, Itinerary, RouteSpecification}
 
   @derive {Phoenix.Param, key: :tracking_id}
@@ -105,19 +104,6 @@ defmodule CargoShipping.CargoBookings.Cargo do
     |> cast_embed(:delivery, with: &Delivery.changeset/2)
     |> set_origin_from_route_specification()
     |> validate_required([:origin])
-  end
-
-  def set_cargo_id(cargo, attrs) do
-    {cargo_id_key, tracking_id_key} =
-      if Utils.atom_keys?(attrs) do
-        {:cargo_id, :tracking_id}
-      else
-        {"cargo_id", "tracking_id"}
-      end
-
-    attrs
-    |> Map.put(cargo_id_key, cargo.id)
-    |> Map.put(tracking_id_key, cargo.tracking_id)
   end
 
   def destination(cargo) do

@@ -52,13 +52,24 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
     :completed_at,
     :registered_at
   ]
-  @required_fields [:cargo_id, :event_type, :location, :completed_at]
+  @cargo_id_required_fields [:cargo_id, :event_type, :location, :completed_at]
+  @tracking_id_required_fields [:event_type, :location, :completed_at]
 
   @doc false
   def changeset(attrs) do
     %__MODULE__{}
     |> cast(attrs, @cast_fields)
-    |> validate_required(@required_fields)
+    |> validate_required(@cargo_id_required_fields)
+    |> validate_inclusion(:event_type, @event_type_values)
+    |> validate_location()
+    |> validate_voyage_number_or_id()
+    |> validate_permissible_event_for_cargo()
+  end
+
+  def tracking_id_changeset(attrs) do
+    %__MODULE__{}
+    |> cast(attrs, @cast_fields)
+    |> validate_required(@tracking_id_required_fields)
     |> validate_inclusion(:event_type, @event_type_values)
     |> validate_location()
     |> validate_voyage_number_or_id()
@@ -66,31 +77,17 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
   end
 
   @doc """
-  Looks up the cargo by tracking id and fails if
+  A changeset that looks up the cargo by tracking id and fails if
   it cannot find the cargo.
   """
   def handling_report_changeset(attrs) do
-    tracking_id_changeset = cast(%__MODULE__{}, attrs, [:tracking_id])
-
-    tracking_id = get_change(tracking_id_changeset, :tracking_id)
-
-    case CargoBookings.get_cargo_by_tracking_id!(tracking_id) do
-      nil ->
-        add_error(tracking_id_changeset, :tracking_id, "is invalid")
-
-      cargo ->
-        event_attrs = Cargo.set_cargo_id(cargo, attrs)
+    case CargoBookings.set_cargo_id_from_tracking_id(attrs) do
+      {:ok, event_attrs} ->
         changeset(event_attrs)
-    end
-  end
 
-  def validate_cargo_exists?(changeset) do
-    cargo_id = get_change(changeset, :cargo_id)
-
-    if CargoBookings.get_cargo!(cargo_id) do
-      changeset
-    else
-      add_error(changeset, :cargo_id, "is invalid")
+      {:error, message} ->
+        tracking_id_changeset(attrs)
+        |> add_error(:tracking_id, message)
     end
   end
 
