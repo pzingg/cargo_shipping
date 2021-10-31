@@ -60,33 +60,33 @@ defmodule CargoShipping.CargoBookings.Delivery do
         ""
       end
 
-    Logger.error("delivery #{delivery.routing_status} #{delivery.transport_status}#{misdirect}")
+    Logger.debug("delivery #{delivery.routing_status} #{delivery.transport_status}#{misdirect}")
 
     if delivery.current_voyage_id do
       voyage_number =
         VoyageService.get_voyage_number_for_id!(delivery.current_voyage_id)
         |> String.pad_trailing(6)
 
-      Logger.error("  on voyage #{voyage_number} from #{delivery.last_known_location}")
+      Logger.debug("  on voyage #{voyage_number} from #{delivery.last_known_location}")
     else
       if delivery.last_known_location != "_" do
-        Logger.error("  at #{delivery.last_known_location}")
+        Logger.debug("  at #{delivery.last_known_location}")
       end
     end
 
     if delivery.last_event_id do
       last_event = CargoShipping.CargoBookings.get_handling_event!(delivery.last_event_id)
-      Logger.error("  last event #{last_event.event_type} at #{last_event.location}")
+      Logger.debug("  last event #{last_event.event_type} at #{last_event.location}")
     else
-      Logger.error("  no events yet")
+      Logger.debug("  no events yet")
     end
 
     if delivery.next_expected_activity do
-      Logger.error(
+      Logger.debug(
         "  next #{delivery.next_expected_activity.event_type} at #{delivery.next_expected_activity.location}"
       )
     else
-      Logger.error("  no expected activity")
+      Logger.debug("  no expected activity")
     end
   end
 
@@ -224,8 +224,12 @@ defmodule CargoShipping.CargoBookings.Delivery do
 
   defp calculate_misdirection_status(itinerary, last_event) do
     case Itinerary.matches_handling_event(itinerary, last_event) do
-      {:error, _reason} -> {itinerary, true}
-      {:ok, next_itinerary, _found} -> {next_itinerary, false}
+      {:error, message} ->
+        Logger.error(message)
+        {itinerary, true}
+
+      {:ok, next_itinerary, _found} ->
+        {next_itinerary, false}
     end
   end
 

@@ -13,7 +13,7 @@ defmodule CargoShipping.CargoBookings.RouteSpecification do
 
   alias CargoShipping.Locations
 
-  @primary_key false
+  @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
     field :origin, :string
     field :destination, :string
@@ -54,7 +54,7 @@ defmodule CargoShipping.CargoBookings.RouteSpecification do
   end
 
   def debug_route_specification(route_specification) do
-    Logger.error("route")
-    Logger.error("   from #{route_specification.origin} to #{route_specification.destination}")
+    Logger.debug("route")
+    Logger.debug("   from #{route_specification.origin} to #{route_specification.destination}")
   end
 end

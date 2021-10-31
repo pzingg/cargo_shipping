@@ -59,7 +59,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     {:ok, _cargo} =
       CargoBookings.update_cargo_for_new_itinerary(cargo, itinerary, remaining_route_spec)
 
-    Logger.error("63 after routing")
+    Logger.warn("Line 62, after routing")
 
     # Wait for event bus
     Process.sleep(500)
@@ -147,7 +147,8 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :LOAD
     }
 
-    Logger.error("bad handling params will fail!")
+    Logger.warn("Line 150: bad handling params will fail!")
+
     {:error, changeset} = HandlingEventService.register_handling_event(handling_params)
     assert changeset.errors[:voyage_number] == {"is invalid", []}
     assert changeset.errors[:location] == {"is invalid", []}
@@ -188,7 +189,8 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       arrival_deadline: arrival_deadline
     }
 
-    Logger.error("reroute 193")
+    Logger.warn("Line 192, rerouting")
+
     {:ok, _cargo} = CargoBookings.update_cargo_for_new_route(cargo, from_shanghai)
 
     # Wait for EventBus
@@ -213,7 +215,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     {:ok, _cargo} =
       CargoBookings.update_cargo_for_new_itinerary(cargo, itinerary, remaining_route_spec)
 
-    Logger.error("208 after routing")
+    Logger.warn("Line 218, after routing")
 
     # Wait for EventBus
     Process.sleep(500)
@@ -350,11 +352,6 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     # Check current state - should be ok
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
-    Logger.error("208 after routing")
-    RouteSpecification.debug_route_specification(cargo.route_specification)
-    Itinerary.debug_itinerary(cargo.itinerary)
-    Delivery.debug_delivery(cargo.delivery)
-
     assert cargo.delivery.current_voyage_id == v100
     assert cargo.delivery.last_known_location == "JPTYO"
     assert cargo.delivery.transport_status == :ONBOARD_CARRIER

@@ -7,6 +7,7 @@ defmodule CargoShipping.RoutingService do
   require Logger
 
   alias CargoShipping.{LocationService, Utils, VoyagePlans, VoyageService}
+  alias CargoShipping.CargoBookings.Itinerary
 
   def find_itineraries(origin, destination, opts) do
     if Keyword.get(opts, :algorithm, :random) == :random do
@@ -23,23 +24,21 @@ defmodule CargoShipping.RoutingService do
     Represents an edge in a path through a graph,
     describing the route of a cargo.
     """
-    use TypedStruct
+    use Ecto.Schema
 
-    typedstruct do
-      @typedoc "An edge in a TransitPath"
-
-      field :id, String.t(), enforce: true
-      field :from_node, String.t(), enforce: true
-      field :to_node, String.t(), enforce: true
-      field :from_date, DateTime.t(), enforce: true
-      field :to_date, DateTime.t(), enforce: true
+    @primary_key {:id, :binary_id, autogenerate: true}
+    embedded_schema do
+      field :from_node, :string
+      field :to_node, :string
+      field :from_date, :utc_datetime
+      field :to_date, :utc_datetime
     end
   end
 
   defp find_itineraries_random(origin, destination, opts) do
     find_transit_paths_random(origin, destination, opts)
     |> Enum.map(fn path ->
-      %{itinerary: %{id: UUID.uuid4(), legs: Enum.map(path, &leg_from_transit_edge/1)}, cost: 0}
+      %{itinerary: Enum.map(path, &leg_from_transit_edge/1) |> Itinerary.new(), cost: 0}
     end)
   end
 
@@ -151,7 +150,8 @@ defmodule CargoShipping.RoutingService do
       load_location: edge.from_node,
       unload_location: edge.to_node,
       load_time: edge.from_date,
-      unload_time: edge.to_date
+      unload_time: edge.to_date,
+      status: :NOT_LOADED
     }
   end
 
@@ -160,21 +160,20 @@ defmodule CargoShipping.RoutingService do
   defmodule Vertex do
     @moduledoc """
     Represents a vertex in a directed graph.
-    `type` is :DEPART, :ARRIVE, :ORIGIN, :DESTINATION
     """
+    use Ecto.Schema
 
-    use TypedStruct
+    @type_values [:DEPART, :ARRIVE, :ORIGIN, :DESTINATION]
 
-    typedstruct do
-      @typedoc "A vertex in a directed graph"
-
-      field :name, String.t(), enforce: true
-      field :type, atom(), enforce: true
-      field :location, String.t(), enforce: true
-      field :time, DateTime.t(), enforce: true
-      field :voyage_number, String.t() | nil
-      field :voyage_id, String.t() | nil
-      field :index, integer() | nil
+    @primary_key false
+    embedded_schema do
+      field :name, :string
+      field :type, Ecto.Enum, values: @type_values
+      field :location, :string
+      field :time, :utc_datetime
+      field :voyage_number, :string
+      field :voyage_id, :string
+      field :index, :integer
     end
   end
 

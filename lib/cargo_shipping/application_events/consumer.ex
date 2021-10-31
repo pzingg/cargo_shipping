@@ -55,7 +55,7 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
     topics = Keyword.get(arg, :topics, ".*") |> List.wrap()
     result = EventBus.subscribe({subscriber, topics})
 
-    Logger.error("Consumer #{name} subscribed to #{inspect(topics)} -> #{inspect(result)}")
+    Logger.info("Consumer #{name} subscribed to #{inspect(topics)} -> #{inspect(result)}")
 
     {:ok, config}
   end
@@ -73,24 +73,24 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   defp handle_event(:cargo_arrived, _config, event) do
     # Payload is the cargo
-    Logger.error("[cargo_arrived] #{event.data.tracking_id} at #{Cargo.destination(event.data)}")
+    Logger.info("[cargo_arrived] #{event.data.tracking_id} at #{Cargo.destination(event.data)}")
   end
 
   defp handle_event(:cargo_misdirected, _config, event) do
     # Payload is the cargo
-    Logger.error("[cargo_misdirected] #{event.data.tracking_id}")
+    Logger.info("[cargo_misdirected] #{event.data.tracking_id}")
   end
 
   defp handle_event(:cargo_delivery_updated, _config, event) do
     # Payload is the cargo
-    Logger.error("[cargo_delivery_updated] #{event.data.tracking_id}")
+    Logger.info("[cargo_delivery_updated] #{event.data.tracking_id}")
     Itinerary.debug_itinerary(event.data.itinerary)
     Delivery.debug_delivery(event.data.delivery)
   end
 
   defp handle_event(:cargo_was_handled, _config, event) do
     # Payload is the handling_event
-    Logger.error("[cargo_was_handled]")
+    Logger.info("[cargo_was_handled]")
     HandlingEvent.debug_handling_event(event.data)
 
     # Respond to the event by updating the delivery status
@@ -99,7 +99,7 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   defp handle_event(:cargo_handling_rejected, _config, event) do
     # Payload is the (error-containing) params
-    Logger.error("[cargo_handling_rejected] #{inspect(event.data.errors)}")
+    Logger.info("[cargo_handling_rejected] #{inspect(event.data.errors)}")
   end
 
   defp handle_event(:handling_report_received, _config, event) do
@@ -114,6 +114,6 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   defp handle_event(:handling_report_rejected, _config, event) do
     # Payload is the (error-containing) params
-    Logger.error("[handling_report_rejected] #{inspect(event.data.errors)}")
+    Logger.info("[handling_report_rejected] #{inspect(event.data.errors)}")
   end
 end

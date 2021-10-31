@@ -49,21 +49,24 @@ defmodule CargoShipping.SampleDataGenerator do
         load_location: "CNHKG",
         unload_location: "AUMEL",
         load_time: ts(1),
-        unload_time: ts(2)
+        unload_time: ts(2),
+        status: :NOT_LOADED
       },
       %{
         voyage_id: voyage_id,
         load_location: "AUMEL",
         unload_location: "SESTO",
         load_time: ts(3),
-        unload_time: ts(4)
+        unload_time: ts(4),
+        status: :NOT_LOADED
       },
       %{
         voyage_id: voyage_id,
         load_location: "SESTO",
         unload_location: "FIHEL",
         load_time: ts(4),
-        unload_time: ts(5)
+        unload_time: ts(5),
+        status: :NOT_LOADED
       }
     ]
   end
@@ -76,21 +79,24 @@ defmodule CargoShipping.SampleDataGenerator do
         load_location: "DEHAM",
         unload_location: "SESTO",
         load_time: ts(1),
-        unload_time: ts(2)
+        unload_time: ts(2),
+        status: :NOT_LOADED
       },
       %{
         voyage_id: voyage_id,
         load_location: "SESTO",
         unload_location: "USCHI",
         load_time: ts(3),
-        unload_time: ts(4)
+        unload_time: ts(4),
+        status: :NOT_LOADED
       },
       %{
         voyage_id: voyage_id,
         load_location: "USCHI",
         unload_location: "JPTYO",
         load_time: ts(5),
-        unload_time: ts(6)
+        unload_time: ts(6),
+        status: :NOT_LOADED
       }
     ]
   end
@@ -329,7 +335,7 @@ defmodule CargoShipping.SampleDataGenerator do
   end
 
   def load_sample_data() do
-    Logger.error("SampleDataGenerator.load_sample_data")
+    Logger.info("SampleDataGenerator.load_sample_data")
 
     # Locations are read-only in memory
 
@@ -407,21 +413,24 @@ defmodule CargoShipping.SampleDataGenerator do
         load_location: "CNHKG",
         unload_location: "USNYC",
         load_time: ~U[2009-03-02 00:00:00Z],
-        unload_time: ~U[2009-03-05 00:00:00Z]
+        unload_time: ~U[2009-03-05 00:00:00Z],
+        status: :NOT_LOADED
       },
       %{
         voyage_id: voyage_id_for(voyages, :voyage_usnyc_usdal),
         load_location: "USNYC",
         unload_location: "USDAL",
         load_time: ~U[2009-03-06 00:00:00Z],
-        unload_time: ~U[2009-03-08 00:00:00Z]
+        unload_time: ~U[2009-03-08 00:00:00Z],
+        status: :NOT_LOADED
       },
       %{
         voyage_id: voyage_id_for(voyages, :voyage_usdal_fihel),
         load_location: "USDAL",
         unload_location: "FIHEL",
         load_time: ~U[2009-03-09 00:00:00Z],
-        unload_time: ~U[2009-03-12 00:00:00Z]
+        unload_time: ~U[2009-03-12 00:00:00Z],
+        status: :NOT_LOADED
       }
     ]
   end
@@ -501,21 +510,24 @@ defmodule CargoShipping.SampleDataGenerator do
         load_location: "CNHGH",
         unload_location: "USNYC",
         load_time: ~U[2009-03-03 00:00:00Z],
-        unload_time: ~U[2009-03-05 00:00:00Z]
+        unload_time: ~U[2009-03-05 00:00:00Z],
+        status: :NOT_LOADED
       },
       %{
         voyage_id: voyage_id_for(voyages, :voyage_usnyc_usdal),
         load_location: "USNYC",
         unload_location: "USDAL",
         load_time: ~U[2009-03-06 00:00:00Z],
-        unload_time: ~U[2009-03-08 00:00:00Z]
+        unload_time: ~U[2009-03-08 00:00:00Z],
+        status: :NOT_LOADED
       },
       %{
         voyage_id: voyage_id_for(voyages, :voyage_usdal_fihel),
         load_location: "USDAL",
         unload_location: "SESTO",
         load_time: ~U[2009-03-09 00:00:00Z],
-        unload_time: ~U[2009-03-11 00:00:00Z]
+        unload_time: ~U[2009-03-11 00:00:00Z],
+        status: :NOT_LOADED
       }
     ]
   end
@@ -734,7 +746,7 @@ defmodule CargoShipping.SampleDataGenerator do
   end
 
   def generate() do
-    Logger.error("SampleDataGenerator.generate")
+    Logger.info("SampleDataGenerator.generate")
 
     # Locations are read-only in memory
 

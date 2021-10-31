@@ -62,12 +62,10 @@ defmodule CargoShipping.CargoBookings.Cargo do
     @moduledoc """
     Use a schemaless changeset to build edit destination form.
     """
-    use TypedStruct
+    use Ecto.Schema
 
-    typedstruct do
-      @typedoc "A destination"
-      plugin(TypedStructEctoChangeset)
-
+    @primary_key false
+    embedded_schema do
       field :destination, :string
       field :arrival_deadline, :utc_datetime
     end
@@ -83,18 +81,16 @@ defmodule CargoShipping.CargoBookings.Cargo do
     @moduledoc """
     Use a schemaless changeset to build edit route form.
     """
-    use TypedStruct
+    use Ecto.Schema
 
-    typedstruct do
-      @typedoc "An itinerary"
-      plugin(TypedStructEctoChangeset)
-
-      field :id, :binary_id
+    @primary_key {:id, :binary_id, autogenerate: true}
+    embedded_schema do
+      # Nothing but an id
     end
 
     def changeset(itinerary, attrs) do
       itinerary
-      |> cast(attrs, [:id])
+      |> cast(attrs, [])
     end
   end
 

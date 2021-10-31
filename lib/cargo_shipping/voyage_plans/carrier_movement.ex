@@ -6,6 +6,7 @@ defmodule CargoShipping.VoyagePlans.CarrierMovement do
 
   import Ecto.Changeset
 
+  @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
     field :departure_location, :string
     field :arrival_location, :string

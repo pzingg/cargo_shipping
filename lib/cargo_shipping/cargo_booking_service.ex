@@ -48,7 +48,7 @@ defmodule CargoShipping.CargoBookingService do
         acc <> to_string(val)
       end)
 
-    Logger.info("new tracking_id #{tracking_id}")
+    Logger.debug("new tracking_id #{tracking_id}")
 
     if CargoBookings.cargo_tracking_id_exists?(tracking_id) do
       unique_tracking_id(try - 1)

@@ -62,8 +62,6 @@ defmodule CargoShipping.LocationService do
   end
 
   defp load_locations() do
-    Enum.map(@locations, fn {port_code, name} ->
-      %Location{id: UUID.uuid4(), port_code: port_code, name: name}
-    end)
+    Enum.map(@locations, fn {port_code, name} -> Location.new(port_code, name) end)
   end
 end

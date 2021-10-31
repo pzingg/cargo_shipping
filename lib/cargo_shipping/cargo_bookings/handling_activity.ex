@@ -12,6 +12,7 @@ defmodule CargoShipping.CargoBookings.HandlingActivity do
 
   @event_type_values [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
 
+  @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
     field :event_type, Ecto.Enum, values: @event_type_values
     field :location, :string

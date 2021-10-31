@@ -2,12 +2,11 @@ defmodule CargoShippingWeb.SharedComponents.Bulletin do
   @moduledoc """
   Support "toasty" messages.
   """
-  use TypedStruct
+  use Ecto.Schema
 
-  typedstruct do
-    @typedoc "A bulletin"
-    field :id, String.t(), enforce: true
-    field :level, String.t(), enforce: true
-    field :message, String.t(), enforce: true
+  @primary_key {:id, :binary_id, autogenerate: true}
+  embedded_schema do
+    field :level, :string
+    field :message, :string
   end
 end

@@ -258,10 +258,10 @@ defmodule CargoShipping.CargoBookings do
 
       new_itinerary = merge_itinerary(cargo.itinerary, patch_itinerary, patch_route_spec.origin)
 
-      Logger.error("original route spec #{inspect(cargo.route_specification)}")
-      Logger.error("patched route spec #{inspect(new_route_spec)}")
-      Logger.error("original itinerary #{inspect(cargo.itinerary)}")
-      Logger.error("patched itinerary #{inspect(new_itinerary)}")
+      Logger.debug("original route spec #{inspect(cargo.route_specification)}")
+      Logger.debug("patched route spec #{inspect(new_route_spec)}")
+      Logger.debug("original itinerary #{inspect(cargo.itinerary)}")
+      Logger.debug("patched itinerary #{inspect(new_itinerary)}")
       {new_route_spec, new_itinerary}
     end
   end
@@ -287,17 +287,17 @@ defmodule CargoShipping.CargoBookings do
       raise "first part itinerary expected arrival #{origin}, was #{first_arrival}"
     end
 
-    %{legs: first_legs ++ patch_itinerary.legs}
+    Itinerary.new(first_legs ++ patch_itinerary.legs)
   end
 
   def get_remaining_route_specification(cargo) do
     case {cargo.delivery.routing_status, cargo.delivery.transport_status} do
       {:NOT_ROUTED, _} ->
-        Logger.error("Cargo not routed, rrs is original route specification")
+        Logger.debug("Cargo not routed, rrs is original route specification")
         cargo.route_specification
 
       {_, :CLAIMED} ->
-        Logger.error("Cargo has been claimed, rrs is nil")
+        Logger.debug("Cargo has been claimed, rrs is nil")
         nil
 
       {_, :IN_PORT} ->
@@ -309,7 +309,7 @@ defmodule CargoShipping.CargoBookings do
         maybe_route_specification(cargo.route_specification, origin, "Cargo is onboard to")
 
       {_, other} ->
-        Logger.error("Cargo transport is #{other}, rrs is original route specification")
+        Logger.debug("Cargo transport is #{other}, rrs is original route specification")
         cargo.route_specification
     end
   end
@@ -317,15 +317,15 @@ defmodule CargoShipping.CargoBookings do
   defp maybe_route_specification(route_specification, new_origin, status) do
     cond do
       new_origin == route_specification.origin ->
-        Logger.error("#{status} origin, rrs is original route specification")
+        Logger.debug("#{status} origin, rrs is original route specification")
         route_specification
 
       new_origin == route_specification.destination ->
-        Logger.error("#{status} final destination, rrs is nil")
+        Logger.debug("#{status} final destination, rrs is nil")
         nil
 
       true ->
-        Logger.error("#{status} rrs set with this location as origin")
+        Logger.debug("#{status} rrs set with this location as origin")
         %{route_specification | origin: new_origin}
     end
   end
@@ -415,8 +415,12 @@ defmodule CargoShipping.CargoBookings do
   """
   def handling_event_expected(cargo, handling_event) do
     case Itinerary.matches_handling_event(cargo.itinerary, handling_event) do
-      {:error, reason} -> {:error, reason}
-      _ -> :ok
+      {:error, message} ->
+        Logger.error(message)
+        {:error, message}
+
+      _ ->
+        :ok
     end
   end
 

@@ -218,9 +218,9 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
           " on voyage " <> VoyageService.get_voyage_number_for_id!(voyage_id)
       end
 
-    Logger.error("handling_event")
+    Logger.debug("handling_event")
 
-    Logger.error(
+    Logger.debug(
       "   #{handling_event.tracking_id} #{handling_event.event_type} at #{handling_event.location}#{voyage_number}"
     )
   end

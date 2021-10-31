@@ -75,8 +75,8 @@ defmodule CargoShippingWeb.LiveHelpers do
     topics = List.wrap(topics)
     result = EventBus.subscribe({subscriber, topics})
 
-    Logger.error(
-      "#{module} #{inspect(pid)} forwarder subscribed to #{inspect(topics)} -> #{inspect(result)}"
+    Logger.info(
+      "Forwarder #{module} #{inspect(pid)} subscribed to #{inspect(topics)} -> #{inspect(result)}"
     )
 
     result

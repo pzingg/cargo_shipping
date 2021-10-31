@@ -16,9 +16,15 @@ defmodule CargoShipping.CargoBookings.Itinerary do
   @start_of_days ~U[2000-01-01 00:00:00Z]
   @end_of_days ~U[2049-12-31 23:59:59Z]
 
-  @primary_key false
+  @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
     embeds_many :legs, Leg, on_replace: :delete
+  end
+
+  def new(legs) do
+    %__MODULE__{}
+    |> changeset(%{legs: legs})
+    |> apply_changes()
   end
 
   @doc false
@@ -143,10 +149,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     if first_leg.load_location == location && first_leg.status == :NOT_LOADED do
       {:ok, itinerary, first_leg}
     else
-      Logger.error(":RECEIVE at #{location} does not match origin #{first_leg.load_location}")
-      debug_legs(legs)
-
-      {:error, "receive origin mismatch"}
+      {:error, ":RECEIVE at #{location} does not match origin #{first_leg.load_location}"}
     end
   end
 
@@ -178,17 +181,14 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     else
       voyage_number = VoyageService.get_voyage_number_for_id!(voyage_id)
 
-      if is_nil(voyage_id) do
-        Logger.error(":LOAD at #{location} does not have a voyage id")
-      else
-        Logger.error(
+      message =
+        if is_nil(voyage_id) do
+          ":LOAD at #{location} does not have a voyage id"
+        else
           ":LOAD at #{location} does not match any load location of voyage #{voyage_number}"
-        )
-      end
+        end
 
-      debug_legs(legs)
-
-      {:error, "#{voyage_number} load mismatch"}
+      {:error, message}
     end
   end
 
@@ -220,17 +220,14 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     else
       voyage_number = VoyageService.get_voyage_number_for_id!(voyage_id)
 
-      if is_nil(voyage_id) do
-        Logger.error(":UNLOAD at #{location} does not have a voyage id")
-      else
-        Logger.error(
+      message =
+        if is_nil(voyage_id) do
+          ":UNLOAD at #{location} does not have a voyage id"
+        else
           ":UNLOAD at #{location} does not match any unload location of voyage #{voyage_number}"
-        )
-      end
+        end
 
-      debug_legs(legs)
-
-      {:error, "#{voyage_number} unload mismatch"}
+      {:error, message}
     end
   end
 
@@ -260,10 +257,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     if found do
       {:ok, %{itinerary | legs: Enum.reverse(reversed_legs)}, found}
     else
-      Logger.error(":CUSTOMS at #{location} does not match any unload location")
-      debug_legs(legs)
-
-      {:error, "customs destination mismatch"}
+      {:error, ":CUSTOMS at #{location} does not match any unload location"}
     end
   end
 
@@ -278,7 +272,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
             !is_nil(f) ->
               {leg, f}
 
-            ignore_leg?(leg) ->
+            leg != last && ignore_leg?(leg) ->
               {leg, nil}
 
             leg != last ->
@@ -295,15 +289,12 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     if found do
       {:ok, %{itinerary | legs: Enum.reverse(reversed_legs)}, found}
     else
-      Logger.error(":CLAIM at #{location} does not match final unload location")
-      debug_legs(legs)
-
-      {:error, "claim destination mismatch"}
+      {:error, ":CLAIM at #{location} does not match final unload location"}
     end
   end
 
   def debug_itinerary(itinerary) do
-    Logger.error("itinerary")
+    Logger.debug("itinerary")
     debug_legs(itinerary.legs)
   end
 
@@ -325,7 +316,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
     status = Map.get(leg, :status, :NOT_LOADED)
 
-    Logger.error(
+    Logger.debug(
       "  on voyage #{voyage_number} from #{load_location} to #{unload_location} - #{status}"
     )
   end

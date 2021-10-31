@@ -8,8 +8,9 @@ defmodule CargoShipping.CargoBookings.Leg do
 
   import Ecto.Changeset
 
-  @status_values [:NOT_LOADED, :ONBOARD_CARRIER, :COMPLETED, :SKIPPED]
+  @status_values [:NOT_LOADED, :SKIPPED, :ONBOARD_CARRIER, :COMPLETED, :CLAIMED]
 
+  @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
     field :status, Ecto.Enum, values: @status_values
     field :voyage_id, Ecto.UUID
