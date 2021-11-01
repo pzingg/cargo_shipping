@@ -10,6 +10,7 @@ defmodule CargoShipping.CargoBookings.Leg do
 
   alias CargoShipping.CargoBookings.RouteSpecification
   alias CargoShipping.VoyageService
+  alias __MODULE__
 
   @status_values [:NOT_LOADED, :ONBOARD_CARRIER, :SKIPPED, :COMPLETED, :CLAIMED]
   @completed_values [:SKIPPED, :COMPLETED, :CLAIMED]
@@ -22,6 +23,24 @@ defmodule CargoShipping.CargoBookings.Leg do
     field :unload_location, :string
     field :load_time, :utc_datetime
     field :unload_time, :utc_datetime
+  end
+
+  defimpl String.Chars, for: Leg do
+    def to_string(
+          %{
+            load_location: load_location,
+            unload_location: unload_location,
+            voyage_id: voyage_id
+          } = leg
+        ) do
+      voyage_number =
+        VoyageService.get_voyage_number_for_id!(voyage_id)
+        |> String.pad_trailing(6)
+
+      status = Map.get(leg, :status, :NOT_LOADED)
+
+      "on voyage #{voyage_number} from #{load_location} to #{unload_location} - #{status}"
+    end
   end
 
   @cast_fields [

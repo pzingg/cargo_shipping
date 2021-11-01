@@ -12,6 +12,7 @@ defmodule CargoShipping.CargoBookings.RouteSpecification do
   require Logger
 
   alias CargoShipping.Locations
+  alias __MODULE__
 
   @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
@@ -19,6 +20,12 @@ defmodule CargoShipping.CargoBookings.RouteSpecification do
     field :destination, :string
     field :earliest_departure, :utc_datetime
     field :arrival_deadline, :utc_datetime
+  end
+
+  defimpl String.Chars, for: RouteSpecification do
+    def to_string(route_specification) do
+      "from #{route_specification.origin} to #{route_specification.destination}"
+    end
   end
 
   @doc false
@@ -55,6 +62,6 @@ defmodule CargoShipping.CargoBookings.RouteSpecification do
 
   def debug_route_specification(route_specification) do
     Logger.debug("route")
-    Logger.debug("   from #{route_specification.origin} to #{route_specification.destination}")
+    Logger.debug("   #{to_string(route_specification)}")
   end
 end

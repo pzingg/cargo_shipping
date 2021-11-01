@@ -5,6 +5,7 @@ defmodule CargoShipping.SampleDataGenerator do
   require Logger
 
   alias CargoShipping.{CargoBookings, VoyagePlans}
+  alias CargoShipping.CargoBookings.Itinerary
   alias CargoShipping.VoyagePlans.VoyageBuilder
 
   @base_time DateTime.utc_now() |> Timex.beginning_of_day() |> Timex.to_datetime()
@@ -44,12 +45,40 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.build()
   end
 
+  def itinerary_xyz(voyages) do
+    # Cargo XYZ: SESTO - FIHEL - DEHAM - CNHKG - JPTYO - AUMEL
+    %{
+      legs: legs_from_voyage(voyages, :voyage_0101)
+    }
+  end
+
+  def itinerary_zyx(voyages) do
+    # Cargo ZYX: AUMEL - USCHI - DEHAM - SESTO - FIHEL
+    %{
+      legs: legs_from_voyage(voyages, :voyage_0202)
+    }
+  end
+
+  def itinerary_abc(voyages) do
+    # Cargo ABC: AUMEL - FIHEL - DEHAM - SESTO - USCHI - JPTYO
+    %{
+      legs: legs_from_voyage(voyages, :voyage_0303) |> Enum.drop(1)
+    }
+  end
+
+  def itinerary_cba(voyages) do
+    # Cargo CBA: AUMEL - USCHI - DEHAM - SESTO - FIHEL
+    %{
+      legs: legs_from_voyage(voyages, :voyage_0202)
+    }
+  end
+
   def itinerary_fgh(voyages) do
-    # Cargo FGH, Hongkong - Melbourne - Stockholm - Helsinki
+    # Cargo FGH: CNHKG - AUMEL - SESTO - FIHEL
     %{
       legs: [
         %{
-          voyage_id: voyage_id_for(voyages, :voyage_0101),
+          voyage_id: voyage_id_for(voyages, :voyage_0303),
           load_location: "CNHKG",
           unload_location: "AUMEL",
           load_time: ts(1),
@@ -77,39 +106,23 @@ defmodule CargoShipping.SampleDataGenerator do
   end
 
   def itinerary_jkl(voyages) do
-    # Cargo JKL: Hamburg - Stockholm - Chicago - Tokyo
+    # Cargo JKL: DEHAM - SESTO - USCHI - JPTYO
     %{
-      legs: [
-        %{
-          voyage_id: voyage_id_for(voyages, :voyage_0303),
-          load_location: "DEHAM",
-          unload_location: "SESTO",
-          load_time: ts(1),
-          unload_time: ts(2),
-          status: :NOT_LOADED
-        },
-        %{
-          voyage_id: voyage_id_for(voyages, :voyage_0303),
-          load_location: "SESTO",
-          unload_location: "USCHI",
-          load_time: ts(3),
-          unload_time: ts(4),
-          status: :NOT_LOADED
-        },
-        %{
-          voyage_id: voyage_id_for(voyages, :voyage_0303),
-          load_location: "USCHI",
-          unload_location: "JPTYO",
-          load_time: ts(5),
-          unload_time: ts(6),
-          status: :NOT_LOADED
-        }
-      ]
+      legs: legs_from_voyage(voyages, :voyage_0303) |> Enum.drop(3)
     }
+  end
+
+  def legs_from_voyage(voyages, voyage_key) do
+    voyage_for(voyages, voyage_key)
+    |> Itinerary.legs_from_voyage()
   end
 
   def load_itinerary_data(voyages) do
     %{
+      itinerary_xyz: itinerary_xyz(voyages),
+      itinerary_zyx: itinerary_zyx(voyages),
+      itinerary_abc: itinerary_abc(voyages),
+      itinerary_cba: itinerary_cba(voyages),
       itinerary_fgh: itinerary_fgh(voyages),
       itinerary_jkl: itinerary_jkl(voyages)
     }
@@ -145,6 +158,7 @@ defmodule CargoShipping.SampleDataGenerator do
           earliest_departure: ts(0),
           arrival_deadline: ts(10)
         },
+        itinerary: itinerary_for(itineraries, :itinerary_xyz),
         delivery: %{
           transport_status: :IN_PORT,
           current_voyage_id: nil,
@@ -167,6 +181,7 @@ defmodule CargoShipping.SampleDataGenerator do
           earliest_departure: ts(0),
           arrival_deadline: ts(20)
         },
+        itinerary: itinerary_for(itineraries, :itinerary_abc),
         delivery: %{
           transport_status: :IN_PORT,
           current_voyage_id: nil,
@@ -189,6 +204,7 @@ defmodule CargoShipping.SampleDataGenerator do
           earliest_departure: ts(0),
           arrival_deadline: ts(30)
         },
+        itinerary: itinerary_for(itineraries, :itinerary_zyx),
         delivery: %{
           transport_status: :IN_PORT,
           current_voyage_id: nil,
@@ -211,6 +227,7 @@ defmodule CargoShipping.SampleDataGenerator do
           earliest_departure: ts(0),
           arrival_deadline: ts(40)
         },
+        itinerary: itinerary_for(itineraries, :itinerary_cba),
         delivery: %{
           transport_status: :IN_PORT,
           current_voyage_id: nil,
@@ -234,7 +251,7 @@ defmodule CargoShipping.SampleDataGenerator do
           earliest_departure: ts(0),
           arrival_deadline: ts(50)
         },
-        itinerary: Map.fetch!(itineraries, :itinerary_fgh),
+        itinerary: itinerary_for(itineraries, :itinerary_fgh),
         delivery: %{
           transport_status: :IN_PORT,
           current_voyage_id: nil,
@@ -257,7 +274,7 @@ defmodule CargoShipping.SampleDataGenerator do
           earliest_departure: ts(0),
           arrival_deadline: ts(60)
         },
-        itinerary: Map.fetch!(itineraries, :itinerary_jkl),
+        itinerary: itinerary_for(itineraries, :itinerary_jkl),
         delivery: %{
           transport_status: :IN_PORT,
           current_voyage_id: nil,
@@ -282,7 +299,7 @@ defmodule CargoShipping.SampleDataGenerator do
 
   def load_handling_event_data(voyages, cargos) do
     [
-      # XYZ (SESTO - FIHEL - DEHAM - CNHKG - JPTYO - AUMEL)
+      # Cargo XYZ: SESTO - FIHEL - DEHAM - CNHKG - JPTYO - AUMEL
       {ts(0), ts(0), "RECEIVE", "SESTO", nil, :cargo_xyz},
       {ts(4), ts(5), "LOAD", "SESTO", :voyage_0101, :cargo_xyz},
       {ts(14), ts(14), "UNLOAD", "FIHEL", :voyage_0101, :cargo_xyz},
@@ -296,7 +313,7 @@ defmodule CargoShipping.SampleDataGenerator do
       {ts(88), ts(88), "UNLOAD", "AUMEL", :voyage_0101, :cargo_xyz},
       {ts(100), ts(102), "CLAIM", "AUMEL", nil, :cargo_xyz},
 
-      # ZYX (AUMEL - USCHI - DEHAM)
+      # Cargo ZYX: AUMEL - USCHI - DEHAM
       {ts(200), ts(201), "RECEIVE", "AUMEL", nil, :cargo_zyx},
       {ts(202), ts(202), "LOAD", "AUMEL", :voyage_0202, :cargo_zyx},
       {ts(208), ts(208), "UNLOAD", "USCHI", :voyage_0202, :cargo_zyx},
@@ -304,22 +321,23 @@ defmodule CargoShipping.SampleDataGenerator do
       {ts(230), ts(230), "UNLOAD", "DEHAM", :voyage_0202, :cargo_zyx},
       {ts(235), ts(235), "LOAD", "DEHAM", :voyage_0202, :cargo_zyx},
 
-      # ABC
+      # Cargo ABC: AUMEL - FIHEL - DEHAM - SESTO - USCHI - JPTYO
+      # Unpermitted event - emits cargo_handling_rejected event
       {ts(20), ts(21), "CLAIM", "AUMEL", nil, :cargo_abc},
 
-      # CBA
+      # Cargo CBA: AUMEL - USCHI - DEHAM - SESTO - FIHEL
       {ts(0), ts(1), "RECEIVE", "AUMEL", nil, :cargo_cba},
       {ts(10), ts(11), "LOAD", "AUMEL", :voyage_0202, :cargo_cba},
       {ts(20), ts(21), "UNLOAD", "USCHI", :voyage_0202, :cargo_cba},
 
-      # FGH
+      # Cargo FGH: CNHKG - AUMEL - SESTO - FIHEL
       {ts(100), ts(160), "RECEIVE", "CNHKG", nil, :cargo_fgh},
       {ts(150), ts(110), "LOAD", "CNHKG", :voyage_0303, :cargo_fgh},
 
-      # JKL
+      # Cargo JKL: DEHAM - SESTO - USCHI - JPTYO
       {ts(200), ts(220), "RECEIVE", "DEHAM", nil, :cargo_jkl},
       {ts(300), ts(330), "LOAD", "DEHAM", :voyage_0303, :cargo_jkl},
-      # Unexpected event
+      # Unexpected event - cargo transport misdirected after this event
       {ts(400), ts(440), "UNLOAD", "FIHEL", :voyage_0303, :cargo_jkl}
     ]
     |> Enum.map(fn row -> insert_handling_event(voyages, cargos, row) end)
@@ -341,6 +359,7 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     CargoBookings.create_handling_event(cargo, attrs)
+    wait_for_events()
   end
 
   def load_sample_data() do
@@ -352,8 +371,6 @@ defmodule CargoShipping.SampleDataGenerator do
     itineraries = load_itinerary_data(voyages)
     cargos = load_cargo_data(itineraries)
     load_handling_event_data(voyages, cargos)
-
-    Process.sleep(500)
     :ok
   end
 
@@ -376,6 +393,7 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, cargo_abc123} = CargoBookings.create_cargo(attrs)
+    wait_for_events()
     cargo_id = cargo_abc123.id
 
     attrs = %{
@@ -386,7 +404,7 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, _event1} = CargoBookings.create_handling_event(cargo_abc123, attrs)
-    Process.sleep(500)
+    wait_for_events()
     cargo_abc123 = CargoBookings.get_cargo!(cargo_id)
 
     attrs = %{
@@ -397,7 +415,7 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, _event2} = CargoBookings.create_handling_event(cargo_abc123, attrs)
-    Process.sleep(500)
+    wait_for_events()
     cargo_abc123 = CargoBookings.get_cargo!(cargo_id)
 
     attrs = %{
@@ -408,12 +426,15 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, _event3} = CargoBookings.create_handling_event(cargo_abc123, attrs)
-    Process.sleep(500)
-    cargo_abc123 = CargoBookings.get_cargo!(cargo_id)
+    wait_for_events()
 
-    handling_history = CargoBookings.lookup_handling_history(cargo_abc123.tracking_id)
-    params = CargoBookings.derive_delivery_progress(cargo_abc123, handling_history)
-    CargoBookings.update_cargo(cargo_abc123, params)
+    # Note: create_handling_event will automatically derive the delivery.
+    # We don't need the following:
+    # cargo_abc123 = CargoBookings.get_cargo!(cargo_id)
+    # handling_history = CargoBookings.lookup_handling_history(cargo_abc123.tracking_id)
+    # params = CargoBookings.derive_delivery_progress(cargo_abc123, handling_history)
+    # CargoBookings.update_cargo(cargo_abc123, params)
+    # wait_for_events()
   end
 
   def cargo_abc123_legs(voyages) do
@@ -462,6 +483,7 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, cargo_jkl567} = CargoBookings.create_cargo(attrs)
+    wait_for_events()
     cargo_id = cargo_jkl567.id
 
     attrs = %{
@@ -472,7 +494,7 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, _event1} = CargoBookings.create_handling_event(cargo_jkl567, attrs)
-    Process.sleep(500)
+    wait_for_events()
     cargo_jkl567 = CargoBookings.get_cargo!(cargo_id)
 
     attrs = %{
@@ -483,7 +505,7 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, _event2} = CargoBookings.create_handling_event(cargo_jkl567, attrs)
-    Process.sleep(500)
+    wait_for_events()
     cargo_jkl567 = CargoBookings.get_cargo!(cargo_id)
 
     attrs = %{
@@ -494,7 +516,7 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, _event3} = CargoBookings.create_handling_event(cargo_jkl567, attrs)
-    Process.sleep(500)
+    wait_for_events()
     cargo_jkl567 = CargoBookings.get_cargo!(cargo_id)
 
     attrs = %{
@@ -505,12 +527,15 @@ defmodule CargoShipping.SampleDataGenerator do
     }
 
     {:ok, _event4} = CargoBookings.create_handling_event(cargo_jkl567, attrs)
-    Process.sleep(500)
-    cargo_jkl567 = CargoBookings.get_cargo!(cargo_id)
+    wait_for_events()
 
-    handling_history = CargoBookings.lookup_handling_history(cargo_jkl567.tracking_id)
-    params = CargoBookings.derive_delivery_progress(cargo_jkl567, handling_history)
-    CargoBookings.update_cargo(cargo_jkl567, params)
+    # Note: create_handling_event will automatically derive the delivery.
+    # We don't need the following:
+    # cargo_jkl567 = CargoBookings.get_cargo!(cargo_id)
+    # handling_history = CargoBookings.lookup_handling_history(cargo_jkl567.tracking_id)
+    # params = CargoBookings.derive_delivery_progress(cargo_jkl567, handling_history)
+    # CargoBookings.update_cargo(cargo_jkl567, params)
+    # wait_for_events()
   end
 
   def cargo_jkl567_legs(voyages) do
@@ -766,13 +791,21 @@ defmodule CargoShipping.SampleDataGenerator do
 
   ## Utilities
 
+  defp wait_for_events(), do: Process.sleep(100)
+
   defp ts(hours) do
     DateTime.add(@base_time, hours * 3600, :second)
   end
 
+  defp voyage_for(voyages, key), do: Map.fetch!(voyages, key)
+
   defp voyage_id_for(_voyages, nil), do: nil
 
-  defp voyage_id_for(voyages, name) do
-    Map.fetch!(voyages, name) |> Map.fetch!(:id)
+  defp voyage_id_for(voyages, key) do
+    voyage_for(voyages, key) |> Map.fetch!(:id)
+  end
+
+  defp itinerary_for(itineraries, key) do
+    Map.fetch!(itineraries, key)
   end
 end

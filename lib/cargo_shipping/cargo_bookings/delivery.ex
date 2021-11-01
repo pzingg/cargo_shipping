@@ -13,6 +13,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
 
   alias CargoShipping.{Utils, VoyageService}
   alias CargoShipping.CargoBookings.{HandlingActivity, Itinerary}
+  alias __MODULE__
 
   @transport_status_values [:NOT_RECEIVED, :IN_PORT, :ONBOARD_CARRIER, :CLAIMED, :UNKNOWN]
   @routing_status_values [:NOT_ROUTED, :ROUTED, :MISROUTED]
@@ -52,41 +53,58 @@ defmodule CargoShipping.CargoBookings.Delivery do
     :calculated_at
   ]
 
-  def debug_delivery(delivery) do
-    misdirect =
-      if delivery.misdirected? do
-        " MISDIRECTED"
+  defimpl String.Chars, for: Delivery do
+    def to_string(delivery) do
+      misdirect =
+        if delivery.misdirected? do
+          " MISDIRECTED"
+        else
+          ""
+        end
+
+      location =
+        cond do
+          !is_nil(delivery.current_voyage_id) ->
+            voyage_number =
+              VoyageService.get_voyage_number_for_id!(delivery.current_voyage_id)
+
+            " from #{delivery.last_known_location} on voyage #{voyage_number}"
+
+          delivery.last_known_location != "_" ->
+            " at #{delivery.last_known_location}"
+
+          true ->
+            ""
+        end
+
+      "#{delivery.routing_status} #{delivery.transport_status}#{misdirect}#{location}"
+    end
+  end
+
+  def delivery_details(delivery) do
+    event =
+      if delivery.last_event_id do
+        last_event = CargoShipping.CargoBookings.get_handling_event!(delivery.last_event_id)
+        "last event #{last_event.event_type} at #{last_event.location}"
       else
-        ""
+        "no events yet"
       end
 
-    Logger.debug("delivery #{delivery.routing_status} #{delivery.transport_status}#{misdirect}")
-
-    if delivery.current_voyage_id do
-      voyage_number =
-        VoyageService.get_voyage_number_for_id!(delivery.current_voyage_id)
-        |> String.pad_trailing(6)
-
-      Logger.debug("  on voyage #{voyage_number} from #{delivery.last_known_location}")
-    else
-      if delivery.last_known_location != "_" do
-        Logger.debug("  at #{delivery.last_known_location}")
+    activity =
+      if delivery.next_expected_activity do
+        "next #{delivery.next_expected_activity.event_type} at #{delivery.next_expected_activity.location}"
+      else
+        "no expected activity"
       end
-    end
 
-    if delivery.last_event_id do
-      last_event = CargoShipping.CargoBookings.get_handling_event!(delivery.last_event_id)
-      Logger.debug("  last event #{last_event.event_type} at #{last_event.location}")
-    else
-      Logger.debug("  no events yet")
-    end
+    [event, activity]
+  end
 
-    if delivery.next_expected_activity do
-      Logger.debug(
-        "  next #{delivery.next_expected_activity.event_type} at #{delivery.next_expected_activity.location}"
-      )
-    else
-      Logger.debug("  no expected activity")
+  def debug_delivery(delivery) do
+    Logger.debug("delivery #{to_string(delivery)}")
+
+    for line <- delivery_details(delivery) do
+      Logger.debug("  #{line}")
     end
   end
 

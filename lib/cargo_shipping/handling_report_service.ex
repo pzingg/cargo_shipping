@@ -5,10 +5,8 @@ defmodule CargoShipping.HandlingReportService do
   """
   require Logger
 
-  alias CargoShipping.Utils
-
   def register_handling_report_attempt({:ok, handling_report}, _params) do
-    publish_event(:handling_report_received, Utils.from_struct(handling_report))
+    publish_event(:handling_report_received, handling_report)
   end
 
   @doc """

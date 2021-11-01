@@ -83,7 +83,7 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   defp handle_event(:cargo_was_handled, _config, event) do
     # Payload is the handling_event
-    Logger.info("[cargo_was_handled]")
+    Logger.info("[cargo_was_handled] #{to_string(event.data)}")
     HandlingEvent.debug_handling_event(event.data)
 
     # Respond to the event by updating the delivery status
@@ -98,7 +98,10 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   defp handle_event(:cargo_delivery_updated, _config, event) do
     # Payload is the cargo
-    Logger.info("[cargo_delivery_updated] #{event.data.tracking_id}")
+    Logger.info(
+      "[cargo_delivery_updated] #{event.data.tracking_id} #{to_string(event.data.delivery)}"
+    )
+
     Itinerary.debug_itinerary(event.data.itinerary)
     Delivery.debug_delivery(event.data.delivery)
   end

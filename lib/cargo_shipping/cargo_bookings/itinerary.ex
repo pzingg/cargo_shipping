@@ -12,6 +12,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
   alias CargoShipping.VoyageService
   alias CargoShipping.CargoBookings.Leg
+  alias __MODULE__
 
   @start_of_days ~U[2000-01-01 00:00:00Z]
   @end_of_days ~U[2049-12-31 23:59:59Z]
@@ -22,24 +23,37 @@ defmodule CargoShipping.CargoBookings.Itinerary do
   end
 
   def new(legs) do
-    %__MODULE__{}
+    %Itinerary{}
     |> changeset(%{legs: coalesce_legs(legs)})
     |> apply_changes()
   end
 
-  def leg_from_voyage_items([]), do: nil
+  def legs_from_voyage(voyage) do
+    Enum.map(voyage.schedule_items, fn item -> leg_from_voyage_item(voyage, item) end)
+  end
 
-  def leg_from_voyage_items(items) do
-    origin = List.first(items)
-    destination = List.last(items)
+  def leg_from_voyage_item(voyage, item) do
+    %{
+      voyage_id: voyage.id,
+      load_location: item.departure_location,
+      unload_location: item.arrival_location,
+      load_time: item.departure_time,
+      unload_time: item.arrival_time,
+      status: :NOT_LOADED
+    }
+  end
+
+  def single_leg_from_voyage(voyage) do
+    origin = List.first(voyage.schedule_items)
+    destination = List.last(voyage.schedule_items)
 
     %{
-      voyage_id: origin.voyage_id,
+      voyage_id: voyage.id,
       load_location: origin.departure_location,
       unload_location: destination.arrival_location,
-      load_time: origin.earliest_departure_time,
-      unload_time: origin.latest_arrival_time,
-      status: :UNLOADED
+      load_time: origin.departure_time,
+      unload_time: destination.arrival_time,
+      status: :NOT_LOADED
     }
   end
 
@@ -381,21 +395,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
   end
 
   # Note: leg may NOT have status set (equivalent to :NOT_LOADED).
-  defp debug_leg(
-         %{
-           load_location: load_location,
-           unload_location: unload_location,
-           voyage_id: voyage_id
-         } = leg
-       ) do
-    voyage_number =
-      VoyageService.get_voyage_number_for_id!(voyage_id)
-      |> String.pad_trailing(6)
-
-    status = Map.get(leg, :status, :NOT_LOADED)
-
-    Logger.debug(
-      "  on voyage #{voyage_number} from #{load_location} to #{unload_location} - #{status}"
-    )
+  defp debug_leg(leg) do
+    Logger.debug("  #{to_string(leg)}")
   end
 end

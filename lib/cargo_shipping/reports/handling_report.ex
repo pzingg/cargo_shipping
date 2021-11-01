@@ -3,6 +3,7 @@ defmodule CargoShipping.Reports.HandlingReport do
   import Ecto.Changeset
 
   alias CargoShipping.{CargoBookings, LocationService, VoyageService}
+  alias __MODULE__
 
   @event_type_values [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
 
@@ -17,6 +18,19 @@ defmodule CargoShipping.Reports.HandlingReport do
     field :completed_at, :utc_datetime
 
     timestamps(inserted_at: :received_at, updated_at: false)
+  end
+
+  defimpl String.Chars, for: HandlingReport do
+    def to_string(handling_report) do
+      voyage_number =
+        case handling_report.voyage_number do
+          nil -> ""
+          "" -> ""
+          number -> " on voyage #{number}"
+        end
+
+      "#{handling_report.tracking_id} #{handling_report.event_type} at #{handling_report.location}#{voyage_number}"
+    end
   end
 
   @doc false

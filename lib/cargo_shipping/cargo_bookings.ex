@@ -495,7 +495,7 @@ defmodule CargoShipping.CargoBookings do
     case Repo.insert(changeset) do
       {:ok, handling_event} ->
         # Publish an event stating that a cargo has been handled.
-        payload = Map.put(handling_event, :tracking_id, tracking_id) |> Utils.from_struct()
+        payload = Map.put(handling_event, :tracking_id, tracking_id)
         publish_event(:cargo_was_handled, payload)
         {:ok, handling_event}
 

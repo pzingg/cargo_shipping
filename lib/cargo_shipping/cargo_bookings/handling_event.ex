@@ -23,6 +23,7 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
 
   alias CargoShipping.{CargoBookings, LocationService, VoyageService}
   alias CargoShipping.CargoBookings.Cargo
+  alias __MODULE__
 
   @event_type_values [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
 
@@ -42,6 +43,21 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
     timestamps(inserted_at: :registered_at, updated_at: false)
   end
 
+  defimpl String.Chars, for: HandlingEvent do
+    def to_string(handling_event) do
+      voyage_number =
+        case handling_event.voyage_id do
+          nil ->
+            ""
+
+          voyage_id ->
+            " on voyage " <> VoyageService.get_voyage_number_for_id!(voyage_id)
+        end
+
+      "#{handling_event.tracking_id} #{handling_event.event_type} at #{handling_event.location}#{voyage_number}"
+    end
+  end
+
   @cast_fields [
     :cargo_id,
     :tracking_id,
@@ -57,7 +73,7 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
 
   @doc false
   def changeset(attrs) do
-    %__MODULE__{}
+    %HandlingEvent{}
     |> cast(attrs, @cast_fields)
     |> validate_required(@cargo_id_required_fields)
     |> validate_inclusion(:event_type, @event_type_values)
@@ -67,7 +83,7 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
   end
 
   def tracking_id_changeset(attrs) do
-    %__MODULE__{}
+    %HandlingEvent{}
     |> cast(attrs, @cast_fields)
     |> validate_required(@tracking_id_required_fields)
     |> validate_inclusion(:event_type, @event_type_values)
@@ -206,19 +222,7 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
   end
 
   def debug_handling_event(handling_event) do
-    voyage_number =
-      case handling_event.voyage_id do
-        nil ->
-          ""
-
-        voyage_id ->
-          " on voyage " <> VoyageService.get_voyage_number_for_id!(voyage_id)
-      end
-
     Logger.debug("handling_event")
-
-    Logger.debug(
-      "   #{handling_event.tracking_id} #{handling_event.event_type} at #{handling_event.location}#{voyage_number}"
-    )
+    Logger.debug("   #{to_string(handling_event)}")
   end
 end
