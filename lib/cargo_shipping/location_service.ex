@@ -2,6 +2,8 @@ defmodule CargoShipping.LocationService do
   @moduledoc """
   Read-only repository for locations.
   """
+  import Ecto.Query
+
   use Agent
 
   alias CargoShipping.Locations.Location
@@ -45,7 +47,8 @@ defmodule CargoShipping.LocationService do
         location
 
       _ ->
-        raise Ecto.NoResultsError
+        query = from l in Location, where: l.id == ^id
+        raise Ecto.NoResultsError, queryable: query
     end
   end
 

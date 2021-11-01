@@ -16,6 +16,8 @@ defmodule CargoShipping.CargoInspectionService do
 
     case CargoBookings.update_cargo(cargo, params) do
       {:ok, inspected_cargo} ->
+        publish_event(:cargo_delivery_updated, inspected_cargo)
+
         if cargo.delivery.misdirected? do
           publish_event(:cargo_misdirected, inspected_cargo)
         end
@@ -23,8 +25,6 @@ defmodule CargoShipping.CargoInspectionService do
         if cargo.delivery.unloaded_at_destination? do
           publish_event(:cargo_arrived, inspected_cargo)
         end
-
-        publish_event(:cargo_delivery_updated, inspected_cargo)
 
       {:error, changeset} ->
         publish_event(:cargo_delivery_update_failed, changeset)

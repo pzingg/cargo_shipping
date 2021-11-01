@@ -4,22 +4,9 @@ defmodule CargoShipping.VoyagePlansFixtures do
   entities via the `CargoShipping.VoyagePlans` context.
   """
 
-  def schedule_fixture() do
-    [
-      %{
-        departure_location: "DEHAM",
-        arrival_location: "CNSHA",
-        departure_time: ~U[2015-01-23 23:50:07Z],
-        arrival_time: ~U[2015-02-23 23:50:07Z]
-      },
-      %{
-        departure_location: "CNSHA",
-        arrival_location: "JPTYO",
-        departure_time: ~U[2015-02-24 23:50:07Z],
-        arrival_time: ~U[2015-03-23 23:50:07Z]
-      }
-    ]
-  end
+  @voyage_number "V0042"
+
+  def voyage_fixture_number(), do: @voyage_number
 
   @doc """
   Generate a voyage.
@@ -27,12 +14,36 @@ defmodule CargoShipping.VoyagePlansFixtures do
   def voyage_fixture(attrs \\ %{}) do
     attrs =
       Enum.into(attrs, %{
-        voyage_number: "V42",
-        schedule_items: schedule_fixture()
+        voyage_number: @voyage_number,
+        schedule_items: [
+          %{
+            departure_location: "DEHAM",
+            arrival_location: "CNSHA",
+            departure_time: ~U[2015-01-24 23:50:07Z],
+            arrival_time: ~U[2015-02-23 23:50:07Z]
+          },
+          %{
+            departure_location: "CNSHA",
+            arrival_location: "JPTYO",
+            departure_time: ~U[2015-02-24 23:50:07Z],
+            arrival_time: ~U[2015-03-23 23:50:07Z]
+          },
+          %{
+            departure_location: "JPTYO",
+            arrival_location: "AUMEL",
+            departure_time: ~U[2015-03-24 23:50:07Z],
+            arrival_time: ~U[2015-04-23 23:50:07Z]
+          }
+        ]
       })
 
-    {:ok, voyage} = CargoShipping.VoyagePlans.create_voyage(attrs)
+    case CargoShipping.VoyagePlans.get_voyage_by_number(attrs.voyage_number) do
+      nil ->
+        {:ok, voyage} = CargoShipping.VoyagePlans.create_voyage(attrs)
+        voyage
 
-    voyage
+      voyage ->
+        voyage
+    end
   end
 end

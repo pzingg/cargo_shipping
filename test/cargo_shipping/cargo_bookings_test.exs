@@ -25,8 +25,7 @@ defmodule CargoShipping.CargoBookingsTest do
         "tracking_id" => "TST042",
         "origin" => "DEHAM",
         "route_specification" => route_specification_fixture(),
-        "itinerary" => itinerary_fixture(),
-        "delivery" => delivery_fixture()
+        "itinerary" => itinerary_fixture()
       }
 
       assert {:ok, %Cargo{} = cargo} = CargoBookings.create_cargo(valid_attrs)

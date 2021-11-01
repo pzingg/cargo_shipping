@@ -70,7 +70,7 @@ defmodule CargoShipping.CargoBookings do
 
       case query |> Repo.one() do
         nil ->
-          raise Ecto.NoResultsError
+          raise Ecto.NoResultsError, queryable: query
 
         cargo ->
           cargo
@@ -99,7 +99,7 @@ defmodule CargoShipping.CargoBookings do
 
     case query |> Repo.one() do
       nil ->
-        raise Ecto.NoResultsError
+        raise Ecto.NoResultsError, queryable: query
 
       cargo ->
         cargo

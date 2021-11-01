@@ -28,28 +28,31 @@ defmodule CargoShipping.ReportsTest do
 
     test "create_handling_report/1 with valid data creates a handling_report" do
       cargo = CargoShipping.CargoBookingsFixtures.cargo_fixture()
-      voyage = CargoShipping.VoyagePlansFixtures.voyage_fixture()
+      voyage_number = CargoShipping.VoyagePlansFixtures.voyage_fixture_number()
 
       valid_attrs = %{
         completed_at: ~U[2021-10-20 03:47:00Z],
-        event_type: "UNLOAD",
-        location: "DEHAM",
+        event_type: "LOAD",
+        location: cargo.origin,
         tracking_id: cargo.tracking_id,
-        voyage_number: voyage.voyage_number
+        voyage_number: voyage_number
       }
 
       assert {:ok, %HandlingReport{} = handling_report} =
                Reports.create_handling_report(valid_attrs)
 
+      Process.sleep(100)
+
       assert handling_report.completed_at == ~U[2021-10-20 03:47:00Z]
-      assert handling_report.event_type == :UNLOAD
-      assert handling_report.location == "DEHAM"
+      assert handling_report.event_type == :LOAD
+      assert handling_report.location == cargo.origin
       assert handling_report.tracking_id == cargo.tracking_id
-      assert handling_report.voyage_number == voyage.voyage_number
+      assert handling_report.voyage_number == voyage_number
     end
 
     test "create_handling_report/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = Reports.create_handling_report(@invalid_attrs)
+      Process.sleep(100)
     end
 
     test "delete_handling_report/1 deletes the handling_report" do

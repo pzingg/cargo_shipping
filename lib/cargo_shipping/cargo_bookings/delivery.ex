@@ -65,8 +65,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
       location =
         cond do
           !is_nil(delivery.current_voyage_id) ->
-            voyage_number =
-              VoyageService.get_voyage_number_for_id!(delivery.current_voyage_id)
+            voyage_number = VoyageService.get_voyage_number_for_id!(delivery.current_voyage_id)
 
             " from #{delivery.last_known_location} on voyage #{voyage_number}"
 

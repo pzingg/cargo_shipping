@@ -4,58 +4,67 @@ defmodule CargoShipping.CargoBookingsFixtures do
   entities via the `CargoShipping.CargoBookings` context.
   """
 
-  @voyage_id UUID.uuid4()
-  @last_event_id UUID.uuid4()
+  require Logger
+
+  @tracking_id "TST042"
 
   def route_specification_fixture() do
-    %{"origin" => "DEHAM", "destination" => "CNSHA", "arrival_deadline" => "2015-02-23T23:50:07Z"}
+    %{
+      origin: "DEHAM",
+      destination: "AUMEL",
+      earliest_departure: ~U[2015-01-01 00:00:00Z],
+      arrival_deadline: ~U[2015-05-31 23:50:07Z]
+    }
   end
 
   def itinerary_fixture() do
+    voyage = CargoShipping.VoyagePlansFixtures.voyage_fixture()
+
     %{
-      "legs" => [
+      legs: [
         %{
-          "voyage_id" => @voyage_id,
-          "load_location" => "DEHAM",
-          "unload_location" => "CNSHA",
-          "load_time" => ~U[2015-01-23 23:50:07Z],
-          "unload_time" => ~U[2015-02-23 23:50:07Z]
+          voyage_id: voyage.id,
+          load_location: "DEHAM",
+          unload_location: "CNSHA",
+          load_time: ~U[2015-01-24 23:50:07Z],
+          unload_time: ~U[2015-02-23 23:50:07Z],
+          status: :NOT_LOADED
+        },
+        %{
+          voyage_id: voyage.id,
+          load_location: "CNSHA",
+          unload_location: "AUMEL",
+          load_time: ~U[2015-02-24 23:50:07Z],
+          unload_time: ~U[2015-04-23 23:50:07Z],
+          status: :NOT_LOADED
         }
       ]
     }
   end
 
-  def delivery_fixture() do
-    %{
-      "transport_status" => "UNKNOWN",
-      "last_known_location" => "DEHAM",
-      "current_voyage_id" => @voyage_id,
-      "misdirected?" => false,
-      "eta" => "2015-02-23T23:50:07Z",
-      "unloaded_at_destination?" => false,
-      "routing_status" => "NOT_ROUTED",
-      "calculated_at" => "2015-02-01T00:00:00Z",
-      "last_event_id" => @last_event_id,
-      "next_expected_activity" => nil
-    }
-  end
+  def cargo_fixture_tracking_id(), do: @tracking_id
 
   @doc """
   Generate a cargo.
   """
   def cargo_fixture(attrs \\ %{}) do
-    {:ok, cargo} =
+    attrs =
       attrs
       |> Enum.into(%{
-        "tracking_id" => "TST042",
-        "origin" => "DEHAM",
-        "route_specification" => route_specification_fixture(),
-        "itinerary" => itinerary_fixture(),
-        "delivery" => delivery_fixture()
+        tracking_id: @tracking_id,
+        origin: "DEHAM",
+        route_specification: route_specification_fixture(),
+        itinerary: itinerary_fixture()
       })
-      |> CargoShipping.CargoBookings.create_cargo()
 
-    cargo
+    try do
+      CargoShipping.CargoBookings.get_cargo_by_tracking_id!(attrs.tracking_id)
+    rescue
+      Ecto.NoResultsError ->
+        {:ok, _cargo} = CargoShipping.CargoBookings.create_cargo(attrs)
+        Process.sleep(100)
+        CargoShipping.CargoBookings.get_cargo_by_tracking_id!(attrs.tracking_id)
+    end
   end
 
   @doc """
@@ -67,12 +76,11 @@ defmodule CargoShipping.CargoBookingsFixtures do
     attrs =
       Enum.into(attrs, %{
         event_type: "RECEIVE",
-        location: "DEHAM",
-        completed_at: ~U[2021-10-14 20:32:00Z]
+        location: cargo.origin,
+        completed_at: ~U[2015-01-24 00:00:00Z]
       })
 
     {:ok, handling_event} = CargoShipping.CargoBookings.create_handling_event(cargo, attrs)
-
     handling_event
   end
 end
