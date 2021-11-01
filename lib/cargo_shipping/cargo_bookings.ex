@@ -497,7 +497,6 @@ defmodule CargoShipping.CargoBookings do
         # Publish an event stating that a cargo has been handled.
         payload = Map.put(handling_event, :tracking_id, tracking_id) |> Utils.from_struct()
         publish_event(:cargo_was_handled, payload)
-
         {:ok, handling_event}
 
       {:error, changeset} ->

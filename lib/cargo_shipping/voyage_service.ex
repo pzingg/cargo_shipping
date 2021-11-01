@@ -68,7 +68,7 @@ defmodule CargoShipping.VoyageService do
     end
   end
 
-  def find_items_satisfying_route_specification(id, route_specification) do
+  def find_items_for_route_specification(id, route_specification) do
     Agent.get(__MODULE__, & &1)
     |> Enum.find(fn %{id: voyage_id} -> voyage_id == id end)
     |> case do

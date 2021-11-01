@@ -12,6 +12,7 @@ defmodule CargoShipping.SampleDataGenerator do
   ## Sample data
 
   def voyage_0101() do
+    # Voyage 0101: SESTO - FIHEL - DEHAM - CNHKG - JPTYO - AUMEL
     VoyageBuilder.init("0101", "SESTO")
     |> VoyageBuilder.add_movement("FIHEL", ts(1), ts(2))
     |> VoyageBuilder.add_movement("DEHAM", ts(1), ts(2))
@@ -22,6 +23,7 @@ defmodule CargoShipping.SampleDataGenerator do
   end
 
   def voyage_0202() do
+    # Voyage 0202: AUMEL - USCHI - DEHAM - SESTO - FIHEL
     VoyageBuilder.init("0202", "AUMEL")
     |> VoyageBuilder.add_movement("USCHI", ts(1), ts(2))
     |> VoyageBuilder.add_movement("DEHAM", ts(1), ts(2))
@@ -31,6 +33,7 @@ defmodule CargoShipping.SampleDataGenerator do
   end
 
   def voyage_0303() do
+    # Voyage 0303: CNHKG - AUMEL - FIHEL - DEHAM - SESTO - USCHI - JPTYO
     VoyageBuilder.init("0303", "CNHKG")
     |> VoyageBuilder.add_movement("AUMEL", ts(1), ts(2))
     |> VoyageBuilder.add_movement("FIHEL", ts(1), ts(2))
@@ -41,74 +44,74 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.build()
   end
 
-  def legs_fgh(voyage_id) do
-    # voyage_0101, Hongkong - Melbourne - Stockholm - Helsinki
-    [
-      %{
-        voyage_id: voyage_id,
-        load_location: "CNHKG",
-        unload_location: "AUMEL",
-        load_time: ts(1),
-        unload_time: ts(2),
-        status: :NOT_LOADED
-      },
-      %{
-        voyage_id: voyage_id,
-        load_location: "AUMEL",
-        unload_location: "SESTO",
-        load_time: ts(3),
-        unload_time: ts(4),
-        status: :NOT_LOADED
-      },
-      %{
-        voyage_id: voyage_id,
-        load_location: "SESTO",
-        unload_location: "FIHEL",
-        load_time: ts(4),
-        unload_time: ts(5),
-        status: :NOT_LOADED
-      }
-    ]
+  def itinerary_fgh(voyages) do
+    # Cargo FGH, Hongkong - Melbourne - Stockholm - Helsinki
+    %{
+      legs: [
+        %{
+          voyage_id: voyage_id_for(voyages, :voyage_0101),
+          load_location: "CNHKG",
+          unload_location: "AUMEL",
+          load_time: ts(1),
+          unload_time: ts(2),
+          status: :NOT_LOADED
+        },
+        %{
+          voyage_id: voyage_id_for(voyages, :voyage_0202),
+          load_location: "AUMEL",
+          unload_location: "SESTO",
+          load_time: ts(3),
+          unload_time: ts(4),
+          status: :NOT_LOADED
+        },
+        %{
+          voyage_id: voyage_id_for(voyages, :voyage_0202),
+          load_location: "SESTO",
+          unload_location: "FIHEL",
+          load_time: ts(4),
+          unload_time: ts(5),
+          status: :NOT_LOADED
+        }
+      ]
+    }
   end
 
-  def legs_jkl(voyage_id) do
-    # voyage_0202, Hamburg - Stockholm - Chicago - Tokyo
-    [
-      %{
-        voyage_id: voyage_id,
-        load_location: "DEHAM",
-        unload_location: "SESTO",
-        load_time: ts(1),
-        unload_time: ts(2),
-        status: :NOT_LOADED
-      },
-      %{
-        voyage_id: voyage_id,
-        load_location: "SESTO",
-        unload_location: "USCHI",
-        load_time: ts(3),
-        unload_time: ts(4),
-        status: :NOT_LOADED
-      },
-      %{
-        voyage_id: voyage_id,
-        load_location: "USCHI",
-        unload_location: "JPTYO",
-        load_time: ts(5),
-        unload_time: ts(6),
-        status: :NOT_LOADED
-      }
-    ]
+  def itinerary_jkl(voyages) do
+    # Cargo JKL: Hamburg - Stockholm - Chicago - Tokyo
+    %{
+      legs: [
+        %{
+          voyage_id: voyage_id_for(voyages, :voyage_0303),
+          load_location: "DEHAM",
+          unload_location: "SESTO",
+          load_time: ts(1),
+          unload_time: ts(2),
+          status: :NOT_LOADED
+        },
+        %{
+          voyage_id: voyage_id_for(voyages, :voyage_0303),
+          load_location: "SESTO",
+          unload_location: "USCHI",
+          load_time: ts(3),
+          unload_time: ts(4),
+          status: :NOT_LOADED
+        },
+        %{
+          voyage_id: voyage_id_for(voyages, :voyage_0303),
+          load_location: "USCHI",
+          unload_location: "JPTYO",
+          load_time: ts(5),
+          unload_time: ts(6),
+          status: :NOT_LOADED
+        }
+      ]
+    }
   end
 
   def load_itinerary_data(voyages) do
     %{
-      itinerary_fgh: %{
-        legs: voyage_id_for(voyages, :voyage_0101) |> legs_fgh()
-      },
-      itinerary_jkl: %{
-        legs: voyage_id_for(voyages, :voyage_0202) |> legs_jkl()
-      }
+      itinerary_fgh: itinerary_fgh(voyages),
+      itinerary_jkl: itinerary_jkl(voyages)
     }
   end
 
@@ -319,19 +322,25 @@ defmodule CargoShipping.SampleDataGenerator do
       # Unexpected event
       {ts(400), ts(440), "UNLOAD", "FIHEL", :voyage_0303, :cargo_jkl}
     ]
-    |> Enum.map(fn {completed_at, registered_at, event_type, location, voyage_name, cargo_name} ->
-      cargo = Map.fetch!(cargos, cargo_name)
+    |> Enum.map(fn row -> insert_handling_event(voyages, cargos, row) end)
+  end
 
-      attrs = %{
-        event_type: event_type,
-        voyage_id: voyage_id_for(voyages, voyage_name),
-        location: location,
-        completed_at: completed_at,
-        registered_at: registered_at
-      }
+  defp insert_handling_event(
+         voyages,
+         cargos,
+         {completed_at, registered_at, event_type, location, voyage_name, cargo_name}
+       ) do
+    cargo = Map.fetch!(cargos, cargo_name)
 
-      {:ok, _handling_event} = CargoBookings.create_handling_event(cargo, attrs)
-    end)
+    attrs = %{
+      event_type: event_type,
+      voyage_id: voyage_id_for(voyages, voyage_name),
+      location: location,
+      completed_at: completed_at,
+      registered_at: registered_at
+    }
+
+    CargoBookings.create_handling_event(cargo, attrs)
   end
 
   def load_sample_data() do
@@ -344,6 +353,7 @@ defmodule CargoShipping.SampleDataGenerator do
     cargos = load_cargo_data(itineraries)
     load_handling_event_data(voyages, cargos)
 
+    Process.sleep(500)
     :ok
   end
 
@@ -756,13 +766,13 @@ defmodule CargoShipping.SampleDataGenerator do
 
   ## Utilities
 
-  def ts(hours) do
+  defp ts(hours) do
     DateTime.add(@base_time, hours * 3600, :second)
   end
 
-  def voyage_id_for(_voyages, nil), do: nil
+  defp voyage_id_for(_voyages, nil), do: nil
 
-  def voyage_id_for(voyages, name) do
+  defp voyage_id_for(voyages, name) do
     Map.fetch!(voyages, name) |> Map.fetch!(:id)
   end
 end

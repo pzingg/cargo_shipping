@@ -92,7 +92,8 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   defp handle_event(:cargo_handling_rejected, _config, event) do
     # Payload is the error changeset
-    Logger.error("[cargo_handling_rejected] #{inspect(event.data.errors)}")
+    tracking_id = Ecto.Changeset.get_field(event.data, :tracking_id)
+    Logger.error("[cargo_handling_rejected] #{tracking_id} #{inspect(event.data.errors)}")
   end
 
   defp handle_event(:cargo_delivery_updated, _config, event) do
@@ -104,7 +105,8 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   defp handle_event(:cargo_delivery_update_failed, _config, event) do
     # Payload is the error changeset
-    Logger.error("[cargo_delivery_update_failed] #{inspect(event.data.errors)}")
+    tracking_id = Ecto.Changeset.get_field(event.data, :tracking_id)
+    Logger.error("[cargo_delivery_update_failed] #{tracking_id} #{inspect(event.data.errors)}")
   end
 
   defp handle_event(:handling_report_received, _config, event) do
@@ -119,6 +121,6 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   defp handle_event(:handling_report_rejected, _config, event) do
     # Payload is the error changeset
-    Logger.error("[handling_report_rejected] #{inspect(event.data.errors)}")
+    Logger.error("[handling_report_rejected] #{inspect(event.data)}")
   end
 end
