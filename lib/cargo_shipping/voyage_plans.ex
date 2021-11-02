@@ -52,8 +52,15 @@ defmodule CargoShipping.VoyagePlans do
       from v in Voyage,
         where: [voyage_number: ^voyage_number]
 
-    query
-    |> Repo.one()
+    Repo.one(query)
+  end
+
+  def get_voyage_by_number!(voyage_number) do
+    query =
+      from v in Voyage,
+        where: [voyage_number: ^voyage_number]
+
+    Repo.one!(query)
   end
 
   @doc """

@@ -13,7 +13,7 @@ defmodule CargoShipping.RouteFindingTest do
       shortest = List.first(itineraries)
 
       refute is_nil(shortest)
-      assert Enum.count(shortest.itinerary.legs) == 11
+      assert Enum.count(shortest.itinerary.legs) == 4
       Itinerary.debug_itinerary(shortest.itinerary)
 
       first_leg = List.first(shortest.itinerary.legs)
@@ -29,7 +29,7 @@ defmodule CargoShipping.RouteFindingTest do
       shortest = List.first(itineraries)
 
       refute is_nil(shortest)
-      assert Enum.count(shortest.itinerary.legs) == 7
+      assert Enum.count(shortest.itinerary.legs) == 3
       Itinerary.debug_itinerary(shortest.itinerary)
 
       first_leg = List.first(shortest.itinerary.legs)
@@ -41,8 +41,8 @@ defmodule CargoShipping.RouteFindingTest do
 
   describe "finds no path from" do
     @tag hibernate_data: :voyages
-    test "from CNSHA to CNHKG" do
-      itineraries = find_paths("CNSHA", "CNHKG")
+    test "from CNSHA to SEGOT" do
+      itineraries = find_paths("CNSHA", "SEGOT")
       debug_itineraries(itineraries, "CNSHA", "CNHKG")
       shortest = List.first(itineraries)
       assert is_nil(shortest)
@@ -65,14 +65,14 @@ defmodule CargoShipping.RouteFindingTest do
   end
 
   def debug_itineraries(itineraries, from, to) do
-    Logger.error("#{Enum.count(itineraries)} itineraries from #{from} to #{to}:")
+    Logger.debug("#{Enum.count(itineraries)} itinerary(ies) from #{from} to #{to}:")
 
     if !Enum.empty?(itineraries) do
       limit = min(5, Enum.count(itineraries))
 
       for i <- 1..limit do
         %{itinerary: it, cost: cost} = Enum.at(itineraries, i - 1)
-        Logger.error("Itinerary #{i}, cost #{cost}, #{Enum.count(it.legs)} legs")
+        Logger.debug("Itinerary #{i}, cost #{cost}, #{Enum.count(it.legs)} legs")
       end
     end
   end

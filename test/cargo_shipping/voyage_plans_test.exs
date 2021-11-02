@@ -30,11 +30,33 @@ defmodule CargoShipping.VoyagePlansTest do
     end
 
     test "create_voyage/1 with valid data creates a voyage" do
-      valid_attrs = %{"voyage_number" => "V42", "schedule_items" => schedule_fixture()}
+      valid_attrs = %{
+        "voyage_number" => "V0042",
+        "schedule_items" => [
+          %{
+            "departure_location" => "DEHAM",
+            "arrival_location" => "CNSHA",
+            "departure_time" => ~U[2015-01-24 23:50:07Z],
+            "arrival_time" => ~U[2015-02-23 23:50:07Z]
+          },
+          %{
+            "departure_location" => "CNSHA",
+            "arrival_location" => "JPTYO",
+            "departure_time" => ~U[2015-02-24 23:50:07Z],
+            "arrival_time" => ~U[2015-03-23 23:50:07Z]
+          },
+          %{
+            "departure_location" => "JPTYO",
+            "arrival_location" => "AUMEL",
+            "departure_time" => ~U[2015-03-24 23:50:07Z],
+            "arrival_time" => ~U[2015-04-23 23:50:07Z]
+          }
+        ]
+      }
 
       assert {:ok, %Voyage{} = voyage} = VoyagePlans.create_voyage(valid_attrs)
-      assert voyage.voyage_number == "V42"
-      assert Enum.count(voyage.schedule_items) == 2
+      assert voyage.voyage_number == "V0042"
+      assert Enum.count(voyage.schedule_items) == 3
       assert hd(voyage.schedule_items).departure_location == "DEHAM"
     end
 
@@ -44,10 +66,10 @@ defmodule CargoShipping.VoyagePlansTest do
 
     test "update_voyage/2 with valid data updates the voyage" do
       voyage = voyage_fixture()
-      update_attrs = %{"voyage_number" => "V43", "schedule_items" => @schedule_update_attrs}
+      update_attrs = %{"voyage_number" => "V0043", "schedule_items" => @schedule_update_attrs}
 
       assert {:ok, %Voyage{} = voyage} = VoyagePlans.update_voyage(voyage, update_attrs)
-      assert voyage.voyage_number == "V43"
+      assert voyage.voyage_number == "V0043"
       assert Enum.count(voyage.schedule_items) == 1
       assert hd(voyage.schedule_items).departure_location == "NLRTM"
     end

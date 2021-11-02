@@ -7,6 +7,7 @@ defmodule CargoShipping.CargoBookingsTest do
     alias CargoShipping.CargoBookings.Cargo
 
     import CargoShipping.CargoBookingsFixtures
+    import CargoShipping.VoyagePlansFixtures
 
     @invalid_attrs %{tracking_id: nil}
 
@@ -21,40 +22,87 @@ defmodule CargoShipping.CargoBookingsTest do
     end
 
     test "create_cargo/1 with valid data creates a cargo" do
+      voyage = voyage_fixture()
+
       valid_attrs = %{
         "tracking_id" => "TST042",
         "origin" => "DEHAM",
-        "route_specification" => route_specification_fixture(),
-        "itinerary" => itinerary_fixture()
+        "route_specification" => %{
+          "origin" => "DEHAM",
+          "destination" => "AUMEL",
+          "earliest_departure" => ~U[2015-01-01 00:00:00Z],
+          "arrival_deadline" => ~U[2015-05-31 23:50:07Z]
+        },
+        "itinerary" => %{
+          "legs" => [
+            %{
+              "voyage_id" => voyage.id,
+              "load_location" => "DEHAM",
+              "unload_location" => "CNSHA",
+              "load_time" => ~U[2015-01-24 23:50:07Z],
+              "unload_time" => ~U[2015-02-23 23:50:07Z],
+              "status" => "NOT_LOADED"
+            },
+            %{
+              "voyage_id" => voyage.id,
+              "load_location" => "CNSHA",
+              "unload_location" => "AUMEL",
+              "load_time" => ~U[2015-02-24 23:50:07Z],
+              "unload_time" => ~U[2015-04-23 23:50:07Z],
+              "status" => "NOT_LOADED"
+            }
+          ]
+        }
       }
 
       assert {:ok, %Cargo{} = cargo} = CargoBookings.create_cargo(valid_attrs)
+      Process.sleep(100)
+      cargo = CargoBookings.get_cargo!(cargo.id)
+      assert cargo.origin == "DEHAM"
       assert cargo.tracking_id == "TST042"
     end
 
     test "create_cargo/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = CargoBookings.create_cargo(@invalid_attrs)
+      Process.sleep(100)
     end
 
     test "update_cargo/2 with valid data updates the cargo" do
+      voyage = voyage_fixture()
       cargo = cargo_fixture()
 
       update_attrs = %{
-        "tracking_id" => "some updated tracking_id",
-        "origin" => "DEHAM",
-        "route_specification" => route_specification_fixture(),
-        "itinerary" => itinerary_fixture(),
-        "delivery" => delivery_fixture()
+        "origin" => "CNSHA",
+        "route_specification" => %{
+          "origin" => "CNSHA",
+          "destination" => "AUMEL",
+          "earliest_departure" => ~U[2015-01-01 00:00:00Z],
+          "arrival_deadline" => ~U[2015-05-31 23:50:07Z]
+        },
+        "itinerary" => %{
+          "legs" => [
+            %{
+              "voyage_id" => voyage.id,
+              "load_location" => "CNSHA",
+              "unload_location" => "AUMEL",
+              "load_time" => ~U[2015-02-24 23:50:07Z],
+              "unload_time" => ~U[2015-04-23 23:50:07Z],
+              "status" => "NOT_LOADED"
+            }
+          ]
+        }
       }
 
       assert {:ok, %Cargo{} = cargo} = CargoBookings.update_cargo(cargo, update_attrs)
-      assert cargo.tracking_id == "some updated tracking_id"
+      Process.sleep(100)
+      cargo = CargoBookings.get_cargo!(cargo.id)
+      assert cargo.origin == "CNSHA"
     end
 
     test "update_cargo/2 with invalid data returns error changeset" do
       cargo = cargo_fixture()
       assert {:error, %Ecto.Changeset{}} = CargoBookings.update_cargo(cargo, @invalid_attrs)
-      assert cargo == CargoBookings.get_cargo!(cargo.id)
+      Process.sleep(100)
     end
 
     test "delete_cargo/1 deletes the cargo" do
@@ -96,6 +144,7 @@ defmodule CargoShipping.CargoBookingsTest do
       assert {:ok, %HandlingEvent{} = handling_event} =
                CargoBookings.create_handling_event(cargo_fixture(), valid_attrs)
 
+      Process.sleep(100)
       assert handling_event.event_type == :RECEIVE
       assert handling_event.completed_at == ~U[2021-10-14 20:32:00Z]
     end

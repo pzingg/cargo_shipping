@@ -68,13 +68,7 @@ defmodule CargoShipping.CargoBookings do
               )
           ]
 
-      case query |> Repo.one() do
-        nil ->
-          raise Ecto.NoResultsError, queryable: query
-
-        cargo ->
-          cargo
-      end
+      Repo.one!(query)
     else
       Repo.get!(Cargo, id)
     end
@@ -97,13 +91,7 @@ defmodule CargoShipping.CargoBookings do
           where: c.tracking_id == ^tracking_id
       end
 
-    case query |> Repo.one() do
-      nil ->
-        raise Ecto.NoResultsError, queryable: query
-
-      cargo ->
-        cargo
-    end
+    Repo.one!(query)
   end
 
   def cargo_tracking_id_exists?(nil), do: false
@@ -277,14 +265,17 @@ defmodule CargoShipping.CargoBookings do
       raise "patched itinerary expected departure #{origin}, was #{itinerary_departure}"
     end
 
-    first_legs =
-      itinerary.legs
-      |> Enum.take_while(fn leg -> leg.load_location != origin end)
-
+    {first_legs, next_legs} = Itinerary.split_completed_legs(itinerary, origin)
     first_arrival = Itinerary.final_arrival_location(%{legs: first_legs})
 
     if first_arrival != origin do
       raise "first part itinerary expected arrival #{origin}, was #{first_arrival}"
+    end
+
+    next_departure = Itinerary.initial_departure_location(%{legs: next_legs})
+
+    if next_departure != origin do
+      raise "next part itinerary expected departure #{origin}, was #{next_departure}"
     end
 
     Itinerary.new(first_legs ++ patch_itinerary.legs)
@@ -419,8 +410,7 @@ defmodule CargoShipping.CargoBookings do
         where: c.tracking_id == ^tracking_id,
         order_by: [desc: he.completed_at]
 
-    query
-    |> Repo.all()
+    Repo.all(query)
   end
 
   @doc """
@@ -464,7 +454,16 @@ defmodule CargoShipping.CargoBookings do
       ** (Ecto.NoResultsError)
 
   """
-  def get_handling_event!(id), do: Repo.get!(HandlingEvent, id)
+  def get_handling_event!(id) do
+    query =
+      from he in HandlingEvent,
+        left_join: c in Cargo,
+        on: c.id == he.cargo_id,
+        select_merge: %{tracking_id: c.tracking_id},
+        where: he.id == ^id
+
+    Repo.one!(query)
+  end
 
   @doc """
   Creates a handling_event.

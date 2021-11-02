@@ -76,7 +76,8 @@ defmodule CargoShipping.CargoBookingService do
       # We are at our destination
       {nil, nil}
     else
-      itineraries = routes_for_specification(remaining_route_spec, algorithm: :libgraph)
+      itineraries =
+        routes_for_specification(remaining_route_spec, algorithm: :libgraph, find: :all)
 
       if Enum.empty?(itineraries) do
         {remaining_route_spec, nil}
@@ -103,7 +104,14 @@ defmodule CargoShipping.CargoBookingService do
       |> Keyword.put(:arrival_deadline, route_specification.arrival_deadline)
     )
     |> Enum.filter(fn %{itinerary: itinerary} ->
-      Itinerary.satisfies?(itinerary, route_specification)
+      filter = Itinerary.satisfies?(itinerary, route_specification)
+
+      if !filter do
+        Logger.error("itinerary fails to satisfy route specification")
+        Itinerary.debug_itinerary(itinerary)
+      end
+
+      filter
     end)
   end
 end
