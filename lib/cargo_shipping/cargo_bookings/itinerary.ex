@@ -10,7 +10,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
   require Logger
 
-  alias CargoShipping.VoyageService
+  alias CargoShipping.{VoyageService, Utils}
   alias CargoShipping.CargoBookings.Leg
   alias __MODULE__
 
@@ -28,13 +28,125 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     |> apply_changes()
   end
 
-  def legs_from_voyage(voyage) do
-    Enum.map(voyage.schedule_items, fn item -> leg_from_voyage_item(voyage, item) end)
+  @doc false
+  def changeset(itinerary, attrs) do
+    itinerary
+    |> cast(attrs, [])
+    |> cast_embed(:legs, with: &Leg.changeset/2)
+    |> validate_contiguous_legs()
   end
 
-  def leg_from_voyage_item(voyage, item) do
+  def validate_contiguous_legs(changeset) do
+    {next_changeset, _} =
+      get_field(changeset, :legs)
+      |> Enum.with_index()
+      |> Enum.reduce_while({changeset, nil}, fn {leg, index}, {cs, last_leg} ->
+        load_location = leg.load_location
+
+        if is_nil(last_leg) ||
+             load_location == last_leg.unload_location ||
+             (!is_nil(last_leg.actual_unload_location) &&
+                load_location == last_leg.actual_unload_location) do
+          {:cont, {cs, leg}}
+        else
+          {:halt, {add_error(cs, :legs, "#{index - 1} and #{index} are not contiguous"), leg}}
+        end
+      end)
+
+    next_changeset
+  end
+
+  def initial_leg(itinerary), do: List.first(itinerary.legs)
+
+  def initial_departure_location(itinerary) do
+    case initial_leg(itinerary) do
+      nil ->
+        "_"
+
+      leg ->
+        Leg.actual_load_location(leg)
+    end
+  end
+
+  def initial_departure_date(itinerary) do
+    case initial_leg(itinerary) do
+      nil ->
+        @start_of_days
+
+      leg ->
+        leg.load_time
+    end
+  end
+
+  def uncompleted_leg(%{legs: legs}) do
+    Enum.drop_while(legs, &Leg.completed?(&1)) |> List.first()
+  end
+
+  def uncompleted_departure_location(itinerary) do
+    case uncompleted_leg(itinerary) do
+      nil ->
+        "_"
+
+      leg ->
+        Leg.actual_load_location(leg)
+    end
+  end
+
+  def uncompleted_departure_date(itinerary) do
+    case uncompleted_leg(itinerary) do
+      nil ->
+        @start_of_days
+
+      leg ->
+        leg.load_time
+    end
+  end
+
+  def final_leg(itinerary), do: List.last(itinerary.legs)
+
+  def final_arrival_location(itinerary) do
+    case final_leg(itinerary) do
+      nil ->
+        "_"
+
+      leg ->
+        Leg.actual_unload_location(leg)
+    end
+  end
+
+  def final_arrival_date(itinerary) do
+    case final_leg(itinerary) do
+      nil ->
+        @end_of_days
+
+      leg ->
+        leg.unload_time
+    end
+  end
+
+  def find_leg(:LOAD, itinerary, location) do
+    Enum.find(itinerary.legs, fn leg ->
+      Leg.actual_load_location(leg) == location
+    end)
+  end
+
+  def find_leg(:UNLOAD, itinerary, location) do
+    Enum.find(itinerary.legs, fn leg ->
+      Leg.actual_unload_location(leg) == location
+    end)
+  end
+
+  def legs_from_voyage(%{id: voyage_id, schedule_items: items} = _voyage) do
+    legs_from_voyage_items(voyage_id, items)
+  end
+
+  def legs_from_voyage_items(voyage_id, items) do
+    Enum.map(items, fn item -> leg_from_voyage_item(voyage_id, item) end)
+  end
+
+  def leg_from_voyage_item(voyage_id, item) do
     %{
-      voyage_id: voyage.id,
+      voyage_id: voyage_id,
       load_location: item.departure_location,
       unload_location: item.arrival_location,
       load_time: item.departure_time,
@@ -43,12 +155,16 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     }
   end
 
-  def single_leg_from_voyage(voyage) do
-    origin = List.first(voyage.schedule_items)
-    destination = List.last(voyage.schedule_items)
+  def single_leg_from_voyage(%{id: voyage_id, schedule_items: items} = _voyage) do
+    single_leg_from_voyage_items(voyage_id, items)
+  end
+
+  def single_leg_from_voyage_items(voyage_id, items) do
+    origin = List.first(items)
+    destination = List.last(items)
 
     %{
-      voyage_id: voyage.id,
+      voyage_id: voyage_id,
       load_location: origin.departure_location,
       unload_location: destination.arrival_location,
       load_time: origin.departure_time,
@@ -81,84 +197,6 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     Enum.reverse(reversed_legs)
   end
 
-  @doc false
-  def changeset(itinerary, attrs) do
-    itinerary
-    |> cast(attrs, [])
-    |> cast_embed(:legs, with: &Leg.changeset/2)
-    |> validate_contiguous_legs()
-  end
-
-  def validate_contiguous_legs(changeset) do
-    {next_changeset, _} =
-      get_field(changeset, :legs)
-      |> Enum.reduce_while({changeset, nil}, fn leg, {cs, last_leg} ->
-        if is_nil(last_leg) || last_leg.unload_location == leg.load_location do
-          {:cont, {cs, leg}}
-        else
-          {:halt, {add_error(cs, :legs, "are not contiguous"), leg}}
-        end
-      end)
-
-    next_changeset
-  end
-
-  def initial_leg(itinerary), do: List.first(itinerary.legs)
-
-  def initial_departure_location(itinerary) do
-    case initial_leg(itinerary) do
-      nil ->
-        "_"
-
-      leg ->
-        leg.load_location
-    end
-  end
-
-  def initial_departure_date(itinerary) do
-    case initial_leg(itinerary) do
-      nil ->
-        @start_of_days
-
-      leg ->
-        leg.load_time
-    end
-  end
-
-  def final_leg(itinerary), do: List.last(itinerary.legs)
-
-  def final_arrival_location(itinerary) do
-    case final_leg(itinerary) do
-      nil ->
-        "_"
-
-      leg ->
-        leg.unload_location
-    end
-  end
-
-  def final_arrival_date(itinerary) do
-    case final_leg(itinerary) do
-      nil ->
-        @end_of_days
-
-      leg ->
-        leg.unload_time
-    end
-  end
-
-  def find_leg(:LOAD, itinerary, location) do
-    Enum.find(itinerary.legs, fn leg ->
-      leg.load_location == location
-    end)
-  end
-
-  def find_leg(:UNLOAD, itinerary, location) do
-    Enum.find(itinerary.legs, fn leg ->
-      leg.unload_location == location
-    end)
-  end
-
   @doc """
   Test that itinerary matches origin and destination requirements.
   """
@@ -170,17 +208,88 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     must_satisfy_dates = Keyword.get(opts, :strict, false)
 
     cond do
-      !(initial_departure_location(itinerary) == route_specification.origin &&
+      !(uncompleted_departure_location(itinerary) == route_specification.origin &&
             final_arrival_location(itinerary) == route_specification.destination) ->
         false
 
       must_satisfy_dates &&
-          !(initial_departure_date(itinerary) >= route_specification.earliest_departure &&
+          !(uncompleted_departure_date(itinerary) >= route_specification.earliest_departure &&
                 final_arrival_date(itinerary) <= route_specification.arrival_deadline) ->
         false
 
       true ->
         true
+    end
+  end
+
+  def internal_itinerary_for_route_specification(itinerary, route_specification) do
+    internal_itinerary_for(itinerary.legs, route_specification)
+  end
+
+  def internal_itinerary_for([], _route_specification), do: nil
+
+  def internal_itinerary_for(legs, route_specification) do
+    [first | rest] = legs
+
+    single_itinerary_for(legs, route_specification) ||
+      recursive_itinerary_for(first, 0, route_specification, rest)
+  end
+
+  def single_itinerary_for(legs, route_specification) do
+    Enum.with_index(legs)
+    |> Enum.reduce_while(nil, fn {leg, _index}, _acc ->
+      case single_leg_for_voyage(leg.voyage_id, route_specification) do
+        nil ->
+          {:cont, nil}
+
+        matched_leg ->
+          # Done, the matched leg does it all.
+          {:halt, Utils.from_struct([matched_leg]) |> Itinerary.new()}
+      end
+    end)
+  end
+
+  @doc """
+  See if there is a voyage for a leg that can make an itinerary
+  from the route specification's origin to the leg's destination.
+  If so, the full itinerary can be built from that itinerary and
+  the remaining legs.
+  """
+  def recursive_itinerary_for(leg, index, route_specification, remaining_legs) do
+    partial_route_spec = %{
+      route_specification
+      | destination: leg.unload_location,
+        arrival_deadline: leg.unload_time
+    }
+
+    case single_leg_for_voyage(leg.voyage_id, partial_route_spec) do
+      nil ->
+        if remaining_legs == [] do
+          # Recursion exhausted
+          nil
+        else
+          # Recurse
+          [next | rest] = remaining_legs
+          recursive_itinerary_for(next, index + 1, route_specification, rest)
+        end
+
+      matched_leg ->
+        # Done, append remaining legs to the solution.
+        Utils.from_struct([matched_leg | remaining_legs]) |> Itinerary.new()
+    end
+  end
+
+  def itinerary_for_voyage(voyage_id, route_specification) do
+    case single_leg_for_voyage(voyage_id, route_specification) do
+      nil -> nil
+      leg -> List.wrap(leg) |> Itinerary.new()
+    end
+  end
+
+  def single_leg_for_voyage(voyage_id, route_specification) do
+    case VoyageService.find_items_for_route_specification(voyage_id, route_specification) do
+      {:ok, items} -> single_leg_from_voyage_items(voyage_id, items)
+      _ -> nil
     end
   end
 
@@ -206,7 +315,16 @@ defmodule CargoShipping.CargoBookings.Itinerary do
             {:ok, updated_itinerary}
 
           {:error, message} ->
-            {:error, message, nil}
+            updated_itinerary =
+              update_for_unexpected_event(
+                itinerary,
+                handling_event.event_type,
+                handling_event.location,
+                handling_event.voyage_id,
+                handling_event.completed_at
+              )
+
+            {:error, message, updated_itinerary}
         end
     end
   end
@@ -364,31 +482,135 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     end
   end
 
-  def split_completed_legs(%{legs: legs} = itinerary, origin \\ nil) do
-    first_uncompleted = first_uncompleted_index(itinerary, origin)
-    Enum.split(legs, first_uncompleted)
+  defp update_for_unexpected_event(
+         %{legs: legs} = itinerary,
+         :RECEIVE,
+         location,
+         _voyage_id,
+         completed_at
+       ) do
+    %{
+      itinerary
+      | legs:
+          List.update_at(legs, current_index(itinerary), fn leg ->
+            %{leg | actual_load_location: location, load_time: completed_at}
+          end)
+    }
   end
 
-  # Returns 1 + the highest leg index marked as :COMPLETED or :CLAIMED
-  # Returns 0 if none completed
-  def first_uncompleted_index(%{legs: legs} = _itinerary, origin) do
-    last_completed_index =
-      Enum.with_index(legs)
-      |> Enum.reduce_while(-1, fn {leg, index}, acc ->
-        if Leg.completed?(leg) do
-          {:cont, index}
-        else
-          if origin && origin != leg.load_location do
-            Logger.error(
-              "load location #{leg.load_location} of first uncompleted leg #{index} does not match origin #{origin}"
-            )
-          end
+  defp update_for_unexpected_event(
+         %{legs: legs} = itinerary,
+         :LOAD,
+         location,
+         _voyage_id,
+         completed_at
+       ) do
+    %{
+      itinerary
+      | legs:
+          List.update_at(legs, current_index(itinerary), fn leg ->
+            %{
+              leg
+              | status: :ONBOARD_CARRIER,
+                actual_load_location: location,
+                load_time: completed_at
+            }
+          end)
+    }
+  end
 
-          {:halt, acc}
+  defp update_for_unexpected_event(
+         %{legs: legs} = itinerary,
+         :UNLOAD,
+         location,
+         _voyage_id,
+         completed_at
+       ) do
+    %{
+      itinerary
+      | legs:
+          List.update_at(legs, current_index(itinerary), fn leg ->
+            %{
+              leg
+              | status: :COMPLETED,
+                actual_unload_location: location,
+                unload_time: completed_at
+            }
+          end)
+    }
+  end
+
+  defp update_for_unexpected_event(
+         %{legs: legs} = itinerary,
+         :CUSTOMS,
+         location,
+         _voyage_id,
+         completed_at
+       ) do
+    %{
+      itinerary
+      | legs:
+          List.update_at(legs, current_index(itinerary), fn leg ->
+            %{
+              leg
+              | status: :COMPLETED,
+                actual_unload_location: location,
+                unload_time: completed_at
+            }
+          end)
+    }
+  end
+
+  defp update_for_unexpected_event(
+         %{legs: legs} = itinerary,
+         :CLAIM,
+         location,
+         _voyage_id,
+         completed_at
+       ) do
+    %{
+      itinerary
+      | legs:
+          List.update_at(legs, current_index(itinerary), fn leg ->
+            %{leg | status: :CLAIMED, actual_unload_location: location, unload_time: completed_at}
+          end)
+    }
+  end
+
+  def split_completed_legs(%{legs: legs} = itinerary, origin \\ nil) do
+    first_uncompleted_index = last_completed_index(itinerary, origin) + 1
+    Enum.split(legs, first_uncompleted_index)
+  end
+
+  def current_leg(%{legs: legs} = itinerary) do
+    Enum.at(legs, current_index(itinerary, nil))
+  end
+
+  def last_completed_leg(%{legs: legs} = itinerary) do
+    Enum.at(legs, last_completed_index(itinerary, nil))
+  end
+
+  def current_index(itinerary, origin \\ nil) do
+    last_completed_index(itinerary, origin) + 1
+  end
+
+  # Returns the highest leg index marked as :COMPLETED or :CLAIMED
+  # Returns -1 if none completed
+  def last_completed_index(%{legs: legs} = _itinerary, origin \\ nil) do
+    Enum.with_index(legs)
+    |> Enum.reduce_while(-1, fn {leg, index}, acc ->
+      if Leg.completed?(leg) do
+        {:cont, index}
+      else
+        if origin && origin != leg.load_location do
+          Logger.error(
+            "load location #{leg.load_location} of first uncompleted leg #{index} does not match origin #{origin}"
+          )
         end
-      end)
 
-    last_completed_index + 1
+        {:halt, acc}
+      end
+    end)
   end
 
   def debug_itinerary(itinerary) do

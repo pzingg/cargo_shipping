@@ -130,6 +130,16 @@ defmodule CargoShipping.CargoBookings.Delivery do
     |> cast_embed(:next_expected_activity, with: &HandlingActivity.changeset/2)
   end
 
+  def last_handling_event(delivery) do
+    case Utils.get(delivery, :last_event_id) do
+      nil ->
+        nil
+
+      event_id ->
+        CargoShipping.CargoBookings.get_handling_event!(event_id)
+    end
+  end
+
   @doc """
   Returns a params map with new itinerary and delivery snapshots based on the current
   routing and delivery information.
@@ -139,15 +149,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
   end
 
   def params_derived_from_routing(delivery, route_specification, itinerary) do
-    last_event =
-      case Map.get(delivery, :last_event_id) || Map.get(delivery, "last_event_id") do
-        nil ->
-          nil
-
-        event_id ->
-          CargoShipping.CargoBookings.get_handling_event!(event_id)
-      end
-
+    last_event = last_handling_event(delivery)
     recalculated_params(route_specification, itinerary, last_event)
   end
 
@@ -241,9 +243,9 @@ defmodule CargoShipping.CargoBookings.Delivery do
 
   defp calculate_misdirection_status(itinerary, last_event) do
     case Itinerary.matches_handling_event(itinerary, last_event) do
-      {:error, message, _movement_info} ->
-        Logger.error("misdirection #{last_event.tracking_id} " <> message)
-        {itinerary, true}
+      {:error, message, updated_itinerary} ->
+        Logger.error("misdirection #{last_event.tracking_id} #{message}")
+        {updated_itinerary, true}
 
       {:ok, updated_itinerary} ->
         {updated_itinerary, false}

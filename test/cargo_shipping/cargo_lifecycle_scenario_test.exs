@@ -47,7 +47,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     # The cargo is then assigned to the selected route, described by an itinerary.
 
-    {remaining_route_spec, indexed_itineraries} =
+    {remaining_route_spec, indexed_itineraries, patch_uncompleted_leg?} =
       CargoBookingService.possible_routes_for_cargo(cargo)
 
     assert remaining_route_spec
@@ -57,7 +57,12 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     itinerary = select_prefered_itinerary(indexed_itineraries)
 
     {:ok, _cargo} =
-      CargoBookings.update_cargo_for_new_itinerary(cargo, itinerary, remaining_route_spec)
+      CargoBookings.update_cargo_for_new_itinerary(
+        cargo,
+        itinerary,
+        remaining_route_spec,
+        patch_uncompleted_leg?
+      )
 
     Logger.warn("Line 62, after routing")
 
@@ -203,7 +208,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     # Repeat procedure of selecting one out of a number of possible
     # routes satisfying the route spec.
 
-    {remaining_route_spec, indexed_itineraries} =
+    {remaining_route_spec, indexed_itineraries, patch_uncompleted_leg?} =
       CargoBookingService.possible_routes_for_cargo(cargo)
 
     assert remaining_route_spec
@@ -213,7 +218,12 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     itinerary = select_prefered_itinerary(indexed_itineraries)
 
     {:ok, _cargo} =
-      CargoBookings.update_cargo_for_new_itinerary(cargo, itinerary, remaining_route_spec)
+      CargoBookings.update_cargo_for_new_itinerary(
+        cargo,
+        itinerary,
+        remaining_route_spec,
+        patch_uncompleted_leg?
+      )
 
     Logger.warn("Line 218, after routing")
 

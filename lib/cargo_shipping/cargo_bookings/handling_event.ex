@@ -175,7 +175,7 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
         event_type = get_change(changeset, :event_type)
         transport_status = cargo.delivery.transport_status
 
-        if check_event_type(event_type, transport_status) do
+        if permitted_event_for_transport_status?(event_type, transport_status) do
           changeset
         else
           add_error(changeset, :event_type, "is not permitted for #{transport_status}")
@@ -183,22 +183,27 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
     end
   end
 
-  defp check_event_type(event_type, transport_status) do
-    case transport_status do
-      :NOT_RECEIVED ->
-        event_type == :RECEIVE
+  def permitted_event_for_transport_status?(event_type, transport_status) do
+    # event_type is one of [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
+    # transport_status is one of [:NOT_RECEIVED, :IN_PORT, :ONBOARD_CARRIER, :CLAIMED, :UNKNOWN]
+    case event_type do
+      :RECEIVE -> transport_status == :NOT_RECEIVED
+      :LOAD -> transport_status != :CLAIMED
+      :UNLOAD -> transport_status != :CLAIMED
+      :CUSTOMS -> transport_status != :CLAIMED
+      :CLAIM -> transport_status != :CLAIMED
+    end
+  end
 
-      :IN_PORT ->
-        event_type != :RECEIVE
-
-      :ONBOARD_CARRIER ->
-        event_type != :RECEIVE
-
-      :CLAIMED ->
-        false
-
-      :UNKNOWN ->
-        true
+  def expected_event_for_transport_status?(event_type, transport_status) do
+    # event_type is one of [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
+    # transport_status is one of [:NOT_RECEIVED, :IN_PORT, :ONBOARD_CARRIER, :CLAIMED, :UNKNOWN]
+    case event_type do
+      :RECEIVE -> transport_status == :NOT_RECEIVED
+      :LOAD -> transport_status == :IN_PORT
+      :UNLOAD -> transport_status == :ONBOARD_CARRIER
+      :CUSTOMS -> transport_status == :IN_PORT
+      :CLAIM -> transport_status == :IN_PORT
     end
   end
 

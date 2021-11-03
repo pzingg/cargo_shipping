@@ -5,7 +5,7 @@ defmodule CargoShipping.SampleDataGenerator do
   require Logger
 
   alias CargoShipping.{CargoBookings, VoyagePlans}
-  alias CargoShipping.CargoBookings.{Delivery, Itinerary}
+  alias CargoShipping.CargoBookings.Itinerary
   alias CargoShipping.VoyagePlans.VoyageBuilder
 
   @base_time DateTime.utc_now() |> Timex.beginning_of_day() |> Timex.to_datetime()

@@ -134,11 +134,12 @@ defmodule CargoShipping.CargoBookings do
 
   """
   def create_cargo(attrs \\ %{}) do
-    {itinerary, other_attrs} = Map.pop(attrs, :itinerary)
+    route_specification = Utils.get(attrs, :route_specification)
+    itinerary = Utils.get(attrs, :itinerary)
 
     recalculated_attrs =
       if itinerary do
-        cargo_params_for_new_itinerary(other_attrs, itinerary)
+        derived_routing_params(attrs, route_specification, itinerary)
       else
         attrs
       end
@@ -195,11 +196,12 @@ defmodule CargoShipping.CargoBookings do
 
   defp new_route_params(%{delivery: delivery, itinerary: itinerary} = cargo, route_specification) do
     # Use the cargo's delivery to preserve the last_event
-    params = Delivery.params_derived_from_routing(delivery, route_specification, itinerary)
+    itinerary_and_delivery_params =
+      Delivery.params_derived_from_routing(delivery, route_specification, itinerary)
 
     cargo
     |> Map.put(:route_specification, route_specification)
-    |> Map.merge(params)
+    |> Map.merge(itinerary_and_delivery_params)
     |> Utils.from_struct()
   end
 
@@ -207,130 +209,198 @@ defmodule CargoShipping.CargoBookings do
   Synchronously updates the Cargo aggregate with a new Itinerary after
   re-routing.
   """
-  def update_cargo_for_new_itinerary(cargo, itinerary, remaining_route_spec \\ nil) do
-    params = cargo_params_for_new_itinerary(cargo, itinerary, remaining_route_spec)
+  def update_cargo_for_new_itinerary(
+        cargo,
+        itinerary,
+        route_specification,
+        patch_uncompleted_leg?
+      ) do
+    params =
+      cargo_params_for_new_itinerary(
+        cargo,
+        itinerary,
+        route_specification,
+        patch_uncompleted_leg?
+      )
+
     update_cargo(cargo, params)
   end
 
   # Argument `cargo` can be a map (when creating cargos), or an existing Cargo struct.
-  defp cargo_params_for_new_itinerary(cargo, new_itinerary, patch_route_spec \\ nil)
+  defp cargo_params_for_new_itinerary(
+         cargo,
+         new_itinerary,
+         new_route_spec,
+         patch_uncompleted_leg?
+       )
        when is_map(new_itinerary) do
-    {route_specification, itinerary} =
-      patch_route_specification_and_itinerary(cargo, patch_route_spec, new_itinerary)
+    route_specification = merge_route_specification(cargo.route_specification, new_route_spec)
+    itinerary = merge_itinerary(cargo.itinerary, new_itinerary, patch_uncompleted_leg?)
+    derived_routing_params(cargo, route_specification, itinerary)
+  end
 
+  def merge_route_specification(route_specification, nil), do: route_specification
+
+  def merge_route_specification(route_specification, new_route_spec) do
+    %{
+      route_specification
+      | destination: new_route_spec.destination,
+        arrival_deadline: new_route_spec.arrival_deadline
+    }
+  end
+
+  @doc """
+  Argument `cargo` can be a map (when creating cargos),
+  or an existing Cargo struct.
+  """
+  def derived_routing_params(cargo, route_specification, itinerary) do
     # Handling consistency within the Cargo aggregate synchronously
-    maybe_delivery = Map.get(cargo, :delivery) || Map.get(cargo, "delivery")
+    maybe_delivery = Utils.get(cargo, :delivery)
 
-    params = Delivery.params_derived_from_routing(maybe_delivery, route_specification, itinerary)
+    itinerary_and_delivery_params =
+      Delivery.params_derived_from_routing(maybe_delivery, route_specification, itinerary)
 
     cargo
     |> Map.put(:route_specification, route_specification)
-    |> Map.merge(params)
+    |> Map.merge(itinerary_and_delivery_params)
     |> Utils.from_struct()
   end
 
-  def patch_route_specification_and_itinerary(cargo, nil, new_itinerary) do
-    {cargo.route_specification, new_itinerary}
+  def merge_itinerary(old_itinerary, new_itinerary, patch_uncompleted_leg?) do
+    last_completed_index = Itinerary.last_completed_index(old_itinerary)
+
+    active_index = last_completed_index + 1
+    first_legs = Enum.take(old_itinerary.legs, active_index)
+    active_leg = Enum.at(old_itinerary.legs, active_index)
+
+    new_legs =
+      if patch_uncompleted_leg? do
+        # patch_uncompleted_leg? is set for misdirected LOAD
+        # Here we update the first new leg with data
+        # from the original uncompleted leg.
+        List.update_at(new_itinerary.legs, 0, fn leg -> merge_active_leg(leg, active_leg) end)
+      else
+        new_itinerary.legs
+      end
+
+    legs = first_legs ++ new_legs
+
+    Utils.from_struct(legs) |> Itinerary.new()
   end
 
-  def patch_route_specification_and_itinerary(cargo, patch_route_spec, patch_itinerary) do
-    if cargo.route_specification == patch_route_spec do
-      {cargo.route_specification, patch_itinerary}
-    else
-      # This is probably a no-op
-      new_route_spec = %{
-        cargo.route_specification
-        | destination: patch_route_spec.destination,
-          arrival_deadline: patch_route_spec.arrival_deadline
-      }
+  defp merge_active_leg(new_leg, active_leg) do
+    load_keys =
+      if !is_nil(active_leg.actual_load_location) do
+        [:actual_load_location, :load_location]
+      else
+        []
+      end
 
-      new_itinerary = merge_itinerary(cargo.itinerary, patch_itinerary, patch_route_spec.origin)
+    unload_keys =
+      if !is_nil(active_leg.actual_unload_location) do
+        [:actual_unload_location, :unload_location]
+      else
+        []
+      end
 
-      Logger.debug("original route spec #{inspect(cargo.route_specification)}")
-      Logger.debug("patched route spec #{inspect(new_route_spec)}")
-      Logger.debug("original itinerary #{inspect(cargo.itinerary)}")
-      Logger.debug("patched itinerary #{inspect(new_itinerary)}")
-      {new_route_spec, new_itinerary}
-    end
+    ([:status, :load_time, :unload_time] ++ load_keys ++ unload_keys)
+    |> Enum.reduce(new_leg, fn key, acc -> Map.put(acc, key, Map.get(active_leg, key)) end)
   end
 
-  def merge_itinerary(itinerary, patch_itinerary, origin) do
-    if Enum.empty?(patch_itinerary.legs) do
-      raise "patched itinerary has no legs"
-    end
+  @doc """
+  Returns a tuple
+    * route specification, or nil if at destination
+    * boolean, true if the route specification has a different origin from cargo
+    * boolean, true true if the merged itinerary should use data from the
+      last uncompleted leg when merging, or false if the new itinerary can just be
+      appended
 
-    itinerary_departure = Itinerary.initial_departure_location(patch_itinerary)
-
-    if itinerary_departure != origin do
-      raise "patched itinerary expected departure #{origin}, was #{itinerary_departure}"
-    end
-
-    {first_legs, next_legs} = Itinerary.split_completed_legs(itinerary, origin)
-    first_arrival = Itinerary.final_arrival_location(%{legs: first_legs})
-
-    if first_arrival != origin do
-      raise "first part itinerary expected arrival #{origin}, was #{first_arrival}"
-    end
-
-    next_departure = Itinerary.initial_departure_location(%{legs: next_legs})
-
-    if next_departure != origin do
-      raise "next part itinerary expected departure #{origin}, was #{next_departure}"
-    end
-
-    Itinerary.new(first_legs ++ patch_itinerary.legs)
-  end
-
-  def get_remaining_route_specification(cargo) do
-    case {cargo.delivery.routing_status, cargo.delivery.transport_status} do
-      {:NOT_ROUTED, _} ->
+  TODO: set :earliest_departure
+  """
+  def get_remaining_route_specification(%{itinerary: itinerary, delivery: delivery} = cargo) do
+    case {delivery.routing_status, delivery.transport_status, delivery.last_known_location} do
+      {:NOT_ROUTED, _, _} ->
         Logger.debug("Cargo not routed, rrs is original route specification")
-        cargo.route_specification
+        {cargo.route_specification, false, false}
 
-      {_, :CLAIMED} ->
+      {_, :CLAIMED, _} ->
         Logger.debug("Cargo has been claimed, rrs is nil")
-        nil
+        {nil, false, false}
 
-      {_, :IN_PORT} ->
-        origin = cargo.delivery.last_known_location
-        maybe_route_specification(cargo.route_specification, origin, "Cargo is in port at")
+      {_, :IN_PORT, location} ->
+        last_completed_leg = Itinerary.last_completed_leg(itinerary)
 
-      {_, :ONBOARD_CARRIER} ->
-        case cargo.delivery.next_expected_activity do
-          nil ->
-            Logger.error(
-              "No expected activity while ONBOARD, rrs is original route specification"
-            )
+        if !is_nil(last_completed_leg.actual_unload_location) do
+          Logger.error(
+            "IN_PORT last_known #{location} last completed unload #{last_completed_leg.actual_unload_location}"
+          )
 
-            cargo.route_specification
-
-          activity ->
+          # Misdirected :UNLOAD
+          {route_spec, new_origin?} =
             maybe_route_specification(
               cargo.route_specification,
-              activity.location,
-              "Cargo is onboard to"
+              last_completed_leg.actual_unload_location,
+              "Cargo is (misdirected) in port at"
             )
+
+          {route_spec, new_origin?, false}
+        else
+          Logger.error(
+            "No change while in port from #{location}, rrs is original route specification"
+          )
+
+          {cargo.route_specification, false, false}
         end
 
-      {_, other} ->
+      {_, :ONBOARD_CARRIER, location} ->
+        current_leg = Itinerary.current_leg(itinerary)
+
+        if !is_nil(current_leg.actual_load_location) do
+          Logger.error(
+            "ONBOARD_CARRIER last_known #{location} actual load #{current_leg.actual_load_location}"
+          )
+
+          # Misdirected :LOAD
+          {route_spec, new_origin?} =
+            maybe_route_specification(
+              cargo.route_specification,
+              current_leg.actual_load_location,
+              "Cargo is on board (misdirected) from"
+            )
+
+          {route_spec, new_origin?, true}
+        else
+          Logger.error(
+            "No change while onboard from #{location}, rrs is original route specification"
+          )
+
+          {cargo.route_specification, false, false}
+        end
+
+      {_, other, _} ->
         Logger.debug("Cargo transport is #{other}, rrs is original route specification")
-        cargo.route_specification
+        {cargo.route_specification, false, false}
     end
   end
 
-  defp maybe_route_specification(route_specification, new_origin, status) do
+  @doc """
+  Returns tuple of a route specification and a the possible new origin for the
+  remaining part of the cargo's delivery.
+  """
+  def maybe_route_specification(route_specification, new_origin, status) do
     cond do
       new_origin == route_specification.origin ->
         Logger.debug("#{status} origin, rrs is original route specification")
-        route_specification
+        {route_specification, false}
 
       new_origin == route_specification.destination ->
         Logger.debug("#{status} final destination, rrs is nil")
-        nil
+        {nil, false}
 
       true ->
+        # TODO: set :earliest_departure
         Logger.debug("#{status} rrs set with this location as origin")
-        %{route_specification | origin: new_origin}
+        {%{route_specification | origin: new_origin}, true}
     end
   end
 
@@ -528,7 +598,7 @@ defmodule CargoShipping.CargoBookings do
   end
 
   def set_cargo_id_from_tracking_id(attrs) do
-    tracking_id = Map.get(attrs, :tracking_id) || Map.get(attrs, "tracking_id")
+    tracking_id = Utils.get(attrs, :tracking_id)
 
     if is_nil(tracking_id) do
       {:error, "can't be blank"}

@@ -58,10 +58,14 @@ defmodule CargoShipping.CargoBookingService do
   end
 
   @doc """
-  Returns a tuple with the remaining route specification for the Cargo,
-  and the possible itineraries.
+  Returns a tuple
+    * the remaining route specification for the cargo
+    * a list of possible replacement itineraries
+    * boolean, true if the merged itinerary should use data from the
+      last uncompleted leg when merging, or false if the new itinerary can just be
+      appended
 
-  If there are no remaining ports for the Cargo, nil is returned.
+  If there are no remaining ports for the cargo, nil is returned.
   If there are no found itineraries, nil is returned.
   """
   def possible_routes_for_cargo(tracking_id) when is_binary(tracking_id) do
@@ -70,14 +74,38 @@ defmodule CargoShipping.CargoBookingService do
   end
 
   def possible_routes_for_cargo(%Cargo{} = cargo) do
-    remaining_route_spec = CargoBookings.get_remaining_route_specification(cargo)
+    {remaining_route_spec, has_new_origin?, patch_uncompleted_leg?} =
+      CargoBookings.get_remaining_route_specification(cargo)
 
     if is_nil(remaining_route_spec) do
       # We are at our destination
       {nil, nil}
     else
+      internal_itinerary =
+        if has_new_origin? do
+          case Itinerary.internal_itinerary_for_route_specification(
+                 cargo.itinerary,
+                 remaining_route_spec
+               ) do
+            nil ->
+              nil
+
+            itinerary ->
+              %{itinerary: itinerary, cost: -1}
+          end
+        else
+          nil
+        end
+
+      other_itineraries =
+        ranked_itineraries_for_route_specification(remaining_route_spec,
+          algorithm: :libgraph,
+          find: :all
+        )
+
       itineraries =
-        routes_for_specification(remaining_route_spec, algorithm: :libgraph, find: :all)
+        [internal_itinerary | other_itineraries]
+        |> Enum.reject(&is_nil(&1))
 
       if Enum.empty?(itineraries) do
         {remaining_route_spec, nil}
@@ -87,7 +115,7 @@ defmodule CargoShipping.CargoBookingService do
             {itinerary, index + 1}
           end)
 
-        {remaining_route_spec, indexed_itineraries}
+        {remaining_route_spec, indexed_itineraries, patch_uncompleted_leg?}
       end
     end
   end
@@ -95,7 +123,7 @@ defmodule CargoShipping.CargoBookingService do
   @doc """
   The RouteSpecification is picked apart and adapted to the external API.
   """
-  def routes_for_specification(route_specification, opts \\ []) do
+  def ranked_itineraries_for_route_specification(route_specification, opts \\ []) do
     RoutingService.find_itineraries(
       route_specification.origin,
       route_specification.destination,

@@ -57,7 +57,7 @@ defmodule CargoShipping.RouteFindingTest do
       arrival_deadline: DateTime.utc_now()
     }
 
-    CargoShipping.CargoBookingService.routes_for_specification(
+    CargoShipping.CargoBookingService.ranked_itineraries_for_route_specification(
       route_specification,
       algorithm: :libgraph,
       find: :all

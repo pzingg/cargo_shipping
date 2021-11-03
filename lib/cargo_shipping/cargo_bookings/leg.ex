@@ -21,23 +21,34 @@ defmodule CargoShipping.CargoBookings.Leg do
     field :voyage_id, Ecto.UUID
     field :load_location, :string
     field :unload_location, :string
+    field :actual_load_location, :string
+    field :actual_unload_location, :string
     field :load_time, :utc_datetime
     field :unload_time, :utc_datetime
   end
 
   defimpl String.Chars, for: Leg do
-    def to_string(
-          %{
-            load_location: load_location,
-            unload_location: unload_location,
-            voyage_id: voyage_id
-          } = leg
-        ) do
+    @doc """
+    :actual_load_location, :actual_unload_location may be missing
+    """
+    def to_string(leg) do
       voyage_number =
-        VoyageService.get_voyage_number_for_id!(voyage_id)
+        VoyageService.get_voyage_number_for_id!(leg.voyage_id)
         |> String.pad_trailing(6)
 
       status = Map.get(leg, :status, :NOT_LOADED)
+
+      load_location =
+        case Map.get(leg, :actual_load_location) do
+          nil -> leg.load_location
+          location -> "#{location} (ACTUAL)"
+        end
+
+      unload_location =
+        case Map.get(leg, :actual_unload_location) do
+          nil -> leg.unload_location
+          location -> "#{location} (ACTUAL)"
+        end
 
       "on voyage #{voyage_number} from #{load_location} to #{unload_location} - #{status}"
     end
@@ -48,13 +59,14 @@ defmodule CargoShipping.CargoBookings.Leg do
     :voyage_id,
     :load_location,
     :unload_location,
+    :actual_load_location,
+    :actual_unload_location,
     :load_time,
     :unload_time
   ]
 
   @required_fields [
     :status,
-    :voyage_id,
     :load_location,
     :unload_location,
     :load_time,
@@ -71,9 +83,10 @@ defmodule CargoShipping.CargoBookings.Leg do
   end
 
   def validate_voyage_item(changeset) do
-    if Enum.member?(@completed_values, get_field(changeset, :status, :NOT_LOADED)) do
-      changeset
-    else
+    status = get_field(changeset, :status, :NOT_LOADED)
+    actual_unload_location = get_field(changeset, :actual_unload_location)
+
+    if requires_voyage_id?(status, actual_unload_location) do
       voyage_id = get_field(changeset, :voyage_id)
 
       route_specification = %RouteSpecification{
@@ -88,16 +101,27 @@ defmodule CargoShipping.CargoBookings.Leg do
         {:error, key, message} ->
           add_error(changeset, leg_key_for(key), message)
       end
+    else
+      changeset
     end
   end
 
   @doc """
   Note: leg may NOT have status set (equivalent to :NOT_LOADED).
   """
-  def completed?(%{status: :SKIPPED}), do: true
-  def completed?(%{status: :COMPLETED}), do: true
-  def completed?(%{status: :CLAIMED}), do: true
-  def completed?(_leg), do: false
+  def completed?(leg), do: Enum.member?(@completed_values, Map.get(leg, :status, :NOT_LOADED))
+
+  def actual_load_location(leg) do
+    leg.actual_load_location || leg.load_location
+  end
+
+  def actual_unload_location(leg) do
+    leg.actual_unload_location || leg.unload_location
+  end
+
+  defp requires_voyage_id?(status, actual_unload_location) do
+    status == :NOT_LOADED || is_binary(actual_unload_location)
+  end
 
   defp leg_key_for(:origin), do: :load_location
   defp leg_key_for(:destination), do: :unload_location
