@@ -17,39 +17,42 @@ defmodule CargoShipping.CargoBookings.Delivery do
 
   @transport_status_values [:NOT_RECEIVED, :IN_PORT, :ONBOARD_CARRIER, :CLAIMED, :UNKNOWN]
   @routing_status_values [:NOT_ROUTED, :ROUTED, :MISROUTED]
+  @last_event_type_values [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
   @eta_unknown nil
 
   @primary_key false
   embedded_schema do
     field :transport_status, Ecto.Enum, values: @transport_status_values
-    field :last_known_location, :string
-    field :current_voyage_id, Ecto.UUID
-    field :misdirected?, :boolean
-    field :eta, :utc_datetime
-    field :unloaded_at_destination?, :boolean
     field :routing_status, Ecto.Enum, values: @routing_status_values
-    field :calculated_at, :utc_datetime
+    field :current_voyage_id, Ecto.UUID
     field :last_event_id, Ecto.UUID
+    field :last_known_location, :string
+    field :last_event_type, Ecto.Enum, values: @last_event_type_values
+    field :misdirected?, :boolean
+    field :unloaded_at_destination?, :boolean
+    field :eta, :utc_datetime
+    field :calculated_at, :utc_datetime
 
     embeds_one :next_expected_activity, HandlingActivity, on_replace: :delete
   end
 
   @cast_fields [
     :transport_status,
-    :last_known_location,
-    :current_voyage_id,
-    :misdirected?,
-    :eta,
-    :unloaded_at_destination?,
     :routing_status,
-    :calculated_at,
-    :last_event_id
+    :current_voyage_id,
+    :last_event_id,
+    :last_known_location,
+    :last_event_type,
+    :misdirected?,
+    :unloaded_at_destination?,
+    :eta,
+    :calculated_at
   ]
   @required_fields [
     :transport_status,
+    :routing_status,
     :misdirected?,
     :unloaded_at_destination?,
-    :routing_status,
     :calculated_at
   ]
 
@@ -69,7 +72,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
 
             " from #{delivery.last_known_location} on voyage #{voyage_number}"
 
-          delivery.last_known_location != "_" ->
+          !is_nil(delivery.last_known_location) ->
             " at #{delivery.last_known_location}"
 
           true ->
@@ -83,8 +86,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
   def delivery_details(delivery) do
     event =
       if delivery.last_event_id do
-        last_event = CargoShipping.CargoBookings.get_handling_event!(delivery.last_event_id)
-        "last event #{last_event.event_type} at #{last_event.location}"
+        "last event #{delivery.last_event_type} at #{delivery.last_known_location}"
       else
         "no events yet"
       end
@@ -192,6 +194,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
         transport_status: transport_status,
         eta: calculate_eta(itinerary, on_track),
         last_known_location: calculate_last_known_location(last_event),
+        last_event_type: calculate_last_event_type(last_event),
         current_voyage_id: calculate_current_voyage(transport_status, last_event),
         next_expected_activity:
           calculate_next_expected_activity(route_specification, itinerary, last_event, on_track),
@@ -227,8 +230,11 @@ defmodule CargoShipping.CargoBookings.Delivery do
     end
   end
 
-  defp calculate_last_known_location(nil), do: "_"
+  defp calculate_last_known_location(nil), do: nil
   defp calculate_last_known_location(last_event), do: last_event.location
+
+  defp calculate_last_event_type(nil), do: nil
+  defp calculate_last_event_type(last_event), do: last_event.event_type
 
   defp calculate_current_voyage(_transport_status, nil), do: nil
 

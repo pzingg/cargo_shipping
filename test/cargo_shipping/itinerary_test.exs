@@ -70,6 +70,23 @@ defmodule CargoShipping.ItineraryTest do
     %{itinerary: itinerary}
   end
 
+  test "finds routes for unexpected :RECEIVE", %{itinerary: itinerary} do
+    handling_event = %{
+      event_type: :RECEIVE,
+      voyage_id: VoyageService.get_voyage_id_for_number!("TEST01"),
+      location: "FIHEL",
+      completed_at: ts(2)
+    }
+
+    {:error, message, updated_itinerary} =
+      Itinerary.matches_handling_event(itinerary, handling_event)
+
+    assert message == "RECEIVE at FIHEL does not match origin SESTO"
+    first_leg = Itinerary.initial_leg(updated_itinerary)
+    assert first_leg.actual_load_location == "FIHEL"
+    assert first_leg.status == :NOT_LOADED
+  end
+
   test "finds routes for unexpected :LOAD", %{itinerary: itinerary} do
     handling_event = %{
       event_type: :LOAD,
@@ -78,9 +95,13 @@ defmodule CargoShipping.ItineraryTest do
       completed_at: ts(2)
     }
 
-    {:error, message, new_itinerary} = Itinerary.matches_handling_event(itinerary, handling_event)
+    {:error, message, updated_itinerary} =
+      Itinerary.matches_handling_event(itinerary, handling_event)
+
     assert message == "LOAD at FIHEL does not match any load location of voyage TEST01"
-    Logger.error("after unexpected :LOAD #{inspect(new_itinerary)}")
+    first_leg = Itinerary.initial_leg(updated_itinerary)
+    assert first_leg.actual_load_location == "FIHEL"
+    assert first_leg.status == :ONBOARD_CARRIER
   end
 
   test "finds routes for unexpected :UNLOAD", %{itinerary: itinerary} do
@@ -91,9 +112,13 @@ defmodule CargoShipping.ItineraryTest do
       completed_at: ts(2)
     }
 
-    {:error, message, new_itinerary} = Itinerary.matches_handling_event(itinerary, handling_event)
+    {:error, message, updated_itinerary} =
+      Itinerary.matches_handling_event(itinerary, handling_event)
+
     assert message == "UNLOAD at FIHEL does not match any unload location of voyage TEST01"
-    Logger.error("after unexpected :UNLOAD #{inspect(new_itinerary)}")
+    first_leg = Itinerary.initial_leg(updated_itinerary)
+    assert first_leg.actual_unload_location == "FIHEL"
+    assert first_leg.status == :COMPLETED
   end
 
   test "splits legs correctly", %{itinerary: %{legs: legs}} do

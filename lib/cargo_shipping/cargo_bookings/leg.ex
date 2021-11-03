@@ -111,12 +111,20 @@ defmodule CargoShipping.CargoBookings.Leg do
   """
   def completed?(leg), do: Enum.member?(@completed_values, Map.get(leg, :status, :NOT_LOADED))
 
+  def unexpected_load?(leg) do
+    !is_nil(Map.get(leg, :actual_load_location))
+  end
+
+  def unexpected_unload?(leg) do
+    !is_nil(Map.get(leg, :actual_unload_location))
+  end
+
   def actual_load_location(leg) do
-    leg.actual_load_location || leg.load_location
+    Map.get(leg, :actual_load_location) || leg.load_location
   end
 
   def actual_unload_location(leg) do
-    leg.actual_unload_location || leg.unload_location
+    Map.get(leg, :actual_unload_location) || leg.unload_location
   end
 
   defp requires_voyage_id?(status, actual_unload_location) do

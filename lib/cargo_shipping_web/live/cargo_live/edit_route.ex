@@ -37,7 +37,6 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
     case CargoBookings.update_cargo_for_new_itinerary(
            socket.assigns.cargo,
            selected_itinerary,
-           nil,
            socket.assigns.patch_uncompleted_leg?
          ) do
       {:ok, _cargo} ->

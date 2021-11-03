@@ -18,10 +18,12 @@ defmodule CargoShipping.Utils do
 
   def from_struct(v), do: v
 
-  def from_struct_0(v) when is_map(v) do
+  def from_struct_0(%{__struct__: _} = v) do
     Map.delete(v, :__struct__)
     |> Map.delete(:__meta__)
   end
+
+  def from_struct_0(v), do: v
 
   def atom_keys?(attrs) do
     from_struct_0(attrs) |> Enum.any?(fn {k, _v} -> is_atom(k) end)

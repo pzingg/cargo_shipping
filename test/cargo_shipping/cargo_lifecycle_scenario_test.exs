@@ -60,7 +60,6 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       CargoBookings.update_cargo_for_new_itinerary(
         cargo,
         itinerary,
-        remaining_route_spec,
         patch_uncompleted_leg?
       )
 
@@ -221,7 +220,6 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       CargoBookings.update_cargo_for_new_itinerary(
         cargo,
         itinerary,
-        remaining_route_spec,
         patch_uncompleted_leg?
       )
 
