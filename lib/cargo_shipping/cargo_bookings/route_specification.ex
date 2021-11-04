@@ -60,8 +60,8 @@ defmodule CargoShipping.CargoBookings.RouteSpecification do
     end
   end
 
-  def debug_route_specification(route_specification) do
-    Logger.debug("route")
-    Logger.debug("   #{to_string(route_specification)}")
+  def debug_route_specification(route_specification, title \\ "route") do
+    Logger.debug(title)
+    Logger.debug("  #{to_string(route_specification)}")
   end
 end

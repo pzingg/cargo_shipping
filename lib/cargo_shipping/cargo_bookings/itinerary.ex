@@ -332,7 +332,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
   @doc """
   Test if the given handling event is expected when executing this itinerary.
   """
-  def matches_handling_event(itinerary, handling_event) do
+  def matches_handling_event(itinerary, handling_event, update_itinerary?) do
     cond do
       is_nil(itinerary) ->
         {:error, "no itinerary", nil}
@@ -348,17 +348,25 @@ defmodule CargoShipping.CargoBookings.Itinerary do
                handling_event.voyage_id
              ) do
           {:ok, updated_itinerary} ->
-            {:ok, updated_itinerary}
+            if update_itinerary? do
+              {:ok, updated_itinerary}
+            else
+              {:ok, itinerary}
+            end
 
           {:error, message} ->
             updated_itinerary =
-              update_for_unexpected_event(
-                itinerary,
-                handling_event.event_type,
-                handling_event.location,
-                handling_event.voyage_id,
-                handling_event.completed_at
-              )
+              if update_itinerary? do
+                update_for_unexpected_event(
+                  itinerary,
+                  handling_event.event_type,
+                  handling_event.location,
+                  handling_event.voyage_id,
+                  handling_event.completed_at
+                )
+              else
+                itinerary
+              end
 
             {:error, message, updated_itinerary}
         end
@@ -369,12 +377,13 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
   defp find_match_for_event(%{legs: legs} = itinerary, :RECEIVE, location, _voyage_id) do
     # Check that the first leg's origin is the event's location
-    first_leg = List.first(legs)
+    leg = List.first(legs)
 
-    if first_leg.load_location == location && first_leg.status == :NOT_LOADED do
+    if leg.status == :NOT_LOADED &&
+         (location == leg.load_location || location == leg.actual_load_location) do
       {:ok, itinerary}
     else
-      {:error, "RECEIVE at #{location} does not match origin #{first_leg.load_location}"}
+      {:error, "RECEIVE at #{location} does not match load location of first leg (#{leg.status})"}
     end
   end
 
@@ -384,22 +393,22 @@ defmodule CargoShipping.CargoBookings.Itinerary do
       Enum.reduce(legs, {[], nil}, fn leg, {acc, f} ->
         {mapped_leg, found_0} =
           cond do
-            !is_nil(f) ->
+            leg.status == :SKIPPED ->
               {leg, f}
 
-            leg.load_location == location ->
-              if Leg.completed?(leg) || leg.status == :ONBOARD_CARRIER do
+            location == leg.load_location || location == leg.actual_load_location ->
+              if leg.status == :ONBOARD_CARRIER do
                 {leg, leg}
               else
                 matched_leg = Map.put(leg, :status, :ONBOARD_CARRIER)
                 {matched_leg, matched_leg}
               end
 
-            Leg.completed?(leg) ->
+            !is_nil(f) && leg.status == :COMPLETED ->
               {leg, nil}
 
             true ->
-              {Map.put(leg, :status, :SKIPPED), nil}
+              {leg, f}
           end
 
         {[mapped_leg | acc], found_0}
@@ -427,22 +436,22 @@ defmodule CargoShipping.CargoBookings.Itinerary do
       Enum.reduce(legs, {[], nil}, fn leg, {acc, f} ->
         {mapped_leg, found_0} =
           cond do
-            !is_nil(f) ->
+            leg.status == :SKIPPED ->
               {leg, f}
 
-            leg.unload_location == location ->
-              if Leg.completed?(leg) do
-                {leg, leg}
+            location == leg.unload_location || location == leg.actual_unload_location ->
+              if leg.status == :COMPLETED do
+                {leg, f}
               else
                 matched_leg = Map.put(leg, :status, :COMPLETED)
                 {matched_leg, matched_leg}
               end
 
-            Leg.completed?(leg) ->
+            !is_nil(f) && leg.status == :COMPLETED ->
               {leg, nil}
 
             true ->
-              {Map.put(leg, :status, :SKIPPED), nil}
+              {leg, f}
           end
 
         {[mapped_leg | acc], found_0}
@@ -470,22 +479,22 @@ defmodule CargoShipping.CargoBookings.Itinerary do
       Enum.reduce(legs, {[], nil}, fn leg, {acc, f} ->
         {mapped_leg, found_0} =
           cond do
-            !is_nil(f) ->
+            leg.status == :SKIPPED ->
               {leg, f}
 
-            leg.unload_location == location ->
-              if Leg.completed?(leg) do
+            location == leg.unload_location || location == leg.actual_unload_location ->
+              if leg.status == :COMPLETED do
                 {leg, leg}
               else
                 matched_leg = Map.put(leg, :status, :COMPLETED)
                 {matched_leg, matched_leg}
               end
 
-            Leg.completed?(leg) ->
+            !is_nil(f) && leg.status == :COMPLETED ->
               {leg, nil}
 
             true ->
-              {Map.put(leg, :status, :SKIPPED), nil}
+              {leg, f}
           end
 
         {[mapped_leg | acc], found_0}
@@ -506,18 +515,20 @@ defmodule CargoShipping.CargoBookings.Itinerary do
       Enum.reduce(legs, {[], nil, last_leg}, fn leg, {acc, f, last} ->
         {mapped_leg, found_0} =
           cond do
-            !is_nil(f) ->
+            leg.status == :SKIPPED ->
               {leg, f}
 
-            leg == last && leg.status == :CLAIMED ->
-              {leg, leg}
-
-            leg == last ->
-              matched_leg = Map.put(leg, :status, :CLAIMED)
-              {matched_leg, matched_leg}
+            leg == last &&
+                (location == leg.unload_location || location == leg.actual_unload_location) ->
+              if leg.status == :CLAIMED do
+                {leg, leg}
+              else
+                matched_leg = Map.put(leg, :status, :CLAIMED)
+                {matched_leg, matched_leg}
+              end
 
             true ->
-              {Map.put(leg, :status, :SKIPPED), nil}
+              {leg, f}
           end
 
         {[mapped_leg | acc], found_0, last}
@@ -526,7 +537,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     if found do
       {:ok, %{itinerary | legs: Enum.reverse(reversed_legs)}}
     else
-      {:error, "CLAIM at #{location} does not match final unload location"}
+      {:error, "CLAIM at #{location} does not match final unload location (#{last_leg.status})"}
     end
   end
 
@@ -625,8 +636,8 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     }
   end
 
-  def debug_itinerary(itinerary) do
-    Logger.debug("itinerary")
+  def debug_itinerary(itinerary, title \\ "itinerary") do
+    Logger.debug(title)
 
     cond do
       is_nil(itinerary) -> Logger.debug("   no itinerary")

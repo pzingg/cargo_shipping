@@ -104,8 +104,7 @@ defmodule CargoShipping.RoutingService.RandomRouteFinder do
     end
   end
 
-  # TODO: Select a real voyage (or create a new one?),
-  # based on from and to.
+  # TODO: Select a real voyage (or create a new one?), based on from and to.
   defp find_edge_id(_edge, voyage_numbers) do
     Enum.random(voyage_numbers)
   end

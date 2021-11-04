@@ -24,7 +24,14 @@ defmodule CargoShipping.CargoBookings do
   require Logger
 
   alias CargoShipping.{Repo, Utils}
-  alias CargoShipping.CargoBookings.{Cargo, Delivery, HandlingEvent, Itinerary}
+
+  alias CargoShipping.CargoBookings.{
+    Cargo,
+    Delivery,
+    HandlingEvent,
+    Itinerary,
+    RouteSpecification
+  }
 
   ## Cargo module
 
@@ -193,14 +200,13 @@ defmodule CargoShipping.CargoBookings do
   Synchronously updates the Cargo aggregate with a new RouteSpecification.
   """
   def update_cargo_for_new_route(cargo, route_specification) do
-    params = new_route_params(cargo, route_specification)
+    params = new_route_params(cargo, cargo.delivery, route_specification, cargo.itinerary)
     update_cargo(cargo, params)
   end
 
-  defp new_route_params(%{delivery: delivery, itinerary: itinerary} = cargo, route_specification) do
-    # Do not re-apply last event
+  defp new_route_params(cargo, delivery, route_specification, itinerary) do
     itinerary_and_delivery_params =
-      Delivery.params_derived_from_routing(delivery, route_specification, itinerary)
+      Delivery.new_route_params(delivery, route_specification, itinerary)
 
     cargo
     |> Map.put(:route_specification, route_specification)
@@ -221,7 +227,10 @@ defmodule CargoShipping.CargoBookings do
     route_specification =
       Itinerary.to_route_specification(merged_itinerary, cargo.route_specification)
 
-    params = derived_routing_params(cargo, route_specification, merged_itinerary)
+    Itinerary.debug_itinerary(merged_itinerary, "merged_itinerary")
+    RouteSpecification.debug_route_specification(route_specification, "from merged_itinerary")
+
+    params = new_route_params(cargo, cargo.delivery, route_specification, merged_itinerary)
     update_cargo(cargo, params)
   end
 
@@ -230,10 +239,11 @@ defmodule CargoShipping.CargoBookings do
   """
   def derived_routing_params(cargo, route_specification, itinerary) do
     # Handling consistency within the Cargo aggregate synchronously
-    maybe_delivery = Utils.get(cargo, :delivery)
 
+    delivery = Map.get(cargo, :delivery)
+    # Just check :routing_status and :eta
     itinerary_and_delivery_params =
-      Delivery.params_derived_from_routing(maybe_delivery, route_specification, itinerary)
+      Delivery.params_derived_from_routing(delivery, route_specification, itinerary)
 
     cargo
     |> Map.put(:route_specification, route_specification)
@@ -255,6 +265,10 @@ defmodule CargoShipping.CargoBookings do
         new_itinerary.legs
       end
 
+    Logger.debug("merge_itineary patch_uncompleted #{patch_uncompleted_leg?}")
+    Itinerary.debug_itinerary(%{legs: uncompleted_legs}, "uncompleted_legs")
+    Itinerary.debug_itinerary(%{legs: active_legs}, "active_legs")
+    Itinerary.debug_itinerary(%{legs: new_legs}, "new_legs")
     legs = uncompleted_legs ++ new_legs
 
     Utils.from_struct(legs) |> Itinerary.new()
@@ -283,13 +297,11 @@ defmodule CargoShipping.CargoBookings do
   Returns a tuple
     * route specification, or nil if at destination
     * boolean, true if the route specification has a different origin from cargo
-    * boolean, true true if the merged itinerary should use data from the
-      last uncompleted leg when merging, or false if the new itinerary can just be
-      appended
-
-  TODO: set :earliest_departure
+    * boolean, true true if the merged itinerary should use data from the last
+      uncompleted leg when merging, or false if the new itinerary can just be appended
   """
   def get_remaining_route_specification(%{itinerary: itinerary, delivery: delivery} = cargo) do
+    # TODO: set :earliest_departure
     location = delivery.last_known_location
     event_type = delivery.last_event_type
     {completed_legs, _uncompleted_legs} = Itinerary.split_completed_legs(itinerary)
@@ -438,7 +450,7 @@ defmodule CargoShipping.CargoBookings do
   Returns true if the Cargo's Itinerary is expecting the HandlingEvent.
   """
   def handling_event_expected(cargo, handling_event) do
-    case Itinerary.matches_handling_event(cargo.itinerary, handling_event) do
+    case Itinerary.matches_handling_event(cargo.itinerary, handling_event, false) do
       {:error, message, _updated_itinerary} ->
         Logger.error(message)
         {:error, message}

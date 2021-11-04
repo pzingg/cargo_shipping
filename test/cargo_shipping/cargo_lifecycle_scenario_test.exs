@@ -207,14 +207,37 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     # Repeat procedure of selecting one out of a number of possible
     # routes satisfying the route spec.
 
-    {remaining_route_spec, _completed_legs, itineraries, patch_uncompleted_leg?} =
+    {remaining_route_spec, completed_legs, itineraries, patch_uncompleted_leg?} =
       CargoBookingService.possible_routes_for_cargo(cargo)
 
     assert remaining_route_spec
     assert remaining_route_spec.origin == "CNSHA"
 
+    assert Enum.count(completed_legs) == 1
+    leg = List.first(completed_legs)
+    assert leg.unload_location == "USNYC"
+    assert leg.actual_unload_location == "CNSHA"
+
+    {completed_legs, _uncompleted_legs} = Itinerary.split_completed_legs(cargo.itinerary)
+
+    assert Enum.count(completed_legs) == 1
+    leg = List.first(completed_legs)
+    assert leg.unload_location == "USNYC"
+    assert leg.actual_unload_location == "CNSHA"
+
     assert itineraries
+    refute patch_uncompleted_leg?
+
     itinerary = select_prefered_itinerary(itineraries)
+
+    Logger.warn("Line 224, prefered itinerary")
+
+    Itinerary.debug_itinerary(itinerary)
+
+    assert Enum.count(itinerary.legs) == 3
+    leg = List.first(itinerary.legs)
+    assert leg.load_location == "CNSHA"
+    assert leg.unload_location == "CNHKG"
 
     {:ok, _cargo} =
       CargoBookings.update_cargo_for_new_itinerary(
@@ -223,11 +246,12 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
         patch_uncompleted_leg?
       )
 
-    Logger.warn("Line 218, after routing")
-
     # Wait for EventBus
     Process.sleep(500)
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
+
+    Logger.warn("Line 253, after re-routing")
+
     RouteSpecification.debug_route_specification(cargo.route_specification)
     Itinerary.debug_itinerary(cargo.itinerary)
     Delivery.debug_delivery(cargo.delivery)
@@ -236,9 +260,6 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     assert cargo.delivery.routing_status == :ROUTED
     assert cargo.delivery.transport_status != :NOT_RECEIVED
     assert cargo.delivery.last_event_id
-
-    # TODO: We aren't properly handling the fact that after a reroute,
-    # the cargo isn't misdirected anymore.
 
     ## Cargo has been rerouted, shipping continues
 

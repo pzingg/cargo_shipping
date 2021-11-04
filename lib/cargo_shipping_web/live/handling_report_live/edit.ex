@@ -11,10 +11,9 @@ defmodule CargoShippingWeb.HandlingReportLive.Edit do
 
   @impl true
   def handle_params(_params, _uri, socket) do
-    completed_at = DateTime.utc_now()
-
     # TODO: Filter the choices for voyage_number and location based
     # on changes to tracking_id and voyage_number.
+    completed_at = DateTime.utc_now()
 
     {:noreply,
      socket
@@ -32,6 +31,8 @@ defmodule CargoShippingWeb.HandlingReportLive.Edit do
 
   @impl true
   def handle_event("validate", raw_params, socket) do
+    # TODO: Filter the choices for voyage_number and location based
+    # on changes to tracking_id and voyage_number.
     params =
       Datepicker.handle_form_change(
         "handling_report",
@@ -43,9 +44,6 @@ defmodule CargoShippingWeb.HandlingReportLive.Edit do
     changeset =
       Reports.change_handling_report(params)
       |> Map.put(:action, :validate)
-
-    # TODO: Filter the choices for voyage_number and location based
-    # on changes to tracking_id and voyage_number.
 
     {:noreply, assign(socket, :changeset, changeset)}
   end

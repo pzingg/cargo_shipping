@@ -23,7 +23,7 @@ config :cargo_shipping, CargoShippingWeb.Endpoint,
 config :cargo_shipping, CargoShipping.Mailer, adapter: Swoosh.Adapters.Test
 
 # Print info, warnings, and errors during test
-config :logger, level: :info
+config :logger, level: :debug
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime

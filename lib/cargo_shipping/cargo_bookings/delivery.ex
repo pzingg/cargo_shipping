@@ -12,7 +12,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
   require Logger
 
   alias CargoShipping.{Utils, VoyageService}
-  alias CargoShipping.CargoBookings.{HandlingActivity, Itinerary}
+  alias CargoShipping.CargoBookings.{HandlingActivity, Itinerary, Leg}
   alias __MODULE__
 
   @transport_status_values [:NOT_RECEIVED, :IN_PORT, :ONBOARD_CARRIER, :CLAIMED, :UNKNOWN]
@@ -132,6 +132,8 @@ defmodule CargoShipping.CargoBookings.Delivery do
     |> cast_embed(:next_expected_activity, with: &HandlingActivity.changeset/2)
   end
 
+  def last_handling_event(nil), do: nil
+
   def last_handling_event(delivery) do
     case Utils.get(delivery, :last_event_id) do
       nil ->
@@ -143,64 +145,67 @@ defmodule CargoShipping.CargoBookings.Delivery do
   end
 
   @doc """
-  Returns a params map with new itinerary and delivery snapshots based on the current
-  routing and delivery information.
+  Returns a map with the original :itinerary and an updated :delivery.
   """
-  def params_derived_from_routing(delivery, route_specification, itinerary) do
-    last_event =
-      if !is_nil(delivery) do
-        last_handling_event(delivery)
-      else
-        nil
-      end
-
-    recalculated_params(route_specification, itinerary, last_event)
+  def new_route_params(delivery, route_specification, itinerary) do
+    last_event = last_handling_event(delivery)
+    recalculated_params(route_specification, itinerary, last_event, false)
   end
 
   @doc """
-  Returns a params map with new itinerary and delivery snapshots based on the complete handling
-  history of a cargo, as well as its route specification and itinerary.
+  Returns a map with an updated :itinerary item and a new :delivery snapshot based
+  on the current routing and delivery information.
+  """
+  def params_derived_from_routing(delivery, route_specification, itinerary) do
+    last_event = last_handling_event(delivery)
+    recalculated_params(route_specification, itinerary, last_event, true)
+  end
+
+  @doc """
+  Returns a map with an updated :itinerary item and a new :delivery snapshot based
+  on the complete handling history of a cargo, as well as its route specification and itinerary.
   """
   def params_derived_from_history(route_specification, itinerary, handling_history) do
+    # TODO: apply ALL events in history, not just the most recent one.
     last_event =
       case handling_history do
         [] -> nil
         [event | _] -> event
       end
 
-    recalculated_params(route_specification, itinerary, last_event)
+    recalculated_params(route_specification, itinerary, last_event, true)
   end
 
-  # BROKEN BROKEN
-  defp recalculated_params(route_specification, itinerary, last_event) do
+  defp recalculated_params(route_specification, itinerary, last_event, update_itinerary?) do
     last_event_id =
-      case last_event do
-        nil ->
-          nil
-
-        event ->
-          event.id
+      if is_nil(last_event) do
+        nil
+      else
+        last_event.id
       end
 
     routing_status = calculate_routing_status(itinerary, route_specification)
     transport_status = calculate_transport_status(last_event)
-    {next_itinerary, misdirected} = calculate_misdirection_status(itinerary, last_event)
+
+    {next_itinerary, misdirected} =
+      calculate_misdirection_status(itinerary, last_event, update_itinerary?)
+
     on_track = on_track?(routing_status, misdirected)
 
     %{
       itinerary: Utils.from_struct(next_itinerary),
       delivery: %{
         calculated_at: DateTime.utc_now(),
+        routing_status: routing_status,
+        eta: calculate_eta(itinerary, on_track),
+        next_expected_activity:
+          calculate_next_expected_activity(route_specification, itinerary, last_event, on_track),
         last_event_id: last_event_id,
         misdirected?: misdirected,
-        routing_status: routing_status,
         transport_status: transport_status,
-        eta: calculate_eta(itinerary, on_track),
         last_known_location: calculate_last_known_location(last_event),
         last_event_type: calculate_last_event_type(last_event),
         current_voyage_id: calculate_current_voyage(transport_status, last_event),
-        next_expected_activity:
-          calculate_next_expected_activity(route_specification, itinerary, last_event, on_track),
         unloaded_at_destination?:
           calculate_unloaded_at_destination(route_specification, last_event)
       }
@@ -248,10 +253,10 @@ defmodule CargoShipping.CargoBookings.Delivery do
     end
   end
 
-  defp calculate_misdirection_status(itinerary, nil), do: {itinerary, false}
+  defp calculate_misdirection_status(itinerary, nil, update_itinerary?), do: {itinerary, false}
 
-  defp calculate_misdirection_status(itinerary, last_event) do
-    case Itinerary.matches_handling_event(itinerary, last_event) do
+  defp calculate_misdirection_status(itinerary, last_event, update_itinerary?) do
+    case Itinerary.matches_handling_event(itinerary, last_event, update_itinerary?) do
       {:error, message, updated_itinerary} ->
         Logger.error("misdirection #{last_event.tracking_id} #{message}")
         {updated_itinerary, true}
@@ -287,7 +292,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
 
       :UNLOAD ->
         case Enum.find_index(itinerary.legs, fn leg ->
-               leg.unload_location == last_event.location
+               Leg.actual_unload_location(leg) == last_event.location
              end) do
           nil ->
             nil
