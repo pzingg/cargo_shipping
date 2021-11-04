@@ -47,7 +47,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     # The cargo is then assigned to the selected route, described by an itinerary.
 
-    {remaining_route_spec, completed_legs, itineraries, patch_uncompleted_leg?} =
+    {remaining_route_spec, _completed_legs, itineraries, patch_uncompleted_leg?} =
       CargoBookingService.possible_routes_for_cargo(cargo)
 
     assert remaining_route_spec
@@ -207,7 +207,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     # Repeat procedure of selecting one out of a number of possible
     # routes satisfying the route spec.
 
-    {remaining_route_spec, completed_legs, itineraries, patch_uncompleted_leg?} =
+    {remaining_route_spec, _completed_legs, itineraries, patch_uncompleted_leg?} =
       CargoBookingService.possible_routes_for_cargo(cargo)
 
     assert remaining_route_spec
@@ -422,8 +422,12 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
   ## Utility stubs
 
-  defp select_prefered_itinerary(itineraries) when is_list(itineraries),
-    do: List.first(itineraries)
+  defp select_prefered_itinerary(itineraries) when is_list(itineraries) do
+    case List.first(itineraries) do
+      nil -> nil
+      %{itinerary: itinerary, cost: _cost} -> itinerary
+    end
+  end
 
   defp select_prefered_itinerary(_), do: nil
 end

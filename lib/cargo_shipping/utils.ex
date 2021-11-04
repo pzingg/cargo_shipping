@@ -2,6 +2,33 @@ defmodule CargoShipping.Utils do
   @moduledoc false
 
   @doc """
+  Recursively change string keys to atoms.
+  """
+  def atomize(%{__struct__: _} = v), do: v
+
+  def atomize(v) when is_list(v) do
+    Enum.map(v, fn item -> atomize(item) end)
+  end
+
+  def atomize(v) when is_map(v) do
+    atomize_0(v)
+    |> Enum.map(fn {k, v} -> {k, atomize(v)} end)
+    |> Enum.into(%{})
+  end
+
+  def atomize(v), do: v
+
+  def atomize_0(v) when is_map(v) do
+    Enum.map(v, fn
+      {k, v} when is_atom(k) -> {k, v}
+      {k, v} when is_binary(k) -> {String.to_existing_atom(k), v}
+    end)
+    |> Enum.into(%{})
+  end
+
+  def atomize_0(v), do: v
+
+  @doc """
   Recursively remove struct and schema information
   """
   def from_struct(%Ecto.Association.NotLoaded{} = _v), do: nil
@@ -25,10 +52,16 @@ defmodule CargoShipping.Utils do
 
   def from_struct_0(v), do: v
 
+  @doc """
+  Detect if params have atom keys or string keys.
+  """
   def atom_keys?(attrs) do
     from_struct_0(attrs) |> Enum.any?(fn {k, _v} -> is_atom(k) end)
   end
 
+  @doc """
+  Get a value from a map by atom key or string key.
+  """
   def get(attrs, atom_key) do
     if atom_keys?(attrs) do
       Map.get(attrs, atom_key)
@@ -37,6 +70,9 @@ defmodule CargoShipping.Utils do
     end
   end
 
+  @doc """
+  Pop a value from a map by atom key or string key.
+  """
   def pop(attrs, atom_key) do
     if atom_keys?(attrs) do
       Map.pop(attrs, atom_key)

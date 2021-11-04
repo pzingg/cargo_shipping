@@ -146,12 +146,14 @@ defmodule CargoShipping.CargoBookings.Delivery do
   Returns a params map with new itinerary and delivery snapshots based on the current
   routing and delivery information.
   """
-  def params_derived_from_routing(nil, route_specification, itinerary) do
-    recalculated_params(route_specification, itinerary, nil)
-  end
-
   def params_derived_from_routing(delivery, route_specification, itinerary) do
-    last_event = last_handling_event(delivery)
+    last_event =
+      if !is_nil(delivery) do
+        last_handling_event(delivery)
+      else
+        nil
+      end
+
     recalculated_params(route_specification, itinerary, last_event)
   end
 
@@ -169,12 +171,8 @@ defmodule CargoShipping.CargoBookings.Delivery do
     recalculated_params(route_specification, itinerary, last_event)
   end
 
+  # BROKEN BROKEN
   defp recalculated_params(route_specification, itinerary, last_event) do
-    transport_status = calculate_transport_status(last_event)
-    routing_status = calculate_routing_status(itinerary, route_specification)
-    {next_itinerary, misdirected} = calculate_misdirection_status(itinerary, last_event)
-    on_track = on_track?(routing_status, misdirected)
-
     last_event_id =
       case last_event do
         nil ->
@@ -183,6 +181,11 @@ defmodule CargoShipping.CargoBookings.Delivery do
         event ->
           event.id
       end
+
+    routing_status = calculate_routing_status(itinerary, route_specification)
+    transport_status = calculate_transport_status(last_event)
+    {next_itinerary, misdirected} = calculate_misdirection_status(itinerary, last_event)
+    on_track = on_track?(routing_status, misdirected)
 
     %{
       itinerary: Utils.from_struct(next_itinerary),

@@ -3,6 +3,8 @@ defmodule CargoShipping.CargoBookingsTest do
 
   alias CargoShipping.CargoBookings
 
+  # TODO: Fix PostgreSQL Sandbox checkin/checkout errors.
+
   describe "cargos" do
     alias CargoShipping.CargoBookings.Cargo
 

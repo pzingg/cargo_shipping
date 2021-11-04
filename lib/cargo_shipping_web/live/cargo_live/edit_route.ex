@@ -35,7 +35,7 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
        tracking_id: cargo.tracking_id,
        cargo: cargo,
        remaining_route_spec: remaining_route_spec,
-       completed_legs: completed_legs,
+       completed_legs: Enum.with_index(completed_legs),
        route_candidates: route_candidates,
        patch_uncompleted_leg?: patch_uncompleted_leg?,
        return_to: Routes.cargo_show_path(socket, :show, cargo)

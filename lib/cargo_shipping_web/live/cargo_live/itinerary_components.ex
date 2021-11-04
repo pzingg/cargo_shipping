@@ -14,6 +14,7 @@ defmodule CargoShippingWeb.CargoLive.ItineraryComponents do
     <table>
       <thead>
         <tr>
+          <th>Status</th>
           <th>Voyage</th>
           <th>Load in</th>
           <th>Date</th>
@@ -24,6 +25,7 @@ defmodule CargoShippingWeb.CargoLive.ItineraryComponents do
       <tbody id="itinerary-legs">
         <%= for {leg, i} <- @indexed_legs do %>
           <tr class={class_highlight(i == @selected_index)} id={"leg-#{leg.load_location}-#{leg.unload_location}"}>
+            <td><%= leg.status %></td>
             <td><%= voyage_number_for(leg) %></td>
             <td><%= location_name(leg.load_location) %></td>
             <td><%= event_time(leg, :load_time) %></td>

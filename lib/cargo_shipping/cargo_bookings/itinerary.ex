@@ -132,6 +132,11 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
   def last_completed_index(itinerary), do: first_uncompleted_index(itinerary) - 1
 
+  @doc """
+  Can be called for a cargo that has no itinerary defined yet.
+  """
+  def split_completed_legs(nil), do: {[], []}
+
   def split_completed_legs(%{legs: legs} = itinerary) do
     Enum.split(legs, first_uncompleted_index(itinerary))
   end
@@ -382,15 +387,19 @@ defmodule CargoShipping.CargoBookings.Itinerary do
             !is_nil(f) ->
               {leg, f}
 
+            leg.load_location == location ->
+              if Leg.completed?(leg) || leg.status == :ONBOARD_CARRIER do
+                {leg, leg}
+              else
+                matched_leg = Map.put(leg, :status, :ONBOARD_CARRIER)
+                {matched_leg, matched_leg}
+              end
+
             Leg.completed?(leg) ->
               {leg, nil}
 
-            leg.load_location != location ->
-              {Map.put(leg, :status, :SKIPPED), nil}
-
             true ->
-              matched_leg = Map.put(leg, :status, :ONBOARD_CARRIER)
-              {matched_leg, matched_leg}
+              {Map.put(leg, :status, :SKIPPED), nil}
           end
 
         {[mapped_leg | acc], found_0}
@@ -421,15 +430,19 @@ defmodule CargoShipping.CargoBookings.Itinerary do
             !is_nil(f) ->
               {leg, f}
 
+            leg.unload_location == location ->
+              if Leg.completed?(leg) do
+                {leg, leg}
+              else
+                matched_leg = Map.put(leg, :status, :COMPLETED)
+                {matched_leg, matched_leg}
+              end
+
             Leg.completed?(leg) ->
               {leg, nil}
 
-            leg.unload_location != location ->
-              {Map.put(leg, :status, :SKIPPED), nil}
-
             true ->
-              matched_leg = Map.put(leg, :status, :COMPLETED)
-              {matched_leg, matched_leg}
+              {Map.put(leg, :status, :SKIPPED), nil}
           end
 
         {[mapped_leg | acc], found_0}
@@ -460,15 +473,19 @@ defmodule CargoShipping.CargoBookings.Itinerary do
             !is_nil(f) ->
               {leg, f}
 
+            leg.unload_location == location ->
+              if Leg.completed?(leg) do
+                {leg, leg}
+              else
+                matched_leg = Map.put(leg, :status, :COMPLETED)
+                {matched_leg, matched_leg}
+              end
+
             Leg.completed?(leg) ->
               {leg, nil}
 
-            leg.unload_location != location ->
-              {Map.put(leg, :status, :SKIPPED), nil}
-
             true ->
-              matched_leg = Map.put(leg, :status, :COMPLETED)
-              {matched_leg, matched_leg}
+              {Map.put(leg, :status, :SKIPPED), nil}
           end
 
         {[mapped_leg | acc], found_0}
@@ -492,15 +509,15 @@ defmodule CargoShipping.CargoBookings.Itinerary do
             !is_nil(f) ->
               {leg, f}
 
-            leg != last && Leg.completed?(leg) ->
-              {leg, nil}
+            leg == last && leg.status == :CLAIMED ->
+              {leg, leg}
 
-            leg != last ->
-              {Map.put(leg, :status, :SKIPPED), nil}
-
-            true ->
+            leg == last ->
               matched_leg = Map.put(leg, :status, :CLAIMED)
               {matched_leg, matched_leg}
+
+            true ->
+              {Map.put(leg, :status, :SKIPPED), nil}
           end
 
         {[mapped_leg | acc], found_0, last}

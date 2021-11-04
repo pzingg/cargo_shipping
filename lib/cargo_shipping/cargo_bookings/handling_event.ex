@@ -172,10 +172,11 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
         add_error(changeset, :cargo, message)
 
       {:ok, cargo} ->
-        event_type = get_change(changeset, :event_type)
         transport_status = cargo.delivery.transport_status
+        event_type = get_change(changeset, :event_type)
 
-        if permitted_event_for_transport_status?(event_type, transport_status) do
+        if is_nil(event_type) ||
+             permitted_event_for_transport_status?(event_type, transport_status) do
           changeset
         else
           add_error(changeset, :event_type, "is not permitted for #{transport_status}")

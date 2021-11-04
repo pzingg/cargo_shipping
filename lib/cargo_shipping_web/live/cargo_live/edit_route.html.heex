@@ -34,13 +34,20 @@
 
 <h1><%= @page_title %></h1>
 
+<%= if @completed_legs == [] do %>
+<p>No legs of the current itinerary have been completed. If a new route is selected below it will be applied from location
+<strong><%= location_name(@remaining_route_spec.origin) %></strong>.</p>
+
+<% else %>
+
 <h2>Completed itinerary</h2>
 
 <.show_itinerary indexed_legs={@completed_legs} selected_index={-1} />
 
-<p>Completed legs of the itinerary shown above will not be changed. If a new route is
-selected below it will be applied from location
+<p>The completed legs of the current itinerary shown above will not be changed.
+If a new route is selected below it will be applied from location
 <strong><%= location_name(@remaining_route_spec.origin) %></strong>.</p>
+<% end %>
 
 <%= if !@route_candidates do %>
 

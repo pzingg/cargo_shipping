@@ -173,7 +173,10 @@ defmodule CargoShippingWeb.LiveHelpers do
   end
 
   def cargo_last_known_location(cargo) do
-    cargo.delivery.last_known_location |> location_name()
+    case cargo.delivery.last_known_location do
+      nil -> "None"
+      location -> location_name(location)
+    end
   end
 
   def cargo_destination(cargo) do
