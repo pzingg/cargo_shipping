@@ -101,3 +101,9 @@
 .banner span {
   vertical-align: 2rem;
 }
+
+/* ItineraryComponents */
+
+tr.current-row {
+  background-color: khaki;
+}

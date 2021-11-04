@@ -41,6 +41,8 @@
 
 <h2>Complete current itinerary</h2>
 
+<p>Last completed leg of itinerary is <span style="background-color: khaki;">highlighted</span>.</p>
+
 <%= if cargo_misrouted?(@cargo) do %>
 <ul>
   <li>
@@ -49,11 +51,12 @@
   </li>
 </ul>
 
-<button type="button" phx-click="revert_destination"><%= "Change destination to #{location_name(@revert_destination)}" %></button>
 <%= live_redirect "Select new route", to: Routes.cargo_edit_route_path(@socket, :edit, @cargo), class: "button", type: "button" %>
+<button type="button" phx-click="revert_destination"><%= "Change destination to #{location_name(@revert_destination)}" %></button>
+
 <% end %>
 
-<.show_itinerary legs={@cargo.itinerary.legs} />
+<.show_itinerary indexed_legs={@indexed_legs} selected_index={@selected_index} />
 
 <%= if !cargo_routed?(@cargo) do %>
 <ul>

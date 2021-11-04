@@ -108,16 +108,7 @@ defmodule CargoShipping.CargoBookingService do
         [internal_itinerary | other_itineraries]
         |> Enum.reject(&is_nil(&1))
 
-      if Enum.empty?(itineraries) do
-        {remaining_route_spec, nil}
-      else
-        indexed_itineraries =
-          Enum.with_index(itineraries, fn %{itinerary: itinerary}, index ->
-            {itinerary, index + 1}
-          end)
-
-        {remaining_route_spec, completed_legs, indexed_itineraries, patch_uncompleted_leg?}
-      end
+      {remaining_route_spec, completed_legs, itineraries, patch_uncompleted_leg?}
     end
   end
 

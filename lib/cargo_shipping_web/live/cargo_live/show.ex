@@ -21,6 +21,8 @@ defmodule CargoShippingWeb.CargoLive.Show do
        handling_events: cargo.handling_events,
        tracking_id: cargo.tracking_id,
        cargo: cargo,
+       indexed_legs: Enum.with_index(cargo.itinerary.legs),
+       selected_index: Itinerary.last_completed_index(cargo.itinerary),
        revert_destination: Itinerary.final_arrival_location(cargo.itinerary),
        return_to: Routes.cargo_show_path(socket, :show, cargo)
      )}

@@ -36,7 +36,7 @@
 
 <h2>Completed itinerary</h2>
 
-<.show_itinerary legs={@completed_legs} />
+<.show_itinerary indexed_legs={@completed_legs} selected_index={-1} />
 
 <p>Completed legs of the itinerary shown above will not be changed. If a new route is
 selected below it will be applied from location
@@ -52,7 +52,8 @@ deadline futher into the future (a few weeks at least).</p>
 
 <p>Select a new route from these candidates:</p>
 
-<%= for {itinerary, index} <- @route_candidates do %>
-  <.select_itinerary_form title={"Route candidate #{index}"} itinerary={itinerary} index={index} />
+<%= for candidate <- @route_candidates do %>
+  <.select_itinerary_form title={candidate.title} index={candidate.index}
+    is_internal={candidate.is_internal} indexed_legs={candidate.indexed_legs} />
 <% end %>
 <% end %>

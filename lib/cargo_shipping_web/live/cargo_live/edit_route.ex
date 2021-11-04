@@ -13,8 +13,20 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
   def handle_params(%{"tracking_id" => tracking_id}, _uri, socket) do
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
 
-    {remaining_route_spec, completed_legs, indexed_itineraries, patch_uncompleted_leg?} =
+    {remaining_route_spec, completed_legs, itineraries, patch_uncompleted_leg?} =
       CargoBookingService.possible_routes_for_cargo(cargo)
+
+    route_candidates =
+      Enum.with_index(itineraries)
+      |> Enum.map(fn {%{itinerary: itinerary, cost: cost}, index} ->
+        %{
+          index: index,
+          title: "Route candidate #{index + 1}",
+          itinerary: itinerary,
+          is_internal: cost < 0,
+          indexed_legs: Enum.with_index(itinerary.legs)
+        }
+      end)
 
     {:noreply,
      socket
@@ -24,7 +36,7 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
        cargo: cargo,
        remaining_route_spec: remaining_route_spec,
        completed_legs: completed_legs,
-       route_candidates: indexed_itineraries,
+       route_candidates: route_candidates,
        patch_uncompleted_leg?: patch_uncompleted_leg?,
        return_to: Routes.cargo_show_path(socket, :show, cargo)
      )}
@@ -54,9 +66,9 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
   end
 
   defp find_itinerary(route_candidates, index) do
-    case Enum.find(route_candidates, fn {_itinerary, idx} -> idx == index end) do
+    case Enum.find(route_candidates, fn %{index: idx} -> idx == index end) do
       nil -> {:error, :not_found}
-      {itinerary, _idx} -> {:ok, itinerary}
+      %{itinerary: itinerary} -> {:ok, itinerary}
     end
   end
 

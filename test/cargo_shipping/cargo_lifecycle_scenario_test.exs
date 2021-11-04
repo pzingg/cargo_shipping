@@ -47,14 +47,14 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     # The cargo is then assigned to the selected route, described by an itinerary.
 
-    {remaining_route_spec, completed_legs, indexed_itineraries, patch_uncompleted_leg?} =
+    {remaining_route_spec, completed_legs, itineraries, patch_uncompleted_leg?} =
       CargoBookingService.possible_routes_for_cargo(cargo)
 
     assert remaining_route_spec
     assert remaining_route_spec == cargo.route_specification
 
-    assert indexed_itineraries
-    itinerary = select_prefered_itinerary(indexed_itineraries)
+    assert itineraries
+    itinerary = select_prefered_itinerary(itineraries)
 
     {:ok, _cargo} =
       CargoBookings.update_cargo_for_new_itinerary(
@@ -207,14 +207,14 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     # Repeat procedure of selecting one out of a number of possible
     # routes satisfying the route spec.
 
-    {remaining_route_spec, completed_legs, indexed_itineraries, patch_uncompleted_leg?} =
+    {remaining_route_spec, completed_legs, itineraries, patch_uncompleted_leg?} =
       CargoBookingService.possible_routes_for_cargo(cargo)
 
     assert remaining_route_spec
     assert remaining_route_spec.origin == "CNSHA"
 
-    assert indexed_itineraries
-    itinerary = select_prefered_itinerary(indexed_itineraries)
+    assert itineraries
+    itinerary = select_prefered_itinerary(itineraries)
 
     {:ok, _cargo} =
       CargoBookings.update_cargo_for_new_itinerary(
@@ -422,10 +422,8 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
   ## Utility stubs
 
-  defp select_prefered_itinerary(indexed_itineraries) when is_list(indexed_itineraries) do
-    {itinerary, _index} = List.first(indexed_itineraries)
-    itinerary
-  end
+  defp select_prefered_itinerary(itineraries) when is_list(itineraries),
+    do: List.first(itineraries)
 
   defp select_prefered_itinerary(_), do: nil
 end
