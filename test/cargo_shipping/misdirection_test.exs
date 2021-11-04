@@ -97,7 +97,7 @@ defmodule CargoShipping.MisdirectionTest do
       cargo = post_report_and_get_cargo(handling_report)
       # itinerary on voyage TEST01 from FIHEL (ACTUAL) to DEHAM - NOT_LOADED
       # delivery TST442 ROUTED IN_PORT MISDIRECTED at FIHEL
-      {new_route_spec, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, completed_legs, new_origin?, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
       assert new_origin?
@@ -140,7 +140,7 @@ defmodule CargoShipping.MisdirectionTest do
       cargo = post_report_and_get_cargo(handling_report)
       # itinerary on voyage TEST01 from USNYC (ACTUAL) to DEHAM - NOT_LOADED
       # delivery TST442 ROUTED IN_PORT MISDIRECTED at USNYC
-      {new_route_spec, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, completed_legs, new_origin?, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
       assert new_origin?
@@ -186,7 +186,7 @@ defmodule CargoShipping.MisdirectionTest do
       # itinerary on voyage TEST01 from SESTO to FIHEL (ACTUAL) - COMPLETED
       # delivery TST442 ROUTED IN_PORT MISDIRECTED at FIHEL
 
-      {new_route_spec, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, completed_legs, new_origin?, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
       assert new_origin?
@@ -230,7 +230,7 @@ defmodule CargoShipping.MisdirectionTest do
       # itinerary on voyage TEST01 from SESTO to USNYC (ACTUAL) - COMPLETED
       # delivery TST442 ROUTED IN_PORT MISDIRECTED at USNYC
 
-      {new_route_spec, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, completed_legs, new_origin?, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
       assert new_origin?
@@ -275,7 +275,7 @@ defmodule CargoShipping.MisdirectionTest do
       cargo = post_report_and_get_cargo(handling_report)
       # itinerary on voyage TEST01 from FIHEL (ACTUAL) to DEHAM - ONBOARD_CARRIER
       # delivery TST442 ROUTED ONBOARD_CARRIER MISDIRECTED from FIHEL on voyage TEST01
-      {new_route_spec, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, completed_legs, new_origin?, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
       assert new_origin?
@@ -318,7 +318,7 @@ defmodule CargoShipping.MisdirectionTest do
       cargo = post_report_and_get_cargo(handling_report)
       # itinerary on voyage TEST01 from USNYC (ACTUAL) to DEHAM - ONBOARD_CARRIER
       # delivery TST442 ROUTED ONBOARD_CARRIER MISDIRECTED from USNYC on voyage TEST01
-      {new_route_spec, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, completed_legs, new_origin?, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
       assert new_origin?

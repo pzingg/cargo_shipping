@@ -2,6 +2,8 @@ defmodule CargoShippingWeb.CargoLive.Show do
   use CargoShippingWeb, :live_view
 
   alias CargoShipping.CargoBookings
+  alias CargoShipping.CargoBookings.Itinerary
+  import CargoShippingWeb.CargoLive.ItineraryComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -18,8 +20,32 @@ defmodule CargoShippingWeb.CargoLive.Show do
      |> assign(
        handling_events: cargo.handling_events,
        tracking_id: cargo.tracking_id,
-       cargo: cargo
+       cargo: cargo,
+       revert_destination: Itinerary.final_arrival_location(cargo.itinerary),
+       return_to: Routes.cargo_show_path(socket, :show, cargo)
      )}
+  end
+
+  @impl true
+  def handle_event("revert_destination", _data, socket) do
+    cargo = socket.assigns.cargo
+
+    case CargoBookings.update_cargo_for_new_destination(
+           cargo,
+           socket.assigns.revert_destination,
+           cargo.route_specification.arrival_deadline
+         ) do
+      {:ok, _cargo} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Cargo destination updated successfully")
+         |> push_redirect(to: socket.assigns.return_to)}
+
+      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Cargo destination was not updated")}
+    end
   end
 
   defp page_title(:show), do: "Cargo"

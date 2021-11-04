@@ -2,6 +2,7 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
   use CargoShippingWeb, :live_view
 
   alias CargoShipping.{CargoBookings, CargoBookingService}
+  import CargoShippingWeb.CargoLive.ItineraryComponents
 
   @impl true
   def mount(_params, _session, socket) do
@@ -12,7 +13,7 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
   def handle_params(%{"tracking_id" => tracking_id}, _uri, socket) do
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
 
-    {remaining_route_spec, indexed_itineraries, patch_uncompleted_leg?} =
+    {remaining_route_spec, completed_legs, indexed_itineraries, patch_uncompleted_leg?} =
       CargoBookingService.possible_routes_for_cargo(cargo)
 
     {:noreply,
@@ -22,8 +23,10 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
        tracking_id: cargo.tracking_id,
        cargo: cargo,
        remaining_route_spec: remaining_route_spec,
+       completed_legs: completed_legs,
        route_candidates: indexed_itineraries,
-       patch_uncompleted_leg?: patch_uncompleted_leg?
+       patch_uncompleted_leg?: patch_uncompleted_leg?,
+       return_to: Routes.cargo_show_path(socket, :show, cargo)
      )}
   end
 
@@ -31,22 +34,29 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
   @doc """
   Fired by click in stateless RouteFormComponent.
   """
-  def handle_event("save", %{"index" => index} = _params, socket) do
-    selected_itinerary = Enum.at(socket.assigns.route_candidates, index - 1)
-
-    case CargoBookings.update_cargo_for_new_itinerary(
-           socket.assigns.cargo,
-           selected_itinerary,
-           socket.assigns.patch_uncompleted_leg?
-         ) do
-      {:ok, _cargo} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Cargo assigned to route successfully")
-         |> push_redirect(to: socket.assigns.return_to)}
-
-      {:error, %Ecto.Changeset{} = _changeset} ->
+  def handle_event("save", %{"index" => index_str} = _params, socket) do
+    with {index, ""} <- Integer.parse(index_str),
+         {:ok, selected_itinerary} <- find_itinerary(socket.assigns.route_candidates, index),
+         {:ok, _cargo} <-
+           CargoBookings.update_cargo_for_new_itinerary(
+             socket.assigns.cargo,
+             selected_itinerary,
+             socket.assigns.patch_uncompleted_leg?
+           ) do
+      {:noreply,
+       socket
+       |> put_flash(:info, "Cargo assigned to route successfully")
+       |> push_redirect(to: socket.assigns.return_to)}
+    else
+      _ ->
         {:noreply, socket |> put_flash(:error, "Could not assign route")}
+    end
+  end
+
+  defp find_itinerary(route_candidates, index) do
+    case Enum.find(route_candidates, fn {_itinerary, idx} -> idx == index end) do
+      nil -> {:error, :not_found}
+      {itinerary, _idx} -> {:ok, itinerary}
     end
   end
 

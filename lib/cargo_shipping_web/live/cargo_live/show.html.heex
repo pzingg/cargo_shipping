@@ -31,7 +31,7 @@
     <%= event_time(@cargo.route_specification, :arrival_deadline) %>
   </li>
   <li><strong>Last known location:</strong>
-    <%= cargo_destination(@cargo) %>
+    <%= cargo_last_known_location(@cargo) %>
   </li>
 </ul>
 
@@ -39,39 +39,21 @@
 
 <%= live_redirect "Change destination", to: Routes.cargo_edit_destination_path(@socket, :edit, @cargo), class: "button", type: "button" %>
 
-<h2>Itinerary</h2>
+<h2>Complete current itinerary</h2>
 
 <%= if cargo_misrouted?(@cargo) do %>
 <ul>
   <li>
-    <strong>Cargo is misrouted!</strong>
+    <strong>Cargo is misrouted!</strong> The itinerary below does not match the currently selected
+    origin and destination.
   </li>
 </ul>
+
+<button type="button" phx-click="revert_destination"><%= "Change destination to #{location_name(@revert_destination)}" %></button>
 <%= live_redirect "Select new route", to: Routes.cargo_edit_route_path(@socket, :edit, @cargo), class: "button", type: "button" %>
 <% end %>
 
-<table>
-  <thead>
-    <tr>
-      <th>Voyage</th>
-      <th>Load in</th>
-      <th>Date</th>
-      <th>Unload in</th>
-      <th>Date</th>
-    </tr>
-  </thead>
-  <tbody id="itinerary-legs">
-    <%= for leg <- @cargo.itinerary.legs do %>
-      <tr id={"leg-#{leg.load_location}-#{leg.unload_location}"}>
-        <td><%= voyage_number_for(leg) %></td>
-        <td><%= location_name(leg.load_location) %></td>
-        <td><%= event_time(leg, :load_time) %></td>
-        <td><%= location_name(leg.unload_location) %></td>
-        <td><%= event_time(leg, :unload_time) %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+<.show_itinerary legs={@cargo.itinerary.legs} />
 
 <%= if !cargo_routed?(@cargo) do %>
 <ul>

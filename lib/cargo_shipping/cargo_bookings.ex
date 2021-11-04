@@ -291,25 +291,26 @@ defmodule CargoShipping.CargoBookings do
   def get_remaining_route_specification(%{itinerary: itinerary, delivery: delivery} = cargo) do
     location = delivery.last_known_location
     event_type = delivery.last_event_type
+    {completed_legs, uncompleted_legs} = Itinerary.split_completed_legs(itinerary)
 
     case {delivery.routing_status, delivery.transport_status} do
       {:NOT_ROUTED, _} ->
         Logger.debug("Cargo not routed, rrs is original route specification")
-        {cargo.route_specification, false, false}
+        {cargo.route_specification, completed_legs, false, false}
 
       {_, :CLAIMED} ->
         Logger.debug("Cargo has been claimed, rrs is nil")
-        {nil, false, false}
+        {nil, completed_legs, false, false}
 
       {_, :IN_PORT} ->
         new_location? =
           case event_type do
             :UNLOAD ->
-              Itinerary.last_completed_leg(itinerary)
+              List.last(completed_legs)
               |> Leg.unexpected_unload?()
 
             :RECEIVE ->
-              Itinerary.first_uncompleted_leg(itinerary)
+              List.first(uncompleted_legs)
               |> Leg.unexpected_load?()
 
             _ ->
@@ -326,18 +327,18 @@ defmodule CargoShipping.CargoBookings do
               "After #{event_type}, cargo is (misdirected) in port at"
             )
 
-          {route_spec, new_origin?, false}
+          {route_spec, completed_legs, new_origin?, false}
         else
           Logger.debug(
             "No change while IN_PORT after #{event_type} at #{location}, rrs is original route specification"
           )
 
-          {cargo.route_specification, false, false}
+          {cargo.route_specification, completed_legs, false, false}
         end
 
       {_, :ONBOARD_CARRIER} ->
         new_location? =
-          Itinerary.first_uncompleted_leg(itinerary)
+          List.first(uncompleted_legs)
           |> Leg.unexpected_load?()
 
         if new_location? do
@@ -349,13 +350,13 @@ defmodule CargoShipping.CargoBookings do
               "After #{event_type}, cargo is on board (misdirected) from"
             )
 
-          {route_spec, new_origin?, true}
+          {route_spec, completed_legs, new_origin?, true}
         else
           Logger.debug(
             "No change while ONBOARD_CARRIER after #{event_type} from #{location}, rrs is original route specification"
           )
 
-          {cargo.route_specification, false, false}
+          {cargo.route_specification, completed_legs, false, false}
         end
 
       {_, other} ->
@@ -363,7 +364,7 @@ defmodule CargoShipping.CargoBookings do
           "After #{event_type}, cargo transport is #{other}, rrs is original route specification"
         )
 
-        {cargo.route_specification, false, false}
+        {cargo.route_specification, completed_legs, false, false}
     end
   end
 

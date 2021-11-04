@@ -58,9 +58,10 @@ defmodule CargoShipping.CargoBookingService do
   end
 
   @doc """
-  Returns a tuple
+  Returns a 4-tuple
     * the remaining route specification for the cargo
-    * a list of possible replacement itineraries
+    * the completed legs of the cargo's current itinerary
+    * a list of possible replacement itineraries for the uncompleted legs
     * boolean, true if the merged itinerary should use data from the
       last uncompleted leg when merging, or false if the new itinerary can just be
       appended
@@ -74,7 +75,7 @@ defmodule CargoShipping.CargoBookingService do
   end
 
   def possible_routes_for_cargo(%Cargo{} = cargo) do
-    {remaining_route_spec, has_new_origin?, patch_uncompleted_leg?} =
+    {remaining_route_spec, completed_legs, has_new_origin?, patch_uncompleted_leg?} =
       CargoBookings.get_remaining_route_specification(cargo)
 
     if is_nil(remaining_route_spec) do
@@ -115,7 +116,7 @@ defmodule CargoShipping.CargoBookingService do
             {itinerary, index + 1}
           end)
 
-        {remaining_route_spec, indexed_itineraries, patch_uncompleted_leg?}
+        {remaining_route_spec, completed_legs, indexed_itineraries, patch_uncompleted_leg?}
       end
     end
   end
