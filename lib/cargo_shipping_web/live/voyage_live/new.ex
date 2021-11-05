@@ -25,13 +25,13 @@ defmodule CargoShippingWeb.VoyageLive.New do
   def handle_event("validate", raw_params, socket) do
     # params =
     #  Datepicker.handle_form_change(
-    #    "handling_report",
+    #    "voyage",
     #    "completed_at",
     #    raw_params,
     #    &update_datepicker/2
     #  )
 
-    params = raw_params
+    params = Map.fetch!(raw_params, "voyage")
 
     changeset =
       VoyagePlans.change_voyage(%Voyage{}, params)
@@ -43,13 +43,13 @@ defmodule CargoShippingWeb.VoyageLive.New do
   def handle_event("save", raw_params, socket) do
     # params =
     #  Datepicker.handle_form_change(
-    #    "handling_report",
+    #    "voyage",
     #    "completed_at",
     #    raw_params,
     #    &update_datepicker/2
     #  )
 
-    params = raw_params
+    params = Map.fetch!(raw_params, "voyage")
 
     case VoyagePlans.create_voyage(params) do
       {:ok, _voyage} ->

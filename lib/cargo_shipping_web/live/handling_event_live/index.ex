@@ -30,9 +30,9 @@ defmodule CargoShippingWeb.HandlingEventLive.Index do
     {:noreply,
      socket
      |> assign(
+       page_title: page_title(tracking_id, socket.assigns.live_action),
        cargo: cargo,
-       handling_events: handling_events,
-       page_title: page_title(tracking_id)
+       handling_events: handling_events
      )}
   end
 
@@ -49,6 +49,6 @@ defmodule CargoShippingWeb.HandlingEventLive.Index do
     {:noreply, clear_bulletin(socket, bulletin_id)}
   end
 
-  defp page_title(nil), do: "Recent handling events"
-  defp page_title(tracking_id), do: "Handling events for #{tracking_id}"
+  defp page_title(nil, :index), do: "Recent handling events"
+  defp page_title(tracking_id, :index), do: "Handling events for #{tracking_id}"
 end

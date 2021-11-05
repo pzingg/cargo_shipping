@@ -14,11 +14,15 @@ defmodule CargoShippingWeb.CargoLive.Index do
 
   @impl true
   def handle_params(_params, _uri, socket) do
+    title = page_title(socket.assigns.live_action)
+
     {:noreply,
      socket
-     |> assign(:header, "All cargos")
-     |> assign(:page_title, page_title(socket.assigns.live_action))
-     |> assign(:cargos, CargoBookings.list_cargos())}
+     |> assign(
+       header: title,
+       page_title: title,
+       cargos: CargoBookings.list_cargos()
+     )}
   end
 
   @impl true
@@ -34,5 +38,5 @@ defmodule CargoShippingWeb.CargoLive.Index do
     {:noreply, clear_bulletin(socket, bulletin_id)}
   end
 
-  defp page_title(:index), do: "Cargos"
+  defp page_title(:index), do: "All cargos"
 end

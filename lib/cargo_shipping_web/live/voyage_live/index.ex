@@ -10,11 +10,15 @@ defmodule CargoShippingWeb.VoyageLive.Index do
 
   @impl true
   def handle_params(_params, _uri, socket) do
+    title = page_title(socket.assigns.live_action)
+
     {:noreply,
      socket
-     |> assign(:header, "All voyages")
-     |> assign(:page_title, page_title(socket.assigns.live_action))
-     |> assign(:voyages, VoyagePlans.list_voyages())}
+     |> assign(
+       header: title,
+       page_title: title,
+       voyages: VoyagePlans.list_voyages()
+     )}
   end
 
   def page_title(:index), do: "All voyages"

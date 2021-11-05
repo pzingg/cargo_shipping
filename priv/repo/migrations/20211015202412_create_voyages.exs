@@ -9,5 +9,7 @@ defmodule CargoShipping.Repo.Migrations.CreateVoyages do
 
       timestamps()
     end
+
+    create unique_index(:voyages, [:voyage_number])
   end
 end

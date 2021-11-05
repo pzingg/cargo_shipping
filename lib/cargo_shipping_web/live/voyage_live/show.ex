@@ -26,8 +26,8 @@ defmodule CargoShippingWeb.VoyageLive.Show do
 
     {:noreply,
      socket
-     |> assign(:page_title, page_title(socket.assigns.live_action))
      |> assign(
+       page_title: page_title(voyage.voyage_number, socket.assigns.live_action),
        voyage_number: voyage.voyage_number,
        voyage: voyage,
        back_link_label: back_link_label,
@@ -36,5 +36,5 @@ defmodule CargoShippingWeb.VoyageLive.Show do
      )}
   end
 
-  defp page_title(:show), do: "Voyage"
+  defp page_title(voyage_number, :show), do: "Voyage #{voyage_number}"
 end

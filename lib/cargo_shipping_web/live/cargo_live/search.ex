@@ -10,11 +10,13 @@ defmodule CargoShippingWeb.CargoLive.Search do
 
   @impl true
   def handle_params(_params, _uri, socket) do
+    title = page_title(socket.assigns.live_action)
+
     {:noreply,
      socket
-     |> assign(:header, "Track cargos")
-     |> assign(:page_title, page_title(socket.assigns.live_action))
      |> assign(
+       header: title,
+       page_title: title,
        cargo: nil,
        handling_events: [],
        tracking_id: "",

@@ -18,9 +18,9 @@ defmodule CargoShippingWeb.CargoLive.EditDestination do
 
     {:noreply,
      socket
-     |> assign(:page_title, page_title(socket.assigns.live_action, tracking_id))
      |> assign(
-       action: :edit,
+       page_title: page_title(tracking_id, socket.assigns.live_action),
+       action: socket.assigns.live_action,
        changeset: changeset,
        cargo: cargo,
        tracking_id: cargo.tracking_id,
@@ -94,5 +94,5 @@ defmodule CargoShippingWeb.CargoLive.EditDestination do
     end
   end
 
-  defp page_title(:edit, tracking_id), do: "Select a new destination for #{tracking_id}"
+  defp page_title(tracking_id, :edit), do: "Select a new destination for #{tracking_id}"
 end

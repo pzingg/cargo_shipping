@@ -17,34 +17,19 @@
 <.form
   let={f}
   for={@changeset}
-  id="handling-report-form"
+  id="cargo-form"
   phx-change="validate"
   phx-submit="save">
 
-  <%= label f, :event_type %>
-  <%= select f, :event_type, @event_type_options %>
-  <%= error_tag f, :event_type %>
-
   <%= label f, :tracking_id, "Tracking ID" %>
-  <%= select f, :tracking_id, @cargo_options %>
+  <%= text_input f, :tracking_id, placeholder: "ABC999", size: 10, style: "width: 25%" %>
   <%= error_tag f, :tracking_id %>
 
-  <%= label f, :voyage_number %>
-  <%= select f, :voyage_number, @voyage_options %>
-  <%= error_tag f, :voyage_number %>
-
-  <%= label f, :location %>
-  <%= select f, :location, @location_options %>
-  <%= error_tag f, :location %>
-
-  <%= label f, :completed_at %>
-  <.live_component module={Datepicker}
-    id="completed_at" prefix="handling_report" selected_date={@completed_at}>
-    <%= error_tag f, :completed_at %>
-  </.live_component>
+  <%= label f, :origin %>
+  <%= select f, :origin, @location_options %>
+  <%= error_tag f, :origin %>
 
   <div>
-    <%= submit "Submit Report", phx_disable_with: "Processing..." %>
+    <%= submit "Create cargo", phx_disable_with: "Processing..." %>
   </div>
 </.form>
-

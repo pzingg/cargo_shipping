@@ -3,6 +3,9 @@
     <h2>Navigation</h2>
     <ul>
       <li>
+        <%= live_redirect "Create new voyage", to: Routes.voyage_new_path(@socket, :new) %>
+      </li>
+      <li>
         <%= link "Managers page", to: "/managers" %>
       </li>
       <li>

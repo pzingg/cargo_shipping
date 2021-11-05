@@ -22,7 +22,7 @@
   phx-submit="save">
 
   <%= label f, :voyage_number %>
-  <%= text_input f, :voyage_number %>
+  <%= text_input f, :voyage_number, placeholder: "V0099S", size: 10, style: "width: 25%" %>
   <%= error_tag f, :voyage_number %>
 
   <div>

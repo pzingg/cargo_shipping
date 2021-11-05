@@ -10,7 +10,7 @@
         <%= link "List all cargos", to: Routes.cargo_index_path(@conn, :index) %>
       </li>
       <li>
-        <%= link "Book new cargo", to: "#" %>
+        <%= link "Book new cargo", to: Routes.cargo_new_path(@conn, :new) %>
       </li>
       <li>
         <%= link "List recent handling events", to: Routes.handling_event_index_path(@conn, :all) %>
@@ -22,7 +22,7 @@
         <%= link "List all voyages", to: Routes.voyage_index_path(@conn, :index) %>
       </li>
       <li>
-        <%= link "Create new voyage", to: "#" %>
+        <%= link "Create new voyage", to: Routes.voyage_new_path(@conn, :new) %>
       </li>
       <li>
         <%= link "Log out", to: "/" %>

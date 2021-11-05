@@ -79,5 +79,5 @@ defmodule CargoShippingWeb.HandlingReportLive.New do
     send_update(Datepicker, id: id, selected_date: dt)
   end
 
-  defp page_title(:new), do: "Submit a Handling Report"
+  defp page_title(:new), do: "Submit a handling report"
 end

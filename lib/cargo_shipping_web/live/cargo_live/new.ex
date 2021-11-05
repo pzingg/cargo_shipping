@@ -16,6 +16,7 @@ defmodule CargoShippingWeb.CargoLive.New do
      socket
      |> assign(
        page_title: page_title(socket.assigns.live_action),
+       location_options: all_location_options(),
        changeset: CargoBookings.change_cargo(%Cargo{}),
        return_to: Routes.cargo_index_path(socket, :index)
      )}
@@ -27,13 +28,13 @@ defmodule CargoShippingWeb.CargoLive.New do
     # on changes to tracking_id and voyage_number.
     # params =
     #  Datepicker.handle_form_change(
-    #    "handling_report",
+    #    "cargo",
     #    "completed_at",
     #    raw_params,
     #    &update_datepicker/2
     #  )
 
-    params = raw_params
+    params = Map.fetch!(raw_params, "cargo")
 
     changeset =
       CargoBookings.change_cargo(%Cargo{}, params)
@@ -45,13 +46,13 @@ defmodule CargoShippingWeb.CargoLive.New do
   def handle_event("save", raw_params, socket) do
     # params =
     #  Datepicker.handle_form_change(
-    #    "handling_report",
+    #    "cargo",
     #    "completed_at",
     #    raw_params,
     #    &update_datepicker/2
     #  )
 
-    params = raw_params
+    params = Map.fetch!(raw_params, "cargo")
 
     case CargoBookings.create_cargo(params) do
       {:ok, _cargo} ->

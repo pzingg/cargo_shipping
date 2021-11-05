@@ -27,6 +27,8 @@ defmodule CargoShipping.VoyagePlans.Voyage do
     voyage
     |> cast(attrs, [:voyage_number])
     |> validate_required([:voyage_number])
+    |> validate_length(:voyage_number, min: 4, max: 10)
+    |> unique_constraint(:voyage_number)
     |> cast_embed(:schedule_items, with: &CarrierMovement.changeset/2)
   end
 
