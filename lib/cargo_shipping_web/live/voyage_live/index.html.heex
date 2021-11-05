@@ -1,0 +1,44 @@
+<section class="row">
+  <article class="column">
+    <h2>Navigation</h2>
+    <ul>
+      <li>
+        <%= link "Managers page", to: "/managers" %>
+      </li>
+      <li>
+        <%= link "Log out", to: "/" %>
+      </li>
+    </ul>
+  </article>
+</section>
+
+<h1><%= @header %></h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Voyage number</th>
+      <th>Movements</th>
+      <th>Origin</th>
+      <th>Date</th>
+      <th>Terminus</th>
+      <th>Date</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody id="voyages">
+    <%= for voyage <- @voyages do %>
+      <tr id={"voyage-#{voyage.id}"}>
+        <td><%= voyage.voyage_number %></td>
+        <td><%= Enum.count(voyage.schedule_items) %></td>
+        <td><%= voyage_origin(voyage) %></td>
+        <td><%= voyage_origin_time(voyage) %></td>
+        <td><%= voyage_destination(voyage) %></td>
+        <td><%= voyage_destination_time(voyage) %></td>
+        <td>
+          <span><%= live_redirect "Show", to: Routes.voyage_show_path(@socket, :show, voyage) %></span>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

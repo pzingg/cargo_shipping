@@ -1,0 +1,20 @@
+<section class="row">
+  <article class="column">
+    <h2>Navigation</h2>
+    <ul>
+      <li>
+        <%= live_redirect @back_link_label, to: @back_link_path %>
+      </li>
+      <li>
+        <%= live_redirect "Managers page", to: "/managers" %>
+      </li>
+      <li>
+        <%= live_redirect "Log out", to: "/" %>
+      </li>
+    </ul>
+  </article>
+</section>
+
+<h1>Details for voyage <%= @voyage.voyage_number %></h1>
+
+<.show_voyage_items items={@voyage.schedule_items} />
