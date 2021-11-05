@@ -341,299 +341,140 @@ defmodule CargoShipping.CargoBookings.Itinerary do
         {:error, "empty itinerary", nil}
 
       true ->
-        case find_match_for_event(
-               itinerary,
-               handling_event.event_type,
-               handling_event.location,
-               handling_event.voyage_id
-             ) do
-          {:ok, updated_itinerary} ->
-            if update_itinerary? do
-              {:ok, updated_itinerary}
-            else
-              {:ok, itinerary}
-            end
+        {scope, voyage_id, leg_location, next_status} =
+          case handling_event.event_type do
+            :RECEIVE ->
+              {:first, nil, :LOAD, :NOT_LOADED}
 
-          {:error, message} ->
-            updated_itinerary =
-              if update_itinerary? do
-                update_for_unexpected_event(
-                  itinerary,
-                  handling_event.event_type,
-                  handling_event.location,
-                  handling_event.voyage_id,
-                  handling_event.completed_at
-                )
-              else
-                itinerary
-              end
+            :LOAD ->
+              {:first_uncompleted, handling_event.voyage_id, :LOAD, :ONBOARD_CARRIER}
 
-            {:error, message, updated_itinerary}
-        end
-    end
-  end
+            :UNLOAD ->
+              {:first_uncompleted, handling_event.voyage_id, :UNLOAD, :COMPLETED}
 
-  defp find_match_for_event(itinerary, event_type, location, voyage_id)
+            :CUSTOMS ->
+              {:last, nil, :UNLOAD, :IN_CUSTOMS}
 
-  defp find_match_for_event(%{legs: legs} = itinerary, :RECEIVE, location, _voyage_id) do
-    # Check that the first leg's origin is the event's location
-    leg = List.first(legs)
-
-    if leg.status == :NOT_LOADED &&
-         (location == leg.load_location || location == leg.actual_load_location) do
-      {:ok, itinerary}
-    else
-      {:error, "RECEIVE at #{location} does not match load location of first leg (#{leg.status})"}
-    end
-  end
-
-  defp find_match_for_event(%{legs: legs} = itinerary, :LOAD, location, voyage_id) do
-    # Check that the there is one leg with same load location and voyage
-    {reversed_legs, found} =
-      Enum.reduce(legs, {[], nil}, fn leg, {acc, f} ->
-        {mapped_leg, found_0} =
-          cond do
-            leg.status == :SKIPPED ->
-              {leg, f}
-
-            location == leg.load_location || location == leg.actual_load_location ->
-              if leg.status == :ONBOARD_CARRIER do
-                {leg, leg}
-              else
-                matched_leg = Map.put(leg, :status, :ONBOARD_CARRIER)
-                {matched_leg, matched_leg}
-              end
-
-            !is_nil(f) && leg.status == :COMPLETED ->
-              {leg, nil}
-
-            true ->
-              {leg, f}
+            :CLAIM ->
+              {:last, nil, :UNLOAD, :CLAIMED}
           end
 
-        {[mapped_leg | acc], found_0}
-      end)
+        {before, leg, rest} = split_for_scope(itinerary, scope, leg_location)
 
-    if found && found.voyage_id == voyage_id do
-      {:ok, %{itinerary | legs: Enum.reverse(reversed_legs)}}
-    else
-      voyage_number = VoyageService.get_voyage_number_for_id!(voyage_id)
+        {voyage_matched?, location_matched?} =
+          case leg_location do
+            :LOAD ->
+              cond do
+                is_nil(leg) || (!is_nil(voyage_id) && voyage_id != leg.voyage_id) ->
+                  {false, false}
 
-      message =
-        if is_nil(voyage_id) do
-          "LOAD at #{location} does not have a voyage id"
+                handling_event.location != leg.load_location &&
+                    handling_event.location != leg.actual_load_location ->
+                  {true, false}
+
+                true ->
+                  {true, true}
+              end
+
+            :UNLOAD ->
+              cond do
+                is_nil(leg) || (!is_nil(voyage_id) && voyage_id != leg.voyage_id) ->
+                  {false, false}
+
+                handling_event.location != leg.unload_location &&
+                    handling_event.location != leg.actual_unload_location ->
+                  {true, false}
+
+                true ->
+                  {true, true}
+              end
+          end
+
+        voyage_number =
+          case VoyageService.get_voyage_number_for_id!(voyage_id) do
+            nil -> ""
+            number -> " on voyage #{number}"
+          end
+
+        error_message =
+          "no match for #{handling_event.event_type} at #{handling_event.location}#{voyage_number} (scope: #{scope})"
+
+        if voyage_matched? && update_itinerary? do
+          updated_leg = update_leg(leg, leg_location, next_status, handling_event)
+
+          updated_itinerary = build_update(before, updated_leg, rest)
+          Itinerary.debug_itinerary(updated_itinerary, "updated_itinerary")
+
+          if location_matched? do
+            {:ok, updated_itinerary}
+          else
+            {:error, error_message, updated_itinerary}
+          end
         else
-          "LOAD at #{location} does not match any load location of voyage #{voyage_number}"
+          {:error, error_message, itinerary}
         end
-
-      {:error, message}
     end
   end
 
-  defp find_match_for_event(%{legs: legs} = itinerary, :UNLOAD, location, voyage_id) do
-    # Check that the there is one leg with same unload location and voyage
-    {reversed_legs, found} =
-      Enum.reduce(legs, {[], nil}, fn leg, {acc, f} ->
-        {mapped_leg, found_0} =
-          cond do
-            leg.status == :SKIPPED ->
-              {leg, f}
-
-            location == leg.unload_location || location == leg.actual_unload_location ->
-              if leg.status == :COMPLETED do
-                {leg, f}
-              else
-                matched_leg = Map.put(leg, :status, :COMPLETED)
-                {matched_leg, matched_leg}
-              end
-
-            !is_nil(f) && leg.status == :COMPLETED ->
-              {leg, nil}
-
-            true ->
-              {leg, f}
-          end
-
-        {[mapped_leg | acc], found_0}
-      end)
-
-    if found && found.voyage_id == voyage_id do
-      {:ok, %{itinerary | legs: Enum.reverse(reversed_legs)}}
+  defp update_leg(leg, :LOAD, status, event) do
+    if leg.load_location == event.location do
+      %{leg | status: status, load_time: event.completed_at}
     else
-      voyage_number = VoyageService.get_voyage_number_for_id!(voyage_id)
-
-      message =
-        if is_nil(voyage_id) do
-          "UNLOAD at #{location} does not have a voyage id"
-        else
-          "UNLOAD at #{location} does not match any unload location of voyage #{voyage_number}"
-        end
-
-      {:error, message}
+      %{
+        leg
+        | actual_load_location: event.location,
+          status: status,
+          load_time: event.completed_at
+      }
     end
   end
 
-  defp find_match_for_event(%{legs: legs} = itinerary, :CUSTOMS, location, _voyage_id) do
-    # Check that the there is one leg with same unload location and voyage
-    {reversed_legs, found} =
-      Enum.reduce(legs, {[], nil}, fn leg, {acc, f} ->
-        {mapped_leg, found_0} =
-          cond do
-            leg.status == :SKIPPED ->
-              {leg, f}
-
-            location == leg.unload_location || location == leg.actual_unload_location ->
-              if leg.status == :COMPLETED do
-                {leg, leg}
-              else
-                matched_leg = Map.put(leg, :status, :COMPLETED)
-                {matched_leg, matched_leg}
-              end
-
-            !is_nil(f) && leg.status == :COMPLETED ->
-              {leg, nil}
-
-            true ->
-              {leg, f}
-          end
-
-        {[mapped_leg | acc], found_0}
-      end)
-
-    if found do
-      {:ok, %{itinerary | legs: Enum.reverse(reversed_legs)}}
+  defp update_leg(leg, :UNLOAD, status, event) do
+    if leg.unload_location == event.location do
+      %{leg | status: status, unload_time: event.completed_at}
     else
-      {:error, "CUSTOMS at #{location} does not match any unload location"}
+      %{
+        leg
+        | actual_unload_location: event.location,
+          status: status,
+          unload_time: event.completed_at
+      }
     end
   end
 
-  defp find_match_for_event(%{legs: legs} = itinerary, :CLAIM, location, _voyage_id) do
-    # Check that the last leg's destination is from the event's location
-    last_leg = List.last(legs)
+  defp build_update(before, leg, rest) do
+    %{legs: before ++ [leg] ++ rest}
+  end
 
-    {reversed_legs, found, _last} =
-      Enum.reduce(legs, {[], nil, last_leg}, fn leg, {acc, f, last} ->
-        {mapped_leg, found_0} =
-          cond do
-            leg.status == :SKIPPED ->
-              {leg, f}
+  defp do_split([]), do: {nil, []}
 
-            leg == last &&
-                (location == leg.unload_location || location == leg.actual_unload_location) ->
-              if leg.status == :CLAIMED do
-                {leg, leg}
-              else
-                matched_leg = Map.put(leg, :status, :CLAIMED)
-                {matched_leg, matched_leg}
-              end
+  defp do_split([a | rest]), do: {a, rest}
 
-            true ->
-              {leg, f}
-          end
+  def split_for_scope(nil, _scope, _leg_location), do: {[], nil, []}
 
-        {[mapped_leg | acc], found_0, last}
-      end)
+  def split_for_scope(%{legs: []}, _scope, _leg_location), do: {[], nil, []}
 
-    if found do
-      {:ok, %{itinerary | legs: Enum.reverse(reversed_legs)}}
+  def split_for_scope(%{legs: [leg | rest]}, :first, _) do
+    {[], leg, rest}
+  end
+
+  def split_for_scope(%{legs: legs}, :last, _) do
+    count = Enum.count(legs)
+
+    if count < 2 do
+      {leg, rest} = do_split(legs)
+      {[], leg, rest}
     else
-      {:error, "CLAIM at #{location} does not match final unload location (#{last_leg.status})"}
+      {before, [leg | rest]} = Enum.split(legs, count - 1)
+      {before, leg, rest}
     end
   end
 
-  defp update_for_unexpected_event(
-         %{legs: legs} = itinerary,
-         :RECEIVE,
-         location,
-         _voyage_id,
-         completed_at
-       ) do
-    %{
-      itinerary
-      | legs:
-          List.update_at(legs, first_uncompleted_index(itinerary), fn leg ->
-            %{leg | actual_load_location: location, load_time: completed_at}
-          end)
-    }
-  end
+  def split_for_scope(%{legs: legs} = itinerary, :first_uncompleted, _) do
+    index = first_uncompleted_index(itinerary)
 
-  defp update_for_unexpected_event(
-         %{legs: legs} = itinerary,
-         :LOAD,
-         location,
-         _voyage_id,
-         completed_at
-       ) do
-    %{
-      itinerary
-      | legs:
-          List.update_at(legs, first_uncompleted_index(itinerary), fn leg ->
-            %{
-              leg
-              | status: :ONBOARD_CARRIER,
-                actual_load_location: location,
-                load_time: completed_at
-            }
-          end)
-    }
-  end
-
-  defp update_for_unexpected_event(
-         %{legs: legs} = itinerary,
-         :UNLOAD,
-         location,
-         _voyage_id,
-         completed_at
-       ) do
-    %{
-      itinerary
-      | legs:
-          List.update_at(legs, first_uncompleted_index(itinerary), fn leg ->
-            %{
-              leg
-              | status: :COMPLETED,
-                actual_unload_location: location,
-                unload_time: completed_at
-            }
-          end)
-    }
-  end
-
-  defp update_for_unexpected_event(
-         %{legs: legs} = itinerary,
-         :CUSTOMS,
-         location,
-         _voyage_id,
-         completed_at
-       ) do
-    %{
-      itinerary
-      | legs:
-          List.update_at(legs, first_uncompleted_index(itinerary), fn leg ->
-            %{
-              leg
-              | status: :COMPLETED,
-                actual_unload_location: location,
-                unload_time: completed_at
-            }
-          end)
-    }
-  end
-
-  defp update_for_unexpected_event(
-         %{legs: legs} = itinerary,
-         :CLAIM,
-         location,
-         _voyage_id,
-         completed_at
-       ) do
-    %{
-      itinerary
-      | legs:
-          List.update_at(legs, first_uncompleted_index(itinerary), fn leg ->
-            %{leg | status: :CLAIMED, actual_unload_location: location, unload_time: completed_at}
-          end)
-    }
+    {before, [leg | rest]} = Enum.split(legs, index)
+    {before, leg, rest}
   end
 
   def debug_itinerary(itinerary, title \\ "itinerary") do

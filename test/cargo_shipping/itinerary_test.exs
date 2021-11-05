@@ -81,7 +81,7 @@ defmodule CargoShipping.ItineraryTest do
     {:error, message, updated_itinerary} =
       Itinerary.matches_handling_event(itinerary, handling_event, true)
 
-    assert message == "RECEIVE at FIHEL does not match load location of first leg (NOT_LOADED)"
+    assert message == "no match for RECEIVE at FIHEL (scope: first)"
     first_leg = Itinerary.initial_leg(updated_itinerary)
     assert first_leg.actual_load_location == "FIHEL"
     assert first_leg.status == :NOT_LOADED
@@ -98,7 +98,7 @@ defmodule CargoShipping.ItineraryTest do
     {:error, message, updated_itinerary} =
       Itinerary.matches_handling_event(itinerary, handling_event, true)
 
-    assert message == "LOAD at FIHEL does not match any load location of voyage TEST01"
+    assert message == "no match for LOAD at FIHEL on voyage TEST01 (scope: first_uncompleted)"
     first_leg = Itinerary.initial_leg(updated_itinerary)
     assert first_leg.actual_load_location == "FIHEL"
     assert first_leg.status == :ONBOARD_CARRIER
@@ -115,7 +115,7 @@ defmodule CargoShipping.ItineraryTest do
     {:error, message, updated_itinerary} =
       Itinerary.matches_handling_event(itinerary, handling_event, true)
 
-    assert message == "UNLOAD at FIHEL does not match any unload location of voyage TEST01"
+    assert message == "no match for UNLOAD at FIHEL on voyage TEST01 (scope: first_uncompleted)"
     first_leg = Itinerary.initial_leg(updated_itinerary)
     assert first_leg.actual_unload_location == "FIHEL"
     assert first_leg.status == :COMPLETED

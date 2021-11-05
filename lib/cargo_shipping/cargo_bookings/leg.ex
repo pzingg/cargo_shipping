@@ -12,8 +12,8 @@ defmodule CargoShipping.CargoBookings.Leg do
   alias CargoShipping.VoyageService
   alias __MODULE__
 
-  @status_values [:NOT_LOADED, :ONBOARD_CARRIER, :SKIPPED, :COMPLETED, :CLAIMED]
-  @completed_values [:SKIPPED, :COMPLETED, :CLAIMED]
+  @status_values [:NOT_LOADED, :ONBOARD_CARRIER, :SKIPPED, :COMPLETED, :IN_CUSTOMS, :CLAIMED]
+  @completed_values [:SKIPPED, :COMPLETED, :IN_CUSTOMS, :CLAIMED]
 
   @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
