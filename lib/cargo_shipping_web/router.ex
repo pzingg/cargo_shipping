@@ -34,7 +34,7 @@ defmodule CargoShippingWeb.Router do
     live "/cargos/:tracking_id/route/edit", CargoLive.EditRoute, :edit
     live "/events", HandlingEventLive.Index, :all
     live "/events/:tracking_id", HandlingEventLive.Index, :index
-    live "/reports/new", HandlingReportLive.Edit, :new
+    live "/reports/new", HandlingReportLive.New, :new
     live "/voyages", VoyageLive.Index, :index
     live "/voyages/:voyage_number", VoyageLive.Show, :show
   end

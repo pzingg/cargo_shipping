@@ -1,0 +1,36 @@
+<section class="row">
+  <article class="column">
+    <h2>Navigation</h2>
+    <ul>
+      <li>
+        <%= link "Cancel edits and return to Managers page", to: "/managers" %>
+      </li>
+      <li>
+        <%= link "Log out", to: "/" %>
+      </li>
+    </ul>
+  </article>
+</section>
+
+<h1><%= @page_title %></h1>
+
+<.form
+  let={f}
+  for={@changeset}
+  id="cargo-form"
+  phx-change="validate"
+  phx-submit="save">
+
+  <%= label f, :tracking_id, "Tracking ID" %>
+  <%= text_input f, :tracking_id, @cargo_options %>
+  <%= error_tag f, :tracking_id %>
+
+  <%= label f, :origin %>
+  <%= select f, :origin, @location_options %>
+  <%= error_tag f, :origin %>
+
+  <div>
+    <%= submit "Create cargo", phx_disable_with: "Processing..." %>
+  </div>
+</.form>
+

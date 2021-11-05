@@ -1,4 +1,4 @@
-defmodule CargoShippingWeb.HandlingReportLive.Edit do
+defmodule CargoShippingWeb.HandlingReportLive.New do
   use CargoShippingWeb, :live_view
 
   alias CargoShipping.Reports

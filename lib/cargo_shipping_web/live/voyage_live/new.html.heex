@@ -1,0 +1,32 @@
+<section class="row">
+  <article class="column">
+    <h2>Navigation</h2>
+    <ul>
+      <li>
+        <%= link "Cancel edits and return to Managers page", to: "/managers" %>
+      </li>
+      <li>
+        <%= link "Log out", to: "/" %>
+      </li>
+    </ul>
+  </article>
+</section>
+
+<h1><%= @page_title %></h1>
+
+<.form
+  let={f}
+  for={@changeset}
+  id="voyage-form"
+  phx-change="validate"
+  phx-submit="save">
+
+  <%= label f, :voyage_number %>
+  <%= text_input f, :voyage_number %>
+  <%= error_tag f, :voyage_number %>
+
+  <div>
+    <%= submit "Create voyage", phx_disable_with: "Processing..." %>
+  </div>
+</.form>
+
