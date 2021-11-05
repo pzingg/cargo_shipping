@@ -42,7 +42,7 @@
 
 <h2>Completed itinerary</h2>
 
-<.show_itinerary indexed_legs={@completed_legs} selected_index={-1} />
+<.show_itinerary socket={@socket} back_link_label={@back_link_label} back_link_path={@back_link_path} indexed_legs={@completed_legs} selected_index={-1} />
 
 <p>The completed legs of the current itinerary shown above will not be changed.
 If a new route is selected below it will be applied from location

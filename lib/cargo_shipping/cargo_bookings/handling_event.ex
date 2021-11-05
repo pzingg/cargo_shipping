@@ -51,7 +51,7 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
             ""
 
           voyage_id ->
-            " on voyage " <> VoyageService.get_voyage_number_for_id!(voyage_id)
+            " on voyage " <> VoyageService.get_voyage_number_for_id(voyage_id)
         end
 
       "#{handling_event.tracking_id} #{handling_event.event_type} at #{handling_event.location}#{voyage_number}"
@@ -149,7 +149,7 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
   end
 
   defp validate_voyage_params(changeset, nil, voyage_number) do
-    case VoyageService.get_voyage_id_for_number!(voyage_number) do
+    case VoyageService.get_voyage_id_for_number(voyage_number) do
       nil ->
         add_error(changeset, :voyage_number, "is invalid")
 

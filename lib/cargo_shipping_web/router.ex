@@ -35,6 +35,8 @@ defmodule CargoShippingWeb.Router do
     live "/events", HandlingEventLive.Index, :all
     live "/events/:tracking_id", HandlingEventLive.Index, :index
     live "/reports/new", HandlingReportLive.Edit, :new
+    live "/voyages", VoyageLive.Index, :index
+    live "/voyages/:voyage_number", VoyageLive.Show, :show
   end
 
   ## This scope handles JSON requests and responses

@@ -3,7 +3,7 @@
     <h2>Navigation</h2>
     <ul>
       <li>
-        <%= link "All cargos", to: Routes.cargo_index_path(@socket, :index) %>
+        <%= live_redirect "All cargos", to: Routes.cargo_index_path(@socket, :index) %>
       </li>
       <li>
         <%= link "Managers page", to: "/managers" %>
@@ -56,7 +56,8 @@
 
 <% end %>
 
-<.show_itinerary indexed_legs={@indexed_legs} selected_index={@selected_index} />
+<.show_itinerary socket={@socket} back_link_label={@back_link_label} back_link_path={@back_link_path}
+  indexed_legs={@indexed_legs} selected_index={@selected_index} />
 
 <%= if !cargo_routed?(@cargo) do %>
 <ul>

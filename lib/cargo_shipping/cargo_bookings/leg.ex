@@ -33,7 +33,7 @@ defmodule CargoShipping.CargoBookings.Leg do
     """
     def to_string(leg) do
       voyage_number =
-        VoyageService.get_voyage_number_for_id!(leg.voyage_id)
+        VoyageService.get_voyage_number_for_id(leg.voyage_id)
         |> String.pad_trailing(6)
 
       status = Map.get(leg, :status, :NOT_LOADED)

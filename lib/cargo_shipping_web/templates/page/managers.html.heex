@@ -19,6 +19,12 @@
         <%= link "Submit a handling report", to: Routes.handling_report_edit_path(@conn, :new) %>
       </li>
       <li>
+        <%= link "List all voyages", to: Routes.voyage_index_path(@conn, :index) %>
+      </li>
+      <li>
+        <%= link "Create new voyage", to: "#" %>
+      </li>
+      <li>
         <%= link "Log out", to: "/" %>
       </li>
     </ul>

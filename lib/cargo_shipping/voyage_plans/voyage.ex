@@ -11,6 +11,7 @@ defmodule CargoShipping.VoyagePlans.Voyage do
 
   alias CargoShipping.VoyagePlans.CarrierMovement
 
+  @derive {Phoenix.Param, key: :voyage_number}
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   @timestamps_opts [type: :utc_datetime]

@@ -19,31 +19,37 @@ defmodule CargoShipping.VoyageService do
     |> Enum.map(fn %{voyage_number: voyage_number} -> voyage_number end)
   end
 
-  def get_voyage_number_for_id!(nil), do: nil
-
-  def get_voyage_number_for_id!(id) do
+  def get_voyage_for_id(id) do
     Agent.get(__MODULE__, & &1)
     |> Enum.find(fn %{id: voyage_id} -> voyage_id == id end)
-    |> case do
+  end
+
+  def get_voyage_number_for_id(nil), do: nil
+
+  def get_voyage_number_for_id(id) do
+    case get_voyage_for_id(id) do
       nil -> nil
       %{voyage_number: voyage_number} -> voyage_number
     end
   end
 
-  def voyage_id_exists?(id), do: !is_nil(get_voyage_number_for_id!(id))
+  def voyage_id_exists?(id), do: !is_nil(get_voyage_for_id(id))
 
-  def get_voyage_id_for_number!(nil), do: nil
-
-  def get_voyage_id_for_number!(number) do
+  def get_voyage_for_number(number) do
     Agent.get(__MODULE__, & &1)
     |> Enum.find(fn %{voyage_number: voyage_number} -> voyage_number == number end)
-    |> case do
+  end
+
+  def get_voyage_id_for_number(nil), do: nil
+
+  def get_voyage_id_for_number(number) do
+    case get_voyage_for_number(number) do
       nil -> nil
       %{id: voyage_id} -> voyage_id
     end
   end
 
-  def voyage_number_exists?(number), do: !is_nil(get_voyage_id_for_number!(number))
+  def voyage_number_exists?(number), do: !is_nil(get_voyage_for_number(number))
 
   def find_departure_from(id, location) do
     find_movement_by_location(id, location, :departure_location)

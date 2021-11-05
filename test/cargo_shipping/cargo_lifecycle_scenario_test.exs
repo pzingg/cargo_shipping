@@ -112,7 +112,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     ## Next event: Load onto voyage in Hong Kong
 
     current_leg = Itinerary.find_leg(:LOAD, cargo.itinerary, "CNHKG")
-    voyage_number = VoyageService.get_voyage_number_for_id!(current_leg.voyage_id)
+    voyage_number = VoyageService.get_voyage_number_for_id(current_leg.voyage_id)
     assert voyage_number
 
     handling_params = %{
@@ -279,7 +279,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     Process.sleep(500)
 
     # Check current state - should be ok
-    v400s = VoyageService.get_voyage_id_for_number!("0400S")
+    v400s = VoyageService.get_voyage_id_for_number("0400S")
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
     assert cargo.delivery.current_voyage_id == v400s
     assert cargo.delivery.last_known_location == "CNSHA"
@@ -305,7 +305,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     Process.sleep(500)
 
     # Check current state - should be ok
-    v100 = VoyageService.get_voyage_id_for_number!("V100")
+    v100 = VoyageService.get_voyage_id_for_number("V100")
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
     refute cargo.delivery.current_voyage_id
     assert cargo.delivery.last_known_location == "CNHKG"
@@ -380,7 +380,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     Process.sleep(500)
 
     # Check current state - should be ok
-    v200 = VoyageService.get_voyage_id_for_number!("V200")
+    v200 = VoyageService.get_voyage_id_for_number("V200")
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
     assert cargo.delivery.current_voyage_id == v200
     assert cargo.delivery.last_known_location == "USNYC"

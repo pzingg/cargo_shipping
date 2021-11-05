@@ -73,7 +73,7 @@ defmodule CargoShipping.ItineraryTest do
   test "finds routes for unexpected :RECEIVE", %{itinerary: itinerary} do
     handling_event = %{
       event_type: :RECEIVE,
-      voyage_id: VoyageService.get_voyage_id_for_number!("TEST01"),
+      voyage_id: VoyageService.get_voyage_id_for_number("TEST01"),
       location: "FIHEL",
       completed_at: ts(2)
     }
@@ -90,7 +90,7 @@ defmodule CargoShipping.ItineraryTest do
   test "finds routes for unexpected :LOAD", %{itinerary: itinerary} do
     handling_event = %{
       event_type: :LOAD,
-      voyage_id: VoyageService.get_voyage_id_for_number!("TEST01"),
+      voyage_id: VoyageService.get_voyage_id_for_number("TEST01"),
       location: "FIHEL",
       completed_at: ts(2)
     }
@@ -107,7 +107,7 @@ defmodule CargoShipping.ItineraryTest do
   test "finds routes for unexpected :UNLOAD", %{itinerary: itinerary} do
     handling_event = %{
       event_type: :UNLOAD,
-      voyage_id: VoyageService.get_voyage_id_for_number!("TEST01"),
+      voyage_id: VoyageService.get_voyage_id_for_number("TEST01"),
       location: "FIHEL",
       completed_at: ts(2)
     }
@@ -158,7 +158,7 @@ defmodule CargoShipping.ItineraryTest do
     [leg] = reroute_itinerary.legs
     assert leg.load_location == "FIHEL"
     assert leg.unload_location == "CNHGH"
-    assert VoyageService.get_voyage_number_for_id!(leg.voyage_id) == "TEST03"
+    assert VoyageService.get_voyage_number_for_id(leg.voyage_id) == "TEST03"
   end
 
   defp ts(hours) do

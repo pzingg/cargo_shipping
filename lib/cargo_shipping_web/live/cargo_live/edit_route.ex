@@ -10,7 +10,7 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
   end
 
   @impl true
-  def handle_params(%{"tracking_id" => tracking_id}, _uri, socket) do
+  def handle_params(%{"tracking_id" => tracking_id}, this_uri, socket) do
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
 
     {remaining_route_spec, completed_legs, itineraries, patch_uncompleted_leg?} =
@@ -28,16 +28,20 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
         }
       end)
 
+    title = page_title(cargo.tracking_id, socket.assigns.live_action)
+
     {:noreply,
      socket
-     |> assign(:page_title, page_title(socket.assigns.live_action))
      |> assign(
-       tracking_id: cargo.tracking_id,
+       page_title: title,
        cargo: cargo,
+       tracking_id: cargo.tracking_id,
        remaining_route_spec: remaining_route_spec,
        completed_legs: Enum.with_index(completed_legs),
        route_candidates: route_candidates,
        patch_uncompleted_leg?: patch_uncompleted_leg?,
+       back_link_label: title,
+       back_link_path: this_uri,
        return_to: Routes.cargo_show_path(socket, :show, cargo)
      )}
   end
@@ -72,5 +76,5 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
     end
   end
 
-  defp page_title(:edit), do: "Select a Route"
+  defp page_title(tracking_id, :edit), do: "Select a route for #{tracking_id}"
 end

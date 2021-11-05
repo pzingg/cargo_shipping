@@ -20,7 +20,11 @@ defmodule CargoShipping.VoyagePlans do
 
   """
   def list_voyages do
-    Repo.all(Voyage)
+    query =
+      from v in Voyage,
+        order_by: v.voyage_number
+
+    Repo.all(query)
   end
 
   @doc """
@@ -39,9 +43,9 @@ defmodule CargoShipping.VoyagePlans do
   """
   def get_voyage!(id), do: Repo.get!(Voyage, id)
 
-  def get_voyage_number_for_id!(nil), do: nil
+  def get_voyage_number_for_id(nil), do: nil
 
-  def get_voyage_number_for_id!(id) do
+  def get_voyage_number_for_id(id) do
     get_voyage!(id).voyage_number
   end
 
@@ -140,101 +144,5 @@ defmodule CargoShipping.VoyagePlans do
   """
   def change_voyage(%Voyage{} = voyage, attrs \\ %{}) do
     Voyage.changeset(voyage, attrs)
-  end
-
-  ## Schedule module
-
-  @doc """
-  Returns the list of carrier_movements.
-
-  ## Examples
-
-      iex> list_carrier_movements()
-      [%CarrierMovement{}, ...]
-
-  """
-  def list_carrier_movements do
-    Repo.all(CarrierMovement)
-  end
-
-  @doc """
-  Gets a single carrier_movement.
-
-  Raises `Ecto.NoResultsError` if the Carrier movement does not exist.
-
-  ## Examples
-
-      iex> get_carrier_movement!(123)
-      %CarrierMovement{}
-
-      iex> get_carrier_movement!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_carrier_movement!(id), do: Repo.get!(CarrierMovement, id)
-
-  @doc """
-  Creates a carrier_movement.
-
-  ## Examples
-
-      iex> create_carrier_movement(%{field: value})
-      {:ok, %CarrierMovement{}}
-
-      iex> create_carrier_movement(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_carrier_movement(attrs \\ %{}) do
-    %CarrierMovement{}
-    |> CarrierMovement.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Updates a carrier_movement.
-
-  ## Examples
-
-      iex> update_carrier_movement(carrier_movement, %{field: new_value})
-      {:ok, %CarrierMovement{}}
-
-      iex> update_carrier_movement(carrier_movement, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_carrier_movement(%CarrierMovement{} = carrier_movement, attrs) do
-    carrier_movement
-    |> CarrierMovement.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a carrier_movement.
-
-  ## Examples
-
-      iex> delete_carrier_movement(carrier_movement)
-      {:ok, %CarrierMovement{}}
-
-      iex> delete_carrier_movement(carrier_movement)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_carrier_movement(%CarrierMovement{} = carrier_movement) do
-    Repo.delete(carrier_movement)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking carrier_movement changes.
-
-  ## Examples
-
-      iex> change_carrier_movement(carrier_movement)
-      %Ecto.Changeset{data: %CarrierMovement{}}
-
-  """
-  def change_carrier_movement(%CarrierMovement{} = carrier_movement, attrs \\ %{}) do
-    CarrierMovement.changeset(carrier_movement, attrs)
   end
 end

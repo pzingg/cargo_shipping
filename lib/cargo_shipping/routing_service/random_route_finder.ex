@@ -132,7 +132,7 @@ defmodule CargoShipping.RoutingService.RandomRouteFinder do
   end
 
   defp leg_from_transit_edge(edge) do
-    voyage_id = VoyageService.get_voyage_id_for_number!(edge.id)
+    voyage_id = VoyageService.get_voyage_id_for_number(edge.id)
 
     %Leg{
       voyage_id: voyage_id,

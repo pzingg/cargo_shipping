@@ -17,7 +17,11 @@ defmodule CargoShipping.Reports do
 
   """
   def list_handling_reports do
-    Repo.all(HandlingReport)
+    query =
+      from hr in HandlingReport,
+        order_by: hr.received_at
+
+    Repo.all(query)
   end
 
   @doc """

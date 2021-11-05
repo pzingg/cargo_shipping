@@ -66,5 +66,6 @@ defmodule CargoShipping.LocationService do
 
   defp load_locations() do
     Enum.map(@locations, fn {port_code, name} -> Location.new(port_code, name) end)
+    |> Enum.sort_by(&Map.get(&1, :name))
   end
 end

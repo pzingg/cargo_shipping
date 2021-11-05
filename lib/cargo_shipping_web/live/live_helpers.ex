@@ -5,6 +5,7 @@ defmodule CargoShippingWeb.LiveHelpers do
 
   alias CargoShipping.{CargoBookings, VoyagePlans, VoyageService, LocationService}
   alias CargoShipping.CargoBookings.Cargo
+  alias CargoShippingWeb.Router.Helpers, as: Routes
   alias CargoShippingWeb.SharedComponents.Bulletin
 
   @doc """
@@ -142,7 +143,7 @@ defmodule CargoShippingWeb.LiveHelpers do
       voyage_number =
         case activity.voyage_id do
           nil -> "None"
-          voyage_id -> VoyageService.get_voyage_number_for_id!(voyage_id)
+          voyage_id -> VoyageService.get_voyage_number_for_id(voyage_id)
         end
 
       location = activity.location |> location_name()
@@ -203,7 +204,7 @@ defmodule CargoShippingWeb.LiveHelpers do
       :ONBOARD_CARRIER ->
         voyage_number =
           cargo.delivery.current_voyage_id
-          |> VoyageService.get_voyage_number_for_id!()
+          |> VoyageService.get_voyage_number_for_id()
 
         "#{cargo.tracking_id} is now onboard carrier in voyage #{voyage_number}"
 
@@ -221,7 +222,23 @@ defmodule CargoShippingWeb.LiveHelpers do
   def voyage_number_for(leg_or_event) do
     case leg_or_event.voyage_id do
       nil -> ""
-      voyage_id -> VoyageService.get_voyage_number_for_id!(voyage_id)
+      voyage_id -> VoyageService.get_voyage_number_for_id(voyage_id)
+    end
+  end
+
+  def voyage_link_for(leg, socket, back_link_label, back_link_path) do
+    case VoyageService.get_voyage_for_id(leg.voyage_id) do
+      nil ->
+        "(Missing)"
+
+      voyage ->
+        live_redirect(voyage.voyage_number,
+          to:
+            Routes.voyage_show_path(socket, :show, voyage,
+              back_link_label: back_link_label,
+              back_link_path: back_link_path
+            )
+        )
     end
   end
 
@@ -232,10 +249,24 @@ defmodule CargoShippingWeb.LiveHelpers do
     end
   end
 
+  def voyage_origin_time(voyage) do
+    case List.first(voyage.schedule_items) do
+      nil -> "_"
+      carrier_movement -> event_time(carrier_movement, :departure_time)
+    end
+  end
+
   def voyage_destination(voyage) do
     case List.last(voyage.schedule_items) do
       nil -> "_"
       carrier_movement -> carrier_movement.arrival_location |> location_name()
+    end
+  end
+
+  def voyage_destination_time(voyage) do
+    case List.last(voyage.schedule_items) do
+      nil -> "_"
+      carrier_movement -> event_time(carrier_movement, :arrival_time)
     end
   end
 
@@ -250,7 +281,7 @@ defmodule CargoShippingWeb.LiveHelpers do
     voyage_number =
       case handling_event.voyage_id do
         nil -> ""
-        voyage_id -> VoyageService.get_voyage_number_for_id!(voyage_id)
+        voyage_id -> VoyageService.get_voyage_number_for_id(voyage_id)
       end
 
     location = handling_event.location |> location_name()

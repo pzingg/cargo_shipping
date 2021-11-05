@@ -5,8 +5,8 @@ defmodule CargoShipping.ItinerariesFixtures do
   alias CargoShipping.CargoBookings.Itinerary
 
   def jptok_deham_sesto_itinerary() do
-    v300 = VoyageService.get_voyage_id_for_number!("V300")
-    v400 = VoyageService.get_voyage_id_for_number!("V400")
+    v300 = VoyageService.get_voyage_id_for_number("V300")
+    v400 = VoyageService.get_voyage_id_for_number("V400")
 
     Itinerary.new([
       %{

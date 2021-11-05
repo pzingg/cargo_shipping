@@ -45,7 +45,11 @@ defmodule CargoShipping.CargoBookings do
 
   """
   def list_cargos do
-    Repo.all(Cargo)
+    query =
+      from c in Cargo,
+        order_by: c.tracking_id
+
+    Repo.all(query)
   end
 
   @doc """

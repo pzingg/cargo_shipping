@@ -391,7 +391,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
           end
 
         voyage_number =
-          case VoyageService.get_voyage_number_for_id!(voyage_id) do
+          case VoyageService.get_voyage_number_for_id(voyage_id) do
             nil -> ""
             number -> " on voyage #{number}"
           end
