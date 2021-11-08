@@ -25,6 +25,53 @@
   <%= text_input f, :voyage_number, placeholder: "V0099S", size: 10, style: "width: 25%" %>
   <%= error_tag f, :voyage_number %>
 
+  <table>
+    <thead>
+      <th>Departs from</th>
+      <th>Time</th>
+      <th>Arrives at</th>
+      <th>Time</th>
+      <th></th>
+    </thead>
+    <tbody>
+    <%= for item_f <- inputs_for f, :schedule_items do %>
+      <%= hidden_inputs_for(item_f) %>
+      <tr>
+        <td>
+          <%= select item_f, :departure_location, @location_options %>
+          <%= error_tag item_f, :departure_location %>
+        </td>
+        <td>
+          <.live_component module={Datepicker}
+            id={"dp-#{input_id(item_f, :departure_time)}"} target_name={input_name(item_f, :departure_time)} selected_date={input_value(item_f, :departure_time)}>
+            <%= hidden_input item_f, :departure_time %>
+          </.live_component>
+        </td>
+        <td>
+          <%= select item_f, :arrival_location, @location_options %>
+          <%= error_tag item_f, :arrival_location %>
+        </td>
+        <td>
+          <.live_component module={Datepicker}
+            id={"dp-#{input_id(item_f, :arrival_time)}"} target_name={input_name(item_f, :arrival_time)} selected_date={input_value(item_f, :arrival_time)}>
+            <%= hidden_input item_f, :arrival_time %>
+          </.live_component>
+        </td>
+        <td>
+          <%= if item_f.data.temp_id do %>
+          <%= hidden_input item_f, :temp_id %>
+          <a href="#" phx-click="remove-item" phx-value-remove={item_f.data.temp_id}>&times</a>
+          <% else %>
+          &nbsp;
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+    </tbody>
+  </table>
+
+  <a href="#" phx-click="add-item">Add a transit item</a>
+
   <div>
     <%= submit "Create voyage", phx_disable_with: "Processing..." %>
   </div>

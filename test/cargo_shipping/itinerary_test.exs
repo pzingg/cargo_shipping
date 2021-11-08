@@ -12,29 +12,29 @@ defmodule CargoShipping.ItineraryTest do
   setup do
     {:ok, voyage01} =
       VoyageBuilder.init("TEST01", "SESTO")
-      |> VoyageBuilder.add_movement("FIHEL", ts(1), ts(2))
-      |> VoyageBuilder.add_movement("DEHAM", ts(3), ts(4))
-      |> VoyageBuilder.add_movement("CNHKG", ts(5), ts(6))
-      |> VoyageBuilder.add_movement("JPTYO", ts(7), ts(8))
+      |> VoyageBuilder.add_destination("FIHEL", ts(1), ts(2))
+      |> VoyageBuilder.add_destination("DEHAM", ts(3), ts(4))
+      |> VoyageBuilder.add_destination("CNHKG", ts(5), ts(6))
+      |> VoyageBuilder.add_destination("JPTYO", ts(7), ts(8))
       |> VoyageBuilder.build()
       |> VoyagePlans.create_voyage()
 
     {:ok, voyage02} =
       VoyageBuilder.init("TEST02", "USCHI")
-      |> VoyageBuilder.add_movement("USNYC", ts(9), ts(10))
-      |> VoyageBuilder.add_movement("DEHAM", ts(11), ts(12))
-      |> VoyageBuilder.add_movement("NLRTM", ts(13), ts(14))
-      |> VoyageBuilder.add_movement("SEGOT", ts(15), ts(16))
+      |> VoyageBuilder.add_destination("USNYC", ts(9), ts(10))
+      |> VoyageBuilder.add_destination("DEHAM", ts(11), ts(12))
+      |> VoyageBuilder.add_destination("NLRTM", ts(13), ts(14))
+      |> VoyageBuilder.add_destination("SEGOT", ts(15), ts(16))
       |> VoyageBuilder.build()
       |> VoyagePlans.create_voyage()
 
     {:ok, voyage03} =
       VoyageBuilder.init("TEST03", "SEGOT")
-      |> VoyageBuilder.add_movement("SESTO", ts(17), ts(18))
-      |> VoyageBuilder.add_movement("FIHEL", ts(19), ts(20))
-      |> VoyageBuilder.add_movement("DEHAM", ts(21), ts(22))
-      |> VoyageBuilder.add_movement("NLRTM", ts(23), ts(24))
-      |> VoyageBuilder.add_movement("CNHGH", ts(25), ts(26))
+      |> VoyageBuilder.add_destination("SESTO", ts(17), ts(18))
+      |> VoyageBuilder.add_destination("FIHEL", ts(19), ts(20))
+      |> VoyageBuilder.add_destination("DEHAM", ts(21), ts(22))
+      |> VoyageBuilder.add_destination("NLRTM", ts(23), ts(24))
+      |> VoyageBuilder.add_destination("CNHGH", ts(25), ts(26))
       |> VoyageBuilder.build()
       |> VoyagePlans.create_voyage()
 

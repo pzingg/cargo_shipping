@@ -80,4 +80,20 @@ defmodule CargoShipping.Utils do
       Map.pop(attrs, Atom.to_string(atom_key))
     end
   end
+
+  ## Changeset helpers
+
+  def maybe_mark_for_deletion(%{data: %{id: nil}} = changeset), do: changeset
+
+  def maybe_mark_for_deletion(changeset) do
+    if Ecto.Changeset.get_change(changeset, :delete) do
+      %{changeset | action: :delete}
+    else
+      changeset
+    end
+  end
+
+  def get_temp_id() do
+    :crypto.strong_rand_bytes(5) |> Base.url_encode64() |> binary_part(0, 5)
+  end
 end

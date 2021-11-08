@@ -6,7 +6,7 @@ defmodule CargoShipping.VoyagePlans do
   import Ecto.Query, warn: false
 
   alias CargoShipping.{Repo, VoyageService}
-  alias CargoShipping.VoyagePlans.{CarrierMovement, Voyage}
+  alias CargoShipping.VoyagePlans.{Voyage, CarrierMovement}
 
   ## Voyage module
 
@@ -144,5 +144,18 @@ defmodule CargoShipping.VoyagePlans do
   """
   def change_voyage(%Voyage{} = voyage, attrs \\ %{}) do
     Voyage.changeset(voyage, attrs)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for building carrier movements in voyages.
+
+  ## Examples
+
+      iex> change_carrier_movement(movement)
+      %Ecto.Changeset{data: %CarrierMovement{}}
+
+  """
+  def change_carrier_movement(%CarrierMovement{} = movement, attrs \\ %{}) do
+    CarrierMovement.changeset(movement, attrs)
   end
 end

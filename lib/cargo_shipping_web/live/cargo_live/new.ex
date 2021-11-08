@@ -30,9 +30,7 @@ defmodule CargoShippingWeb.CargoLive.New do
     #  Datepicker.handle_form_change(
     #    "cargo",
     #    "completed_at",
-    #    raw_params,
-    #    &update_datepicker/2
-    #  )
+    #    raw_params)
 
     params = Map.fetch!(raw_params, "cargo")
 
@@ -48,9 +46,7 @@ defmodule CargoShippingWeb.CargoLive.New do
     #  Datepicker.handle_form_change(
     #    "cargo",
     #    "completed_at",
-    #    raw_params,
-    #    &update_datepicker/2
-    #  )
+    #    raw_params)
 
     params = Map.fetch!(raw_params, "cargo")
 
@@ -67,10 +63,6 @@ defmodule CargoShippingWeb.CargoLive.New do
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :changeset, changeset)}
     end
-  end
-
-  def update_datepicker(id, dt) do
-    send_update(Datepicker, id: id, selected_date: dt)
   end
 
   defp page_title(:new), do: "Create new cargo booking"

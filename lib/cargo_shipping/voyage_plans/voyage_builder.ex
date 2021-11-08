@@ -2,12 +2,22 @@ defmodule CargoShipping.VoyagePlans.VoyageBuilder do
   @moduledoc """
   Convenience methods for creating Voyage aggregates.
   """
+  use Ecto.Schema
+
+  @derive {Phoenix.Param, key: :voyage_number}
+  @primary_key {:id, :binary_id, autogenerate: true}
+  embedded_schema do
+    field :voyage_number, :string
+    field :origin, :string
+
+    timestamps()
+  end
 
   def init(voyage_number, departure_location) do
     %{voyage_number: voyage_number, departure_location: departure_location, schedule_items: []}
   end
 
-  def add_movement(state, arrival_location, departure_time, arrival_time) do
+  def add_destination(state, arrival_location, departure_time, arrival_time) do
     new_movement = %{
       departure_location: state.departure_location,
       arrival_location: arrival_location,

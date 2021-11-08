@@ -35,10 +35,10 @@ defmodule CargoShippingWeb.HandlingReportLive.New do
     # on changes to tracking_id and voyage_number.
     params =
       Datepicker.handle_form_change(
+        "handling-report-form",
         "handling_report",
         "completed_at",
-        raw_params,
-        &update_datepicker/2
+        raw_params
       )
 
     changeset =
@@ -51,10 +51,10 @@ defmodule CargoShippingWeb.HandlingReportLive.New do
   def handle_event("save", raw_params, socket) do
     params =
       Datepicker.handle_form_change(
+        "handling-report-form",
         "handling_report",
         "completed_at",
-        raw_params,
-        &update_datepicker/2
+        raw_params
       )
 
     case Reports.create_handling_report(params) do
@@ -73,10 +73,6 @@ defmodule CargoShippingWeb.HandlingReportLive.New do
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :changeset, changeset)}
     end
-  end
-
-  def update_datepicker(id, dt) do
-    send_update(Datepicker, id: id, selected_date: dt)
   end
 
   defp page_title(:new), do: "Submit a handling report"

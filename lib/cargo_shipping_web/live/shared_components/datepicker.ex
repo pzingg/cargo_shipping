@@ -4,8 +4,8 @@ defmodule CargoShippingWeb.SharedComponents.Datepicker do
 
   Required parameters:
 
-  * :id - The field name from the changeset, as a string.
-  * :prefix - The form name for the form, as a string.
+  * :id - The unique id, from `input_id(f, :field)`.
+  * :target_name - The name of the field, from `input_name(f, :field)`.
 
   Optional parameters:
 
@@ -15,6 +15,8 @@ defmodule CargoShippingWeb.SharedComponents.Datepicker do
     otherwise the value of DateTime.utc_now() will be used.
   """
   use CargoShippingWeb, :live_component
+
+  require Logger
 
   @hour_options [
     "00",
@@ -47,28 +49,127 @@ defmodule CargoShippingWeb.SharedComponents.Datepicker do
   @doc """
   If the live component is embedded in a <form> element in a live view (the normal use case),
   and a user clicks on the hour or time select input, a "phx-change" event will
-  be sent to parent live view. That event handler must call this method with the
-  same `prefix` and `id` that were used to configure the live component, the form
-  params, and an 2-arity updater function that will call `send_update` back to the
-  component, with assigns for the `id` and the new `selected_date`.
+  be sent to parent live view.
+
+  `inputs` can be either a single field or a list of fields.
+
+  Each field is either the field name as a string for non-nested fields,
+  or a 2-tuple of the  collection name and field name both as strings, for
+  nested fields.
+
+  Example `"arrival_deadline"` for a single non-nested field, or
+  `{"schedule_items", "arrival_time"}` for a collection field.
   """
-  def handle_form_change(prefix, id, params, updater) do
-    dp_params = get_in(params, ["datepicker", id])
-    iso_str = Map.get(dp_params, "iso")
-    {:ok, current_date, _offset} = DateTime.from_iso8601(iso_str)
+  def handle_form_change(form_id, form_name, inputs, params) do
+    List.wrap(inputs)
+    |> Enum.reduce(params, &handle_input(form_id, form_name, &1, &2))
+    |> Map.get(form_name)
+  end
 
-    selected_date =
-      with {:ok, h, m} <- parse_time(dp_params),
-           {:ok, t} <- Time.new(h, m, 0),
-           {:ok, new_date} <- DateTime.to_date(current_date) |> DateTime.new(t) do
-        _ = updater.(id, new_date)
-        new_date
-      else
-        _ -> current_date
-      end
+  # For nested form
+  # input_id(nested_f, :field) is voyage-form_schedule_items_0_departure_time
+  # input_name(nested_f, :field) is voyage[schedule_items][0][departure_time]
 
-    Map.get(params, prefix)
-    |> Map.put(id, selected_date)
+  # Example of params for nested input
+  # %{
+  #   "_csrf_token" => "CScfIydyFngRPCILQEpWdwFFFD4mBm5hBjpywGg6SvDsv3nFLrYoMUW8",
+  #   "_target" => ["voyage", "schedule_items", "0", "departure_location"],
+  #   "datepicker" => %{
+  #     "arrival_time-0" => %{
+  #       "alt" => "Mon Nov 08, 2021 18:08",
+  #       "hour" => "18",
+  #       "iso" => "2021-11-08T18:08:05Z",
+  #       "minute" => "05"
+  #     },
+  #     "departure_time-0" => %{
+  #       "alt" => "Sat Nov 06, 2021 18:08",
+  #       "hour" => "18",
+  #       "iso" => "2021-11-06T18:08:05Z",
+  #       "minute" => "05"
+  #     }
+  #   },
+  #   "voyage" => %{
+  #     "schedule_items" => %{
+  #       "0" => %{
+  #         "arrival_location" => "USCHI",
+  #         "arrival_time" => "2021-11-08T18:08:05Z",
+  #         "departure_location" => "SEGOT",
+  #         "departure_time" => "2021-11-06T18:08:05Z"
+  #       }
+  #     },
+  #     "voyage_number" => ""
+  #   }
+  # }
+  #
+  #
+  # We loop through the indices in the nested collection and process the corresponding
+  # datepicker fields.
+  defp handle_input(form_id, form_name, {collection, field}, params) do
+    # The indices are the keys at ["voyage", "schedule_items"]
+    indices = get_in(params, [form_name, collection]) |> Map.keys()
+
+    Enum.reduce(indices, params, fn index, acc ->
+      # `form_id` will be "voyage-form"
+      # `form_name will be "voyage"
+      # `path` will be ["schedule_items", "0", "arrival_time"]
+      # `dp_path` will be ["dp-voyage", "schedule_items", "0", "arrival_time"]
+      # `form_path` will be ["voyage", "schedule_items", "0", "arrival_time"]
+      do_handle_input(form_id, form_name, [collection, index, field], acc)
+    end)
+  end
+
+  # Example of params for single input
+  # %{
+  #   "_csrf_token" => "CScfIydyFngRPCILQEpWdwFFFD4mBm5hBjpywGg6SvDsv3nFLrYoMUW8",
+  #   "_target" => ["voyage", "schedule_items", "0", "departure_location"],
+  #   "datepicker" => %{
+  #     "arrival_deadline" => %{
+  #       "alt" => "Mon Nov 08, 2021 18:08",
+  #       "hour" => "18",
+  #       "iso" => "2021-11-08T18:08:05Z",
+  #       "minute" => "05"
+  #     }
+  #   },
+  #   "edit_destination" => %{
+  #     "arrival_deadline" => "2021-11-08T18:08:05Z",
+  #     "destination" => "SEGOT"
+  #   }
+  # }
+  #
+  defp handle_input(form_id, form_name, field, params) when is_binary(field) do
+    # `form_id` will be "cargo-destination-form"
+    # `form_name will be "edit_destination"
+    # `path` will be ["arrival_deadline"]
+    # `dp_path` will be ["dp-edit_destination", "arrival_deadline"]
+    # `form_path` will be ["edit_destination", "arrival_deadline"]
+    do_handle_input(form_id, form_name, [field], params)
+  end
+
+  defp do_handle_input(form_id, form_name, path, params) do
+    dp_path = ["dp-#{form_name}" | path]
+    dp_params = get_in(params, dp_path)
+
+    if is_nil(dp_params) do
+      Logger.error("No map at #{inspect(dp_path)}")
+      params
+    else
+      iso_str = Map.get(dp_params, "iso")
+      {:ok, current_date, _offset} = DateTime.from_iso8601(iso_str)
+
+      selected_date =
+        with {:ok, h, m} <- parse_time(dp_params),
+             {:ok, t} <- Time.new(h, m, 0),
+             {:ok, new_date} <- DateTime.to_date(current_date) |> DateTime.new(t) do
+          # Reset datepicker component's :selected_date
+          dp_id = Enum.join(["dp-#{form_id}" | path], "_")
+          _ = send_update(__MODULE__, id: dp_id, selected_date: new_date)
+          new_date
+        else
+          _ -> current_date
+        end
+
+      put_in(params, [form_name | path], selected_date)
+    end
   end
 
   @doc """
@@ -92,7 +193,6 @@ defmodule CargoShippingWeb.SharedComponents.Datepicker do
   def mount(socket) do
     next_socket =
       socket
-      |> assign_new(:prefix, fn -> "datepicker" end)
       |> assign(
         state: "closed",
         hour_options: @hour_options,

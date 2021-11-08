@@ -42,7 +42,23 @@ defmodule CargoShipping.Locations do
     LocationService.get_by_locode(un_locode)
   end
 
+  def location_exists?(nil), do: false
+
   def location_exists?(un_locode) when is_binary(un_locode) do
     LocationService.locode_exists?(un_locode)
+  end
+
+  def validate_location_code(changeset, field) do
+    changeset
+    |> Ecto.Changeset.validate_required([field])
+    |> validate_location_exists(field)
+  end
+
+  def validate_location_exists(changeset, field) do
+    if Ecto.Changeset.get_field(changeset, field) |> location_exists?() do
+      changeset
+    else
+      Ecto.Changeset.add_error(changeset, field, "is not a valid location code")
+    end
   end
 end

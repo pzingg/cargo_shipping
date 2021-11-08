@@ -1,11 +1,11 @@
 <div class="datepicker">
   <div>
     <input
-      name={"datepicker[#{@id}][iso]"}
+      name={"dp-#{@target_name}[iso]"}
       type="hidden"
       value={@selected_date} />
     <input
-      name={"datepicker[#{@id}][alt]"}
+      name={"dp-#{@target_name}[alt]"}
       type="text"
       readonly
       placeholder="Select date"
@@ -100,7 +100,7 @@
     <div class="time-footer">
       <div style="width: 14.26%">&nbsp;</div>
       <div style="width: 28.52%" class="time-input">
-        <select name={"datepicker[#{@id}][hour]"}>
+        <select name={"dp-#{@target_name}[hour]"}>
           <%= for hour <- @hour_options do %>
           <option value={hour} selected={hour_selected(hour, @selected_hour)}><%= hour %></option>
           <% end %>
@@ -110,7 +110,7 @@
         <span>&nbsp;:&nbsp;</span>
       </div>
       <div style="width: 28.52%" class="time-input">
-        <select name={"datepicker[#{@id}][minute]"}>
+        <select name={"dp-#{@target_name}[minute]"}>
           <%= for minute <- @minute_options do %>
           <option value={minute} selected={minute_selected(minute, @selected_minute)}><%= minute %></option>
           <% end %>

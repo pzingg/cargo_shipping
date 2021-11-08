@@ -31,7 +31,7 @@
 
     <%= label f, :arrival_deadline %>
     <.live_component module={Datepicker}
-      id="arrival_deadline" prefix="edit_destination" selected_date={@arrival_deadline}>
+      id="arrival_deadline" selected_date={@arrival_deadline}>
       <%= error_tag f, :arrival_deadline %>
     </.live_component>
 

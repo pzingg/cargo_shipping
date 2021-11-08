@@ -39,6 +39,7 @@ defmodule CargoShipping.CargoBookings.Cargo do
 
   import Ecto.Changeset
 
+  alias CargoShipping.Locations
   alias CargoShipping.CargoBookings.{Delivery, HandlingEvent, Itinerary, RouteSpecification}
 
   @derive {Phoenix.Param, key: :tracking_id}
@@ -72,7 +73,7 @@ defmodule CargoShipping.CargoBookings.Cargo do
     def changeset(destination, attrs) do
       destination
       |> cast(attrs, [:destination, :arrival_deadline])
-      |> RouteSpecification.validate_location_code(:destination)
+      |> Locations.validate_location_code(:destination)
     end
   end
 

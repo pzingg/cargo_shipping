@@ -15,33 +15,33 @@ defmodule CargoShipping.SampleDataGenerator do
   def voyage_0101() do
     # Voyage 0101: SESTO - FIHEL - DEHAM - CNHKG - JPTYO - AUMEL
     VoyageBuilder.init("0101", "SESTO")
-    |> VoyageBuilder.add_movement("FIHEL", ts(1), ts(2))
-    |> VoyageBuilder.add_movement("DEHAM", ts(1), ts(2))
-    |> VoyageBuilder.add_movement("CNHKG", ts(1), ts(2))
-    |> VoyageBuilder.add_movement("JPTYO", ts(1), ts(2))
-    |> VoyageBuilder.add_movement("AUMEL", ts(1), ts(2))
+    |> VoyageBuilder.add_destination("FIHEL", ts(1), ts(2))
+    |> VoyageBuilder.add_destination("DEHAM", ts(1), ts(2))
+    |> VoyageBuilder.add_destination("CNHKG", ts(1), ts(2))
+    |> VoyageBuilder.add_destination("JPTYO", ts(1), ts(2))
+    |> VoyageBuilder.add_destination("AUMEL", ts(1), ts(2))
     |> VoyageBuilder.build()
   end
 
   def voyage_0202() do
     # Voyage 0202: AUMEL - USCHI - DEHAM - SESTO - FIHEL
     VoyageBuilder.init("0202", "AUMEL")
-    |> VoyageBuilder.add_movement("USCHI", ts(1), ts(2))
-    |> VoyageBuilder.add_movement("DEHAM", ts(1), ts(2))
-    |> VoyageBuilder.add_movement("SESTO", ts(1), ts(2))
-    |> VoyageBuilder.add_movement("FIHEL", ts(1), ts(2))
+    |> VoyageBuilder.add_destination("USCHI", ts(1), ts(2))
+    |> VoyageBuilder.add_destination("DEHAM", ts(1), ts(2))
+    |> VoyageBuilder.add_destination("SESTO", ts(1), ts(2))
+    |> VoyageBuilder.add_destination("FIHEL", ts(1), ts(2))
     |> VoyageBuilder.build()
   end
 
   def voyage_0303() do
     # Voyage 0303: CNHKG - AUMEL - FIHEL - DEHAM - SESTO - USCHI - JPTYO
     VoyageBuilder.init("0303", "CNHKG")
-    |> VoyageBuilder.add_movement("AUMEL", ts(1), ts(2))
-    |> VoyageBuilder.add_movement("FIHEL", ts(1), ts(2))
-    |> VoyageBuilder.add_movement("DEHAM", ts(1), ts(2))
-    |> VoyageBuilder.add_movement("SESTO", ts(1), ts(2))
-    |> VoyageBuilder.add_movement("USCHI", ts(1), ts(2))
-    |> VoyageBuilder.add_movement("JPTYO", ts(1), ts(2))
+    |> VoyageBuilder.add_destination("AUMEL", ts(1), ts(2))
+    |> VoyageBuilder.add_destination("FIHEL", ts(1), ts(2))
+    |> VoyageBuilder.add_destination("DEHAM", ts(1), ts(2))
+    |> VoyageBuilder.add_destination("SESTO", ts(1), ts(2))
+    |> VoyageBuilder.add_destination("USCHI", ts(1), ts(2))
+    |> VoyageBuilder.add_destination("JPTYO", ts(1), ts(2))
     |> VoyageBuilder.build()
   end
 
@@ -489,12 +489,12 @@ defmodule CargoShipping.SampleDataGenerator do
 
   def voyage_v100() do
     VoyageBuilder.init("V100", "CNHKG")
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "JPTYO",
       ~U[2009-03-03 00:00:00Z],
       ~U[2009-03-06 00:00:00Z]
     )
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "USNYC",
       ~U[2009-03-06 00:00:00Z],
       ~U[2009-03-09 00:00:00Z]
@@ -504,17 +504,17 @@ defmodule CargoShipping.SampleDataGenerator do
 
   def voyage_v200() do
     VoyageBuilder.init("V200", "JPTYO")
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "USNYC",
       ~U[2009-03-06 00:00:00Z],
       ~U[2009-03-08 00:00:00Z]
     )
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "USCHI",
       ~U[2009-03-10 00:00:00Z],
       ~U[2009-03-14 00:00:00Z]
     )
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "SESTO",
       ~U[2009-03-14 00:00:00Z],
       ~U[2009-03-16 00:00:00Z]
@@ -524,22 +524,22 @@ defmodule CargoShipping.SampleDataGenerator do
 
   def voyage_v300() do
     VoyageBuilder.init("V300", "JPTYO")
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "NLRTM",
       ~U[2009-03-08 00:00:00Z],
       ~U[2009-03-11 00:00:00Z]
     )
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "DEHAM",
       ~U[2009-03-11 00:00:00Z],
       ~U[2009-03-12 00:00:00Z]
     )
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "AUMEL",
       ~U[2009-03-14 00:00:00Z],
       ~U[2009-03-18 00:00:00Z]
     )
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "JPTYO",
       ~U[2009-03-19 00:00:00Z],
       ~U[2009-03-21 00:00:00Z]
@@ -549,17 +549,17 @@ defmodule CargoShipping.SampleDataGenerator do
 
   def voyage_v400() do
     VoyageBuilder.init("V400", "DEHAM")
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "SESTO",
       ~U[2009-03-14 00:00:00Z],
       ~U[2009-03-15 00:00:00Z]
     )
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "FIHEL",
       ~U[2009-03-15 00:00:00Z],
       ~U[2009-03-16 00:00:00Z]
     )
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "DEHAM",
       ~U[2009-03-20 00:00:00Z],
       ~U[2009-03-22 00:00:00Z]
@@ -571,22 +571,22 @@ defmodule CargoShipping.SampleDataGenerator do
     # Voyage number 0100S (by ship)
     # Hongkong - Hangzou - Tokyo - Melbourne - New York
     VoyageBuilder.init("0100S", "CNHKG")
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "CNHGH",
       ~U[2008-10-01 12:00:00Z],
       ~U[2008-10-03 14:30:00Z]
     )
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "JPTYO",
       ~U[2008-10-03 21:00:00Z],
       ~U[2008-10-06 06:15:00Z]
     )
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "AUMEL",
       ~U[2008-10-06 11:00:00Z],
       ~U[2008-10-12 11:30:00Z]
     )
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "USNYC",
       ~U[2008-10-14 12:00:00Z],
       ~U[2008-10-13 23:10:00Z]
@@ -600,12 +600,12 @@ defmodule CargoShipping.SampleDataGenerator do
     # Voyage number 0200T (by train)
     # New York - Chicago - Dallas
     VoyageBuilder.init("0200T", "USNYC")
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "USCHI",
       ~U[2008-10-24 07:00:00Z],
       ~U[2008-10-24 17:45:00Z]
     )
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "USDAL",
       ~U[2008-10-24 21:25:00Z],
       ~U[2008-10-15 19:30:00Z]
@@ -617,17 +617,17 @@ defmodule CargoShipping.SampleDataGenerator do
     # Voyage number 0300A (by airplane)
     # Dallas - Hamburg - Stockholm - Helsinki
     VoyageBuilder.init("0300A", "USDAL")
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "DEHAM",
       ~U[2008-10-29 03:30:00Z],
       ~U[2008-10-31 14:00:00Z]
     )
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "SESTO",
       ~U[2008-11-01 15:20:00Z],
       ~U[2008-11-01 18:40:00Z]
     )
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "FIHEL",
       ~U[2008-11-02 09:00:00Z],
       ~U[2008-11-02 11:15:00Z]
@@ -639,7 +639,7 @@ defmodule CargoShipping.SampleDataGenerator do
     # Voyage number 0301S (by ship)
     # Dallas - Hamburg - Stockholm - Helsinki, alternate route
     VoyageBuilder.init("0301S", "USDAL")
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "FIHEL",
       ~U[2008-10-29 03:30:00Z],
       ~U[2008-11-05 15:45:00Z]
@@ -651,17 +651,17 @@ defmodule CargoShipping.SampleDataGenerator do
     # Voyage number 0400S (by ship)
     # Helsinki - Rotterdam - Shanghai - Hongkong
     VoyageBuilder.init("0400S", "FIHEL")
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "NLRTM",
       ~U[2008-11-04 05:50:00Z],
       ~U[2008-11-06 14:10:00Z]
     )
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "CNSHA",
       ~U[2008-11-10 21:45:00Z],
       ~U[2008-11-22 16:40:00Z]
     )
-    |> VoyageBuilder.add_movement(
+    |> VoyageBuilder.add_destination(
       "CNHKG",
       ~U[2008-11-24 07:00:00Z],
       ~U[2008-11-28 13:37:00Z]
