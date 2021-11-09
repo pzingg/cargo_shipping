@@ -39,9 +39,10 @@
 
   <%= label f, :completed_at %>
   <.live_component module={Datepicker}
-    id="completed_at" prefix="handling_report" selected_date={@completed_at}>
-    <%= error_tag f, :completed_at %>
-  </.live_component>
+    id={"#{input_id(f, :completed_at)}_datepicker"}
+    target_name={input_name(f, :completed_at)}
+    selected_date={input_value(f, :completed_at)} />
+  <%= error_tag f, :completed_at %>
 
   <div>
     <%= submit "Submit Report", phx_disable_with: "Processing..." %>

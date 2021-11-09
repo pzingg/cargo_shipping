@@ -25,9 +25,43 @@
   <%= text_input f, :tracking_id, placeholder: "ABC999", size: 10, style: "width: 25%" %>
   <%= error_tag f, :tracking_id %>
 
-  <%= label f, :origin %>
-  <%= select f, :origin, @location_options %>
-  <%= error_tag f, :origin %>
+  <table>
+    <thead>
+      <th>Origin</th>
+      <th>Earliest departure</th>
+      <th>Destination</th>
+      <th>Arrival deadline</th>
+      <th></th>
+    </thead>
+    <tbody>
+      <%= for route_f <- inputs_for(f, :route_specification) do %>
+        <tr>
+          <td>
+            <%= select route_f, :origin, @location_options %>
+            <%= error_tag route_f, :origin %>
+          </td>
+          <td>
+            <.live_component module={Datepicker}
+              id={"#{input_id(route_f, :earliest_departure)}_datepicker"}
+              target_name={input_name(route_f, :earliest_departure)}
+              selected_date={input_value(route_f, :earliest_departure)} />
+            <%= error_tag route_f, :earliest_departure %>
+          </td>
+          <td>
+            <%= select route_f, :destination, @location_options %>
+            <%= error_tag route_f, :destination %>
+          </td>
+          <td>
+            <.live_component module={Datepicker}
+              id={"#{input_id(route_f, :arrival_deadline)}_datepicker"}
+              target_name={input_name(route_f, :arrival_deadline)}
+              selected_date={input_value(route_f, :arrival_deadline)} />
+            <%= error_tag route_f, :arrival_deadline %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
 
   <div>
     <%= submit "Create cargo", phx_disable_with: "Processing..." %>

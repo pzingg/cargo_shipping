@@ -19,9 +19,10 @@
 
     <%= label f, :arrival_deadline %>
     <.live_component module={Datepicker}
-      id="arrival_deadline" prefix="cargo" selected_date={@arrival_deadline}>
-      <%= hidden_input f, :arrival_deadline %>
-    </.live_component>
+      id={"#{input_id(f, :arrival_deadline)}_datepicker"}
+      target_name={input_name(f, :arrival_deadline)}
+      selected_date={input_value(f, :arrival_deadline)} />
+    <%= error_tag f, :arrival_deadline %>
 
     <div>
       <%= submit "Save", phx_disable_with: "Saving..." %>

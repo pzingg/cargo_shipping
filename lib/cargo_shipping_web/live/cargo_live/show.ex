@@ -15,16 +15,29 @@ defmodule CargoShippingWeb.CargoLive.Show do
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id, with_events: true)
     title = page_title(cargo.tracking_id, socket.assigns.live_action)
 
+    itinerary_data =
+      if is_nil(cargo.itinerary) do
+        %{
+          indexed_legs: [],
+          selected_index: -1,
+          revert_destination: cargo.route_specification.destination
+        }
+      else
+        %{
+          indexed_legs: Enum.with_index(cargo.itinerary.legs),
+          selected_index: Itinerary.last_completed_index(cargo.itinerary),
+          revert_destination: Itinerary.final_arrival_location(cargo.itinerary)
+        }
+      end
+
     {:noreply,
      socket
+     |> assign(itinerary_data)
      |> assign(
        page_title: title,
        cargo: cargo,
        tracking_id: cargo.tracking_id,
        handling_events: cargo.handling_events,
-       indexed_legs: Enum.with_index(cargo.itinerary.legs),
-       selected_index: Itinerary.last_completed_index(cargo.itinerary),
-       revert_destination: Itinerary.final_arrival_location(cargo.itinerary),
        back_link_label: title,
        back_link_path: this_uri,
        return_to: Routes.cargo_index_path(socket, :index)

@@ -304,6 +304,8 @@ defmodule CargoShipping.CargoBookings do
     * boolean, true true if the merged itinerary should use data from the last
       uncompleted leg when merging, or false if the new itinerary can just be appended
   """
+  # TODO: handle nil delivery
+  # TODO: handle nil itinerary
   def get_remaining_route_specification(%{itinerary: itinerary, delivery: delivery} = cargo) do
     # TODO: set :earliest_departure
     location = delivery.last_known_location

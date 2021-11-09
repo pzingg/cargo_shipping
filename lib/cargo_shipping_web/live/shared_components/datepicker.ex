@@ -228,6 +228,8 @@ defmodule CargoShippingWeb.SharedComponents.Datepicker do
     Map.get(next_params, form_name)
   end
 
+  def handle_form_change(_form_id, form_name, params), do: Map.get(params, form_name)
+
   ## Private functions
 
   # Example of params for nested input

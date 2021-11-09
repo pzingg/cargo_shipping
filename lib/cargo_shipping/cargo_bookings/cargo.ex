@@ -101,9 +101,8 @@ defmodule CargoShipping.CargoBookings.Cargo do
     cargo.route_specification.arrival_deadline
   end
 
-  def routing_status(cargo) do
-    cargo.delivery.routing_status
-  end
+  def routing_status(%{delivery: nil}), do: :NOT_ROUTED
+  def routing_status(%{delivery: delivery} = _cargo), do: delivery.routing_status
 
   def set_origin_from_route_specification(changeset) do
     # Cargo origin never changes, even if the route specification changes.
