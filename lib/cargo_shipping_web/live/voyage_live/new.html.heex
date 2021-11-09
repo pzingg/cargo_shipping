@@ -39,23 +39,20 @@
       <tr>
         <td>
           <%= select item_f, :departure_location, @location_options %>
-          <%= error_tag item_f, :departure_location %>
+          <%= error_tag item_f, :departure_location, force: true %>
         </td>
         <td>
           <.live_component module={Datepicker}
-            id={"dp-#{input_id(item_f, :departure_time)}"} target_name={input_name(item_f, :departure_time)} selected_date={input_value(item_f, :departure_time)}>
-            <%= hidden_input item_f, :departure_time %>
-          </.live_component>
+            id={"#{input_id(item_f, :departure_time)}_datepicker"} target_name={input_name(item_f, :departure_time)} selected_date={input_value(item_f, :departure_time)} />
+          <%= error_tag item_f, :departure_time, force: true %>
         </td>
         <td>
           <%= select item_f, :arrival_location, @location_options %>
-          <%= error_tag item_f, :arrival_location %>
+          <%= error_tag item_f, :arrival_location, force: true %>
         </td>
         <td>
           <.live_component module={Datepicker}
-            id={"dp-#{input_id(item_f, :arrival_time)}"} target_name={input_name(item_f, :arrival_time)} selected_date={input_value(item_f, :arrival_time)}>
-            <%= hidden_input item_f, :arrival_time %>
-          </.live_component>
+            id={"#{input_id(item_f, :arrival_time)}_datepicker"} target_name={input_name(item_f, :arrival_time)} selected_date={input_value(item_f, :arrival_time)} />          <%= error_tag item_f, :arrival_time, force: true %>
         </td>
         <td>
           <%= if item_f.data.temp_id do %>

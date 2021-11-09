@@ -3,7 +3,7 @@ defmodule CargoShippingWeb.VoyageLive.New do
 
   require Logger
 
-  alias CargoShipping.{Utils, VoyagePlans}
+  alias CargoShipping.{LocationService, Utils, VoyagePlans}
   alias CargoShipping.VoyagePlans.{CarrierMovement, Voyage}
   alias CargoShippingWeb.SharedComponents.Datepicker
 
@@ -15,11 +15,12 @@ defmodule CargoShippingWeb.VoyageLive.New do
   @impl true
   def handle_params(_params, _uri, socket) do
     # Create an initial carrier movement
-    item_changeset = new_item_changeset(nil, DateTime.utc_now(), nil)
+    departure_location = LocationService.all_locodes() |> Enum.random()
+    item_changeset = new_item_changeset(departure_location, DateTime.utc_now(), nil)
 
     changeset =
       VoyagePlans.change_voyage(%Voyage{})
-      |> update_item_changesets([item_changeset])
+      |> Ecto.Changeset.put_embed(:schedule_items, [item_changeset])
 
     {:noreply,
      socket
@@ -29,6 +30,36 @@ defmodule CargoShippingWeb.VoyageLive.New do
        changeset: changeset,
        return_to: Routes.voyage_index_path(socket, :index)
      )}
+  end
+
+  @impl true
+  # params is something like
+  # %{
+  #   "voyage" => %{
+  #     "schedule_items" => %{
+  #       "0" => %{
+  #         "departure_time" => "2021-11-17 18:25:26Z"
+  #       }
+  #     }
+  #   }
+  # }
+  def handle_info(
+        {:datepicker, _datepicker_id, %{"voyage" => %{"schedule_items" => items_params}}},
+        socket
+      ) do
+    Logger.error("got datepicker info #{inspect(items_params)}")
+
+    updated_items =
+      Map.get(socket.assigns.changeset.changes, :schedule_items, [])
+      |> update_schedule_items_from_datepicker(items_params)
+
+    changeset =
+      socket.assigns.changeset
+      |> Ecto.Changeset.put_embed(:schedule_items, updated_items)
+
+    Logger.error("datepicker -> #{inspect(Utils.errors_on(changeset))}")
+
+    {:noreply, assign(socket, :changeset, changeset)}
   end
 
   @impl true
@@ -59,7 +90,7 @@ defmodule CargoShippingWeb.VoyageLive.New do
 
     changeset =
       socket.assigns.changeset
-      |> update_item_changesets(existing_items ++ [item_changeset])
+      |> Ecto.Changeset.put_embed(:schedule_items, existing_items ++ [item_changeset])
 
     {:noreply, assign(socket, :changeset, changeset)}
   end
@@ -71,32 +102,25 @@ defmodule CargoShippingWeb.VoyageLive.New do
 
     changeset =
       socket.assigns.changeset
-      |> update_item_changesets(items)
+      |> Ecto.Changeset.put_embed(:schedule_items, items)
 
     {:noreply, assign(socket, :changeset, changeset)}
   end
 
-  @datepicker_fields [
-    {"schedule_items", "arrival_time"},
-    {"schedule_items", "departure_time"}
-  ]
-
   def handle_event("validate", raw_params, socket) do
-    params =
-      Datepicker.handle_form_change("voyage-form", "voyage", @datepicker_fields, raw_params)
+    params = Datepicker.handle_form_change("voyage-form", "voyage", raw_params)
 
     changeset =
       VoyagePlans.change_voyage(%Voyage{}, params)
       |> Map.put(:action, :validate)
 
-    Logger.error("validate -> #{inspect(changeset)}")
+    Logger.error("validate -> #{inspect(Utils.errors_on(changeset))}")
 
     {:noreply, assign(socket, :changeset, changeset)}
   end
 
   def handle_event("save", raw_params, socket) do
-    params =
-      Datepicker.handle_form_change("voyage-form", "voyage", @datepicker_fields, raw_params)
+    params = Datepicker.handle_form_change("voyage-form", "voyage", raw_params)
 
     case VoyagePlans.create_voyage(params) do
       {:ok, _voyage} ->
@@ -113,15 +137,44 @@ defmodule CargoShippingWeb.VoyageLive.New do
     end
   end
 
-  defp new_item_changeset(last_arrival_location, departure_time, temp_id) do
-    item_params = CarrierMovement.new_params(last_arrival_location, departure_time)
+  defp new_item_changeset(departure_location, departure_time, temp_id) do
+    item_params = CarrierMovement.new_params(departure_location, departure_time)
 
     %CarrierMovement{temp_id: temp_id}
     |> VoyagePlans.change_carrier_movement(item_params)
   end
 
-  defp update_item_changesets(changeset, items) do
-    Ecto.Changeset.put_embed(changeset, :schedule_items, items)
+  # items_params is something like:
+  # %{
+  #   "0" => %{
+  #     "departure_time" => "2021-11-17 18:25:26Z"
+  #   }
+  # }
+  defp update_schedule_items_from_datepicker(schedule_items, items_params) do
+    items_index = Map.keys(items_params) |> List.first()
+
+    fields =
+      Map.get(items_params, items_index)
+      |> Enum.map(fn {field, value} ->
+        {:ok, dt, _offset} = DateTime.from_iso8601(value)
+        {String.to_atom(field), dt}
+      end)
+
+    item_index = String.to_integer(items_index)
+
+    Enum.with_index(schedule_items, fn item, index ->
+      next_item =
+        if index == item_index do
+          Enum.reduce(fields, item, fn {field, value}, cs ->
+            Ecto.Changeset.put_change(cs, field, value)
+          end)
+        else
+          item
+        end
+
+      Logger.error("#{inspect(next_item)} at #{index}")
+      Map.put(next_item, :action, :validate)
+    end)
   end
 
   defp page_title(:new), do: "Create a new voyage"

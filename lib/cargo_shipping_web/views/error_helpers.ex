@@ -8,10 +8,17 @@ defmodule CargoShippingWeb.ErrorHelpers do
   @doc """
   Generates tag for inlined form input errors.
   """
-  def error_tag(form, field) do
+  def error_tag(form, field, opts \\ []) do
+    span_class =
+      if Keyword.get(opts, :force, false) do
+        "invalid-feedback always-feedback"
+      else
+        "invalid-feedback"
+      end
+
     Enum.map(Keyword.get_values(form.errors, field), fn error ->
       content_tag(:span, translate_error(error),
-        class: "invalid-feedback",
+        class: span_class,
         phx_feedback_for: input_name(form, field)
       )
     end)

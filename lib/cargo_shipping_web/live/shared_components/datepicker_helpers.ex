@@ -23,9 +23,6 @@ defmodule CargoShippingWeb.SharedComponents.DatepickerHelpers do
     end
   end
 
-  def calendar_class("closed"), do: "calendar hidden"
-  def calendar_class(_state), do: "calendar"
-
   def selectable_cells(date, max_date) do
     case Datepicker.compare_month(date, max_date) do
       :lt -> Date.days_in_month(date)
@@ -45,10 +42,10 @@ defmodule CargoShippingWeb.SharedComponents.DatepickerHelpers do
     %{visible_month_year | day: i}
   end
 
-  def selectable_cell_class(_visible_month_year, _i, nil), do: "day selectable"
+  def selectable_cell_class(_i, nil), do: "day selectable"
 
-  def selectable_cell_class(visible_month_year, i, selected_date) do
-    if selectable_cell_value(visible_month_year, i) == selected_date do
+  def selectable_cell_class(i, selected_day) do
+    if i == selected_day do
       "day selectable selected"
     else
       "day selectable"

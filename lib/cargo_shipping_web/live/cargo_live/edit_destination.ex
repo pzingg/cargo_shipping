@@ -33,12 +33,7 @@ defmodule CargoShippingWeb.CargoLive.EditDestination do
   @impl true
   def handle_event("validate", raw_params, socket) do
     params =
-      Datepicker.handle_form_change(
-        "cargo-destination-form",
-        "edit_destination",
-        "arrival_deadline",
-        raw_params
-      )
+      Datepicker.handle_form_change("cargo-destination-form", "edit_destination", raw_params)
 
     changeset =
       socket.assigns.cargo
@@ -50,12 +45,7 @@ defmodule CargoShippingWeb.CargoLive.EditDestination do
 
   def handle_event("save", raw_params, socket) do
     params =
-      Datepicker.handle_form_change(
-        "cargo-destination-form",
-        "edit_destination",
-        "arrival_deadline",
-        raw_params
-      )
+      Datepicker.handle_form_change("cargo-destination-form", "edit_destination", raw_params)
 
     save_cargo_destination(socket, socket.assigns.action, params)
   end

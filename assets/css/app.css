@@ -42,6 +42,11 @@
   display: none;
 }
 
+.phx-no-feedback.invalid-feedback.always-feedback,
+.phx-no-feedback .invalid-feedback.always-feedback {
+  display: block;
+}
+
 .phx-click-loading {
   opacity: 0.5;
   transition: opacity 1s ease-out;

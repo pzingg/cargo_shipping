@@ -8,7 +8,7 @@ defmodule CargoShipping.VoyagePlans.CarrierMovement do
 
   require Logger
 
-  alias CargoShipping.Utils
+  alias CargoShipping.{LocationService, Utils}
 
   @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
@@ -22,10 +22,11 @@ defmodule CargoShipping.VoyagePlans.CarrierMovement do
     field :delete, :boolean, virtual: true
   end
 
-  def new_params(previous_arrival_location, departure_time) do
+  def new_params(departure_location, departure_time) do
     %{
-      departure_location: previous_arrival_location,
+      departure_location: departure_location,
       departure_time: departure_time,
+      arrival_location: LocationService.other_than(departure_location),
       arrival_time: DateTime.add(departure_time, 48 * 3600, :second)
     }
   end
@@ -55,70 +56,53 @@ defmodule CargoShipping.VoyagePlans.CarrierMovement do
   end
 
   def validate_departure_location(changeset) do
-    with previous_arrival_location when is_binary(previous_arrival_location) <-
-           get_field(changeset, :previous_arrival_location),
-         departure_location when is_binary(departure_location) <-
-           get_change(changeset, :departure_location) do
-      if previous_arrival_location == departure_location do
-        changeset
-      else
-        add_error(
-          changeset,
-          :departure_location,
-          "should be the same as previous arrival location"
-        )
-      end
+    previous_arrival_location = get_field(changeset, :previous_arrival_location)
+    departure_location = get_change(changeset, :departure_location)
+
+    if is_nil(previous_arrival_location) || is_nil(departure_location) ||
+         previous_arrival_location == departure_location do
+      changeset
     else
-      _ ->
-        changeset
+      add_error(
+        changeset,
+        :departure_location,
+        "should be the same as previous arrival location"
+      )
     end
   end
 
   def validate_departure_time(changeset) do
-    with previous_arrival_time when is_binary(previous_arrival_time) <-
-           get_field(changeset, :previous_arrival_time),
-         departure_time when is_binary(departure_time) <-
-           get_change(changeset, :departure_time) do
-      if departure_time <= previous_arrival_time do
-        changeset
-      else
-        add_error(changeset, :departure_time, "should be later than previous arrival time")
-      end
+    previous_arrival_time = get_field(changeset, :previous_arrival_time)
+    departure_time = get_change(changeset, :departure_time)
+
+    if is_nil(previous_arrival_time) || is_nil(departure_time) ||
+         previous_arrival_time <= departure_time do
+      changeset
     else
-      _ ->
-        changeset
+      add_error(changeset, :departure_time, "should be later than previous arrival time")
     end
   end
 
   def validate_arrival_location(changeset) do
-    with departure_location when is_binary(departure_location) <-
-           get_change(changeset, :departure_location),
-         arrival_location when is_binary(arrival_location) <-
-           get_change(changeset, :arrival_location) do
-      if arrival_location == departure_location do
-        add_error(changeset, :arrival_location, "can't be the same as departure location")
-      else
-        changeset
-      end
+    departure_location = get_change(changeset, :departure_location)
+    arrival_location = get_change(changeset, :arrival_location)
+
+    if is_nil(departure_location) || is_nil(arrival_location) ||
+         departure_location != arrival_location do
+      changeset
     else
-      _ ->
-        changeset
+      add_error(changeset, :arrival_location, "can't be the same as departure location")
     end
   end
 
   def validate_arrival_time(changeset) do
-    with departure_time when is_binary(departure_time) <-
-           get_change(changeset, :departure_time),
-         arrival_time when is_binary(arrival_time) <-
-           get_change(changeset, :arrival_time) do
-      if departure_time <= arrival_time do
-        changeset
-      else
-        add_error(changeset, :arrival_time, "should be later than departure time")
-      end
+    departure_time = get_change(changeset, :departure_time)
+    arrival_time = get_change(changeset, :arrival_time)
+
+    if is_nil(departure_time) || is_nil(arrival_time) || departure_time <= arrival_time do
+      changeset
     else
-      _ ->
-        changeset
+      add_error(changeset, :arrival_time, "should be later than departure time")
     end
   end
 end

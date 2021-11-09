@@ -33,13 +33,7 @@ defmodule CargoShippingWeb.HandlingReportLive.New do
   def handle_event("validate", raw_params, socket) do
     # TODO: Filter the choices for voyage_number and location based
     # on changes to tracking_id and voyage_number.
-    params =
-      Datepicker.handle_form_change(
-        "handling-report-form",
-        "handling_report",
-        "completed_at",
-        raw_params
-      )
+    params = Datepicker.handle_form_change("handling-report-form", "handling_report", raw_params)
 
     changeset =
       Reports.change_handling_report(params)
@@ -49,13 +43,7 @@ defmodule CargoShippingWeb.HandlingReportLive.New do
   end
 
   def handle_event("save", raw_params, socket) do
-    params =
-      Datepicker.handle_form_change(
-        "handling-report-form",
-        "handling_report",
-        "completed_at",
-        raw_params
-      )
+    params = Datepicker.handle_form_change("handling-report-form", "handling_report", raw_params)
 
     case Reports.create_handling_report(params) do
       {:ok, handling_report} ->

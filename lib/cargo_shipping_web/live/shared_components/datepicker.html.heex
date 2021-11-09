@@ -1,11 +1,13 @@
 <div class="datepicker">
   <div>
-    <input
-      name={"dp-#{@target_name}[iso]"}
-      type="hidden"
+    <input phx-hook="LiveInput" phx-update="ignore"
+      id={"#{@id}_target"}
+      name={@target_name}
+      type="text"
+      style="display: none"
       value={@selected_date} />
     <input
-      name={"dp-#{@target_name}[alt]"}
+      name={"#{@dp_target_name}[alt]"}
       type="text"
       readonly
       placeholder="Select date"
@@ -19,9 +21,7 @@
     </div>
   </div>
 
-  <%= render_slot(@inner_block) %>
-
-  <div class={calendar_class(@state)}>
+  <div class={@calendar_class}>
     <div class="header">
       <div>
         <strong><%= full_month_name(@visible_month_year) %></strong>
@@ -79,11 +79,11 @@
         <%# Day cells %>
         <%= for i <- 1..selectable_cells(@visible_month_year, @max_date) do %>
           <div
+            phx-click="day-clicked"
+            phx-value-day={i}
+            phx-target={@myself}
             style="width: 14.26%"
-            class={selectable_cell_class(@visible_month_year, i, @selected_date)}
-            phx-click="date-clicked"
-            phx-value-date={selectable_cell_value(@visible_month_year, i)}
-            phx-target={@myself} >
+            class={selectable_cell_class(i, @selected_day)} >
             <%= i %>
           </div>
         <% end %>
@@ -100,7 +100,7 @@
     <div class="time-footer">
       <div style="width: 14.26%">&nbsp;</div>
       <div style="width: 28.52%" class="time-input">
-        <select name={"dp-#{@target_name}[hour]"}>
+        <select name={"#{@dp_target_name}[hour]"}>
           <%= for hour <- @hour_options do %>
           <option value={hour} selected={hour_selected(hour, @selected_hour)}><%= hour %></option>
           <% end %>
@@ -110,7 +110,7 @@
         <span>&nbsp;:&nbsp;</span>
       </div>
       <div style="width: 28.52%" class="time-input">
-        <select name={"dp-#{@target_name}[minute]"}>
+        <select name={"#{@dp_target_name}[minute]"}>
           <%= for minute <- @minute_options do %>
           <option value={minute} selected={minute_selected(minute, @selected_minute)}><%= minute %></option>
           <% end %>

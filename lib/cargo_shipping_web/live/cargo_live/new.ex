@@ -26,12 +26,8 @@ defmodule CargoShippingWeb.CargoLive.New do
   def handle_event("validate", raw_params, socket) do
     # TODO: Filter the choices for voyage_number and location based
     # on changes to tracking_id and voyage_number.
-    # params =
-    #  Datepicker.handle_form_change(
-    #    "cargo",
-    #    "completed_at",
-    #    raw_params)
 
+    # params = Datepicker.handle_form_change("cargo-form", "cargo", raw_params)
     params = Map.fetch!(raw_params, "cargo")
 
     changeset =
@@ -42,12 +38,7 @@ defmodule CargoShippingWeb.CargoLive.New do
   end
 
   def handle_event("save", raw_params, socket) do
-    # params =
-    #  Datepicker.handle_form_change(
-    #    "cargo",
-    #    "completed_at",
-    #    raw_params)
-
+    # params = Datepicker.handle_form_change("cargo-form", "cargo", raw_params)
     params = Map.fetch!(raw_params, "cargo")
 
     case CargoBookings.create_cargo(params) do

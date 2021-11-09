@@ -36,6 +36,15 @@ defmodule CargoShipping.LocationService do
     end)
   end
 
+  def all_except(nil), do: all()
+
+  def all_except(un_locode) when is_binary(un_locode) do
+    Agent.get(__MODULE__, & &1)
+    |> Enum.reject(fn %Location{port_code: port_code} ->
+      port_code == "_" || port_code == un_locode
+    end)
+  end
+
   def all_locodes() do
     all()
     |> Enum.map(fn %Location{port_code: port_code} -> port_code end)
@@ -56,6 +65,11 @@ defmodule CargoShipping.LocationService do
 
   def get_by_locode(un_locode) when is_binary(un_locode) do
     Enum.find(all(), fn %Location{port_code: port_code} -> port_code == un_locode end)
+  end
+
+  def other_than(un_locode) do
+    %Location{port_code: port_code} = all_except(un_locode) |> Enum.random()
+    port_code
   end
 
   def locode_exists?(nil), do: false

@@ -46,155 +46,13 @@ defmodule CargoShippingWeb.SharedComponents.Datepicker do
   ]
   @minute_options ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"]
 
-  @doc """
-  If the live component is embedded in a <form> element in a live view (the normal use case),
-  and a user clicks on the hour or time select input, a "phx-change" event will
-  be sent to parent live view.
-
-  `inputs` can be either a single field or a list of fields.
-
-  Each field is either the field name as a string for non-nested fields,
-  or a 2-tuple of the  collection name and field name both as strings, for
-  nested fields.
-
-  Example `"arrival_deadline"` for a single non-nested field, or
-  `{"schedule_items", "arrival_time"}` for a collection field.
-  """
-  def handle_form_change(form_id, form_name, inputs, params) do
-    List.wrap(inputs)
-    |> Enum.reduce(params, &handle_input(form_id, form_name, &1, &2))
-    |> Map.get(form_name)
-  end
-
-  # For nested form
-  # input_id(nested_f, :field) is voyage-form_schedule_items_0_departure_time
-  # input_name(nested_f, :field) is voyage[schedule_items][0][departure_time]
-
-  # Example of params for nested input
-  # %{
-  #   "_csrf_token" => "CScfIydyFngRPCILQEpWdwFFFD4mBm5hBjpywGg6SvDsv3nFLrYoMUW8",
-  #   "_target" => ["voyage", "schedule_items", "0", "departure_location"],
-  #   "datepicker" => %{
-  #     "arrival_time-0" => %{
-  #       "alt" => "Mon Nov 08, 2021 18:08",
-  #       "hour" => "18",
-  #       "iso" => "2021-11-08T18:08:05Z",
-  #       "minute" => "05"
-  #     },
-  #     "departure_time-0" => %{
-  #       "alt" => "Sat Nov 06, 2021 18:08",
-  #       "hour" => "18",
-  #       "iso" => "2021-11-06T18:08:05Z",
-  #       "minute" => "05"
-  #     }
-  #   },
-  #   "voyage" => %{
-  #     "schedule_items" => %{
-  #       "0" => %{
-  #         "arrival_location" => "USCHI",
-  #         "arrival_time" => "2021-11-08T18:08:05Z",
-  #         "departure_location" => "SEGOT",
-  #         "departure_time" => "2021-11-06T18:08:05Z"
-  #       }
-  #     },
-  #     "voyage_number" => ""
-  #   }
-  # }
-  #
-  #
-  # We loop through the indices in the nested collection and process the corresponding
-  # datepicker fields.
-  defp handle_input(form_id, form_name, {collection, field}, params) do
-    # The indices are the keys at ["voyage", "schedule_items"]
-    indices = get_in(params, [form_name, collection]) |> Map.keys()
-
-    Enum.reduce(indices, params, fn index, acc ->
-      # `form_id` will be "voyage-form"
-      # `form_name will be "voyage"
-      # `path` will be ["schedule_items", "0", "arrival_time"]
-      # `dp_path` will be ["dp-voyage", "schedule_items", "0", "arrival_time"]
-      # `form_path` will be ["voyage", "schedule_items", "0", "arrival_time"]
-      do_handle_input(form_id, form_name, [collection, index, field], acc)
-    end)
-  end
-
-  # Example of params for single input
-  # %{
-  #   "_csrf_token" => "CScfIydyFngRPCILQEpWdwFFFD4mBm5hBjpywGg6SvDsv3nFLrYoMUW8",
-  #   "_target" => ["voyage", "schedule_items", "0", "departure_location"],
-  #   "datepicker" => %{
-  #     "arrival_deadline" => %{
-  #       "alt" => "Mon Nov 08, 2021 18:08",
-  #       "hour" => "18",
-  #       "iso" => "2021-11-08T18:08:05Z",
-  #       "minute" => "05"
-  #     }
-  #   },
-  #   "edit_destination" => %{
-  #     "arrival_deadline" => "2021-11-08T18:08:05Z",
-  #     "destination" => "SEGOT"
-  #   }
-  # }
-  #
-  defp handle_input(form_id, form_name, field, params) when is_binary(field) do
-    # `form_id` will be "cargo-destination-form"
-    # `form_name will be "edit_destination"
-    # `path` will be ["arrival_deadline"]
-    # `dp_path` will be ["dp-edit_destination", "arrival_deadline"]
-    # `form_path` will be ["edit_destination", "arrival_deadline"]
-    do_handle_input(form_id, form_name, [field], params)
-  end
-
-  defp do_handle_input(form_id, form_name, path, params) do
-    dp_path = ["dp-#{form_name}" | path]
-    dp_params = get_in(params, dp_path)
-
-    if is_nil(dp_params) do
-      Logger.error("No map at #{inspect(dp_path)}")
-      params
-    else
-      iso_str = Map.get(dp_params, "iso")
-      {:ok, current_date, _offset} = DateTime.from_iso8601(iso_str)
-
-      selected_date =
-        with {:ok, h, m} <- parse_time(dp_params),
-             {:ok, t} <- Time.new(h, m, 0),
-             {:ok, new_date} <- DateTime.to_date(current_date) |> DateTime.new(t) do
-          # Reset datepicker component's :selected_date
-          dp_id = Enum.join(["dp-#{form_id}" | path], "_")
-          _ = send_update(__MODULE__, id: dp_id, selected_date: new_date)
-          new_date
-        else
-          _ -> current_date
-        end
-
-      put_in(params, [form_name | path], selected_date)
-    end
-  end
-
-  @doc """
-  Compare the month and year of the given date to the `max_date`.
-  `max_date` can be either false (in which case `:lt` is always returned),
-  or a struct or map with `:month` and `:year` items.
-
-  Returns :lt, :eq, or :gt.
-  """
-  def compare_month(_month_year, false), do: :lt
-
-  def compare_month(%{year: y1, month: m1}, %{year: y2, month: m2}) do
-    cond do
-      y1 < y2 || (y1 == y2 && m1 < m2) -> :lt
-      y1 == y2 && m1 == m2 -> :eq
-      true -> :gt
-    end
-  end
-
   @impl true
   def mount(socket) do
     next_socket =
       socket
       |> assign(
         state: "closed",
+        calendar_class: "calendar hidden",
         hour_options: @hour_options,
         minute_options: @minute_options
       )
@@ -204,14 +62,10 @@ defmodule CargoShippingWeb.SharedComponents.Datepicker do
 
   @impl true
   def update(assigns, socket) do
-    max_date =
-      case Map.get(assigns, :max_date, false) do
-        %Date{} = d -> d
-        true -> DateTime.utc_now() |> DateTime.to_date()
-        _ -> false
-      end
+    {assigns, target_name} = maybe_put_target_names(assigns, socket)
+    {assigns, max_date} = maybe_put_max_date(assigns, socket)
 
-    {unclamped_date, time} =
+    {selected_datetime, selected_time} =
       case Map.get(assigns, :selected_date) do
         %DateTime{} = dt ->
           t = DateTime.to_time(dt)
@@ -228,34 +82,56 @@ defmodule CargoShippingWeb.SharedComponents.Datepicker do
           {dt, t}
       end
 
-    month_compare = compare_month(unclamped_date, max_date)
+    month_compare = compare_month(selected_datetime, max_date)
 
-    selected_date =
-      if month_compare == :lt || (month_compare == :eq && unclamped_date.day <= max_date.day) do
-        unclamped_date
+    datetime =
+      if month_compare == :lt || (month_compare == :eq && selected_datetime.day <= max_date.day) do
+        selected_datetime
       else
-        {:ok, max_dt} = DateTime.new(max_date, time)
-        max_dt
+        {:ok, max_datetime} = DateTime.new(max_date, selected_time)
+        max_datetime
       end
 
-    hour = time.hour |> Integer.to_string() |> String.pad_leading(2, "0")
-    minute = (div(time.minute, 5) * 5) |> Integer.to_string() |> String.pad_leading(2, "0")
+    day = DateTime.to_date(datetime).day
 
-    assigns =
+    hour =
+      selected_time.hour
+      |> Integer.to_string()
+      |> String.pad_leading(2, "0")
+
+    minute =
+      (div(selected_time.minute + 2, 5) * 5)
+      |> Integer.to_string()
+      |> String.pad_leading(2, "0")
+
+    {push_event?, next_assigns} =
       assigns
-      |> Map.put(:max_date, max_date)
-      |> Map.put(:selected_date, selected_date)
-      |> Map.put(:selected_hour, hour)
-      |> Map.put(:selected_minute, minute)
-      |> set_visible_month_year()
+      |> Map.merge(%{
+        selected_date: datetime,
+        selected_day: day,
+        selected_hour: hour,
+        selected_minute: minute
+      })
+      |> put_visible_month_year()
       |> put_next_month_selectable(max_date)
+      |> Map.pop(:push_event, false)
 
-    {:ok, assign(socket, assigns)}
+    next_socket =
+      if push_event? do
+        value = to_string(datetime)
+        Logger.debug("push set-value #{target_name} #{value}")
+
+        push_event(socket, "lvinput:set-value", %{name: target_name, value: value})
+      else
+        socket
+      end
+
+    {:ok, assign(next_socket, next_assigns)}
   end
 
   @impl true
   def handle_event("datepicker-clicked", _, socket) do
-    {:noreply, assign(socket, :state, toggle_state(socket.assigns.state))}
+    {:noreply, assign(socket, toggle_state(socket.assigns.state))}
   end
 
   def handle_event("prev-clicked", _, socket) do
@@ -287,19 +163,163 @@ defmodule CargoShippingWeb.SharedComponents.Datepicker do
     {:noreply, assign(socket, assigns)}
   end
 
-  def handle_event("date-clicked", %{"date" => date}, socket) do
-    {:ok, new_date} = Date.from_iso8601(date)
+  def handle_event("day-clicked", %{"day" => day_str}, socket) do
+    day = String.to_integer(day_str)
+    month_year = socket.assigns.visible_month_year
+    new_date = %{month_year | day: day}
     current_time = DateTime.to_time(socket.assigns.selected_date)
-    {:ok, selected_date} = DateTime.new(new_date, current_time)
+    {:ok, new_date} = DateTime.new(new_date, current_time)
 
-    assigns =
-      Map.new()
-      |> Map.put(:selected_date, selected_date)
+    # Reset datepicker component's :selected_date
+    _ = send_update_with_push_event(socket.assigns.id, new_date)
+    {:noreply, socket}
+  end
 
-    {:noreply, assign(socket, assigns)}
+  ## Utility functions
+
+  @doc """
+  Compare the month and year of the given date to the `max_date`.
+  `max_date` can be either false (in which case `:lt` is always returned),
+  or a struct or map with `:month` and `:year` items.
+
+  Returns :lt, :eq, or :gt.
+  """
+  def compare_month(_month_year, false), do: :lt
+
+  def compare_month(%{year: y1, month: m1}, %{year: y2, month: m2}) do
+    cond do
+      y1 < y2 || (y1 == y2 && m1 < m2) -> :lt
+      y1 == y2 && m1 == m2 -> :eq
+      true -> :gt
+    end
+  end
+
+  ## Post processing
+
+  @doc """
+  If the live component is embedded in a <form> element in a live view (the normal use case),
+  and a user clicks on the hour or time select input, a "phx-change" event will
+  be sent to parent live view.
+
+  `inputs` can be either a single field or a list of fields.
+
+  Each field is either the field name as a string for non-nested fields,
+  or a 2-tuple of the  collection name and field name both as strings, for
+  nested fields.
+
+  Example `"arrival_deadline"` for a single non-nested field, or
+  `{"schedule_items", "arrival_time"}` for a collection field.
+  """
+  def handle_form_change(form_id, form_name, %{"_target" => target_path} = params) do
+    next_params =
+      case target_path do
+        ["_datepicker" | rest] ->
+          # Changed datepicker [hour] or [minute] fields
+          len = Enum.count(rest)
+          path = Enum.take(rest, len - 1)
+          handle_input_path(form_id, form_name, path, params)
+
+        _ ->
+          # Changed non-datepicker fields
+          Logger.debug("handle_form_change target #{inspect(target_path)}")
+          params
+      end
+
+    Map.get(next_params, form_name)
   end
 
   ## Private functions
+
+  # Example of params for nested input
+  # %{
+  #   "_csrf_token" => "CScfIydyFngRPCILQEpWdwFFFD4mBm5hBjpywGg6SvDsv3nFLrYoMUW8",
+  #   "_target" => ["voyage", "schedule_items", "0", "departure_location"],
+  #   "datepicker" => %{
+  #     "schedule_items" => %{
+  #       "0" => %{
+  #         "arrival_time" => %{
+  #           "alt" => "Mon Nov 08, 2021 18:08",
+  #           "hour" => "18",
+  #           "minute" => "05"
+  #         },
+  #         "departure_time" => %{
+  #           "alt" => "Sat Nov 06, 2021 18:08",
+  #           "hour" => "18",
+  #           "minute" => "05"
+  #         }
+  #       }
+  #     }
+  #   },
+  #   "voyage" => %{
+  #     "schedule_items" => %{
+  #       "0" => %{
+  #         "arrival_location" => "USCHI",
+  #         "arrival_time" => "2021-11-08T18:08:05Z",
+  #         "departure_location" => "SEGOT",
+  #         "departure_time" => "2021-11-06T18:08:05Z"
+  #       }
+  #     },
+  #     "voyage_number" => ""
+  #   }
+  # }
+
+  # Example of params for single input
+  # %{
+  #   "_csrf_token" => "CScfIydyFngRPCILQEpWdwFFFD4mBm5hBjpywGg6SvDsv3nFLrYoMUW8",
+  #   "_target" => ["voyage", "schedule_items", "0", "departure_location"],
+  #   "_datepicker" => %{
+  #     "arrival_deadline" => %{
+  #       "alt" => "Mon Nov 08, 2021 18:08",
+  #       "hour" => "18",
+  #       "minute" => "05"
+  #     }
+  #   },
+  #   "edit_destination" => %{
+  #     "arrival_deadline" => "2021-11-08T18:08:05Z",
+  #     "destination" => "SEGOT"
+  #   }
+  # }
+  #
+
+  defp handle_input_path(form_id, form_name, path, params) do
+    Logger.debug("handle_input_path #{inspect(path)}")
+
+    dp_id = Enum.join([form_id | path], "_") <> "_datepicker"
+    form_path = [form_name | path]
+
+    dp_params_path = ["_datepicker" | path]
+    dp_params = get_in(params, dp_params_path)
+
+    if is_nil(dp_params) do
+      Logger.error("No map at #{inspect(dp_params_path)}")
+      params
+    else
+      iso_str = get_in(params, form_path)
+
+      if !is_binary(iso_str) do
+        Logger.error("No date value at #{inspect(form_path)}")
+        params
+      else
+        with {:ok, current_date, _offset} = DateTime.from_iso8601(iso_str),
+             {:ok, h, m} <- parse_time(dp_params),
+             {:ok, t} <- Time.new(h, m, 0),
+             {:ok, new_date} <- DateTime.to_date(current_date) |> DateTime.new(t) do
+          # Reset datepicker component's :selected_date
+          _ = send_update_with_push_event(dp_id, new_date)
+          put_in(params, [form_name | path], new_date)
+        else
+          error ->
+            Logger.error("Failed to parse date and time #{inspect(error)}")
+
+            params
+        end
+      end
+    end
+  end
+
+  defp send_update_with_push_event(id, new_date) do
+    send_update(__MODULE__, %{id: id, selected_date: new_date, push_event: true})
+  end
 
   defp parse_time(%{"hour" => hour, "minute" => minute}) do
     with {:ok, h} <- valid_hour(hour),
@@ -313,7 +333,35 @@ defmodule CargoShippingWeb.SharedComponents.Datepicker do
 
   defp parse_time(_), do: :error
 
-  defp set_visible_month_year(%{selected_date: %DateTime{year: year, month: month}} = assigns) do
+  defp maybe_put_max_date(assigns, %{assigns: %{max_date: max_date}} = _socket),
+    do: {assigns, max_date}
+
+  defp maybe_put_max_date(%{max_date: max_date} = assigns, _) do
+    max_date_value =
+      case max_date do
+        %Date{} = d -> d
+        true -> DateTime.utc_now() |> DateTime.to_date()
+        false -> false
+      end
+
+    {Map.put(assigns, :max_date, max_date_value), max_date_value}
+  end
+
+  defp maybe_put_max_date(assigns, _), do: {Map.put(assigns, :max_date, false), false}
+
+  defp maybe_put_target_names(
+         assigns,
+         %{assigns: %{target_name: target_name, dp_target_name: _dp_target_name}} = _socket
+       ) do
+    {assigns, target_name}
+  end
+
+  defp maybe_put_target_names(%{target_name: target_name} = assigns, _) do
+    dp_target_name = Regex.replace(~r/^[^[]+/, target_name, "_datepicker")
+    {Map.put(assigns, :dp_target_name, dp_target_name), target_name}
+  end
+
+  defp put_visible_month_year(%{selected_date: %DateTime{year: year, month: month}} = assigns) do
     {:ok, first_day_of_month} = Date.new(year, month, 1)
     Map.put(assigns, :visible_month_year, first_day_of_month)
   end
@@ -358,8 +406,13 @@ defmodule CargoShippingWeb.SharedComponents.Datepicker do
     end
   end
 
-  defp toggle_state("open"), do: "closed"
-  defp toggle_state("closed"), do: "open"
+  defp toggle_state("open") do
+    %{state: "closed", calendar_class: "calendar hidden"}
+  end
+
+  defp toggle_state(_) do
+    %{state: "open", calendar_class: "calendar"}
+  end
 
   defp put_next_month_selectable(%{visible_month_year: d} = assigns, max_date) do
     Map.put(assigns, :next_month_selectable, next_month_selectable?(d, max_date))
