@@ -93,6 +93,8 @@ defmodule CargoShipping.CargoBookings.Cargo do
     |> validate_required([:origin])
   end
 
+  ## Route specification delegates
+
   def destination(cargo) do
     cargo.route_specification.destination
   end
@@ -101,8 +103,42 @@ defmodule CargoShipping.CargoBookings.Cargo do
     cargo.route_specification.arrival_deadline
   end
 
+  ## Itinerary delegates
+
+  def completed_itinerary_legs(%{itinerary: nil}), do: []
+
+  def completed_itinerary_legs(%{itinerary: itinerary}) do
+    {completed, _uncompleted} = Itinerary.split_completed_legs(itinerary)
+    completed
+  end
+
+  ## Delivery delegates
+
+  def misdirected?(%{delivery: nil}), do: false
+  def misdirected?(%{delivery: delivery}), do: delivery.misdirected?
+
   def routing_status(%{delivery: nil}), do: :NOT_ROUTED
-  def routing_status(%{delivery: delivery} = _cargo), do: delivery.routing_status
+  def routing_status(%{delivery: delivery}), do: delivery.routing_status
+
+  def transport_status(%{delivery: nil}), do: :UNKNOWN
+  def transport_status(%{delivery: delivery}), do: delivery.transport_status
+
+  def last_event_type(%{delivery: nil}), do: nil
+  def last_event_type(%{delivery: delivery}), do: delivery.last_event_type
+
+  def last_known_location(%{delivery: nil}), do: nil
+  def last_known_location(%{delivery: delivery}), do: delivery.last_known_location
+
+  def next_expected_activity(%{delivery: nil}), do: nil
+  def next_expected_activity(%{delivery: delivery} = _cargo), do: delivery.next_expected_activity
+
+  def current_voyage_number(%{delivery: nil}), do: nil
+
+  def current_voyage_number(%{delivery: delivery}) do
+    VoyageService.get_voyage_number_for_id(delivery.current_voyage_id)
+  end
+
+  ## Public API
 
   def set_origin_from_route_specification(changeset) do
     # Cargo origin never changes, even if the route specification changes.

@@ -17,6 +17,21 @@
 
 <h1><%= @page_title %></h1>
 
+<h2>Current routing for <%= @tracking_id %></h2>
+
+<ul>
+  <li><strong>Origin:</strong>
+    <%= cargo_origin(@cargo) %>
+  </li>
+  <li><strong>Destination:</strong>
+    <%= cargo_destination(@cargo) %>
+  </li>
+  <li>
+    <strong>Arrival deadline:</strong>
+    <%= event_time(@cargo.route_specification, :arrival_deadline) %>
+  </li>
+</ul>
+
 <div>
   <.form
     let={f}
@@ -25,11 +40,11 @@
     phx-change="validate"
     phx-submit="save">
 
-    <%= label f, :destination %>
+    <%= label f, :destination, "New destination" %>
     <%= select f, :destination, @location_options %>
     <%= error_tag f, :destination %>
 
-    <%= label f, :arrival_deadline %>
+    <%= label f, :arrival_deadline, "New arrival deadline" %>
     <.live_component module={Datepicker}
       id={"#{input_id(f, :arrival_deadline)}_datepicker"}
       target_name={input_name(f, :arrival_deadline)}

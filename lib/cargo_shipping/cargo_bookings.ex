@@ -304,15 +304,13 @@ defmodule CargoShipping.CargoBookings do
     * boolean, true true if the merged itinerary should use data from the last
       uncompleted leg when merging, or false if the new itinerary can just be appended
   """
-  # TODO: handle nil delivery
-  # TODO: handle nil itinerary
-  def get_remaining_route_specification(%{itinerary: itinerary, delivery: delivery} = cargo) do
+  def get_remaining_route_specification(cargo) do
     # TODO: set :earliest_departure
-    location = delivery.last_known_location
-    event_type = delivery.last_event_type
-    {completed_legs, _uncompleted_legs} = Itinerary.split_completed_legs(itinerary)
+    location = Cargo.last_known_location(cargo)
+    event_type = Cargo.last_event_type(cargo)
+    completed_legs = Cargo.completed_itinerary_legs(cargo)
 
-    case {delivery.routing_status, delivery.transport_status} do
+    case {Cargo.routing_status(cargo), Cargo.transport_status(cargo)} do
       {:NOT_ROUTED, _} ->
         Logger.debug("Cargo not routed, rrs is original route specification")
         {cargo.route_specification, completed_legs, false, false}

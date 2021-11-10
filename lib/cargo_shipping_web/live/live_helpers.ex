@@ -134,10 +134,59 @@ defmodule CargoShippingWeb.LiveHelpers do
     end
   end
 
-  def cargo_next_expected_activity(%{delivery: nil}), do: "None"
+  def cargo_origin(cargo) do
+    cargo.origin |> location_name()
+  end
 
-  def cargo_next_expected_activity(%{delivery: delivery} = _cargo) do
-    activity = delivery.next_expected_activity
+  def cargo_destination(cargo) do
+    Cargo.destination(cargo) |> location_name()
+  end
+
+  ## Delivery helpers
+
+  def cargo_last_known_location(cargo) do
+    case Cargo.last_known_location(cargo) do
+      nil -> "None"
+      location -> location_name(location)
+    end
+  end
+
+  def cargo_routing_status(cargo) do
+    case Cargo.routing_status(cargo) do
+      :ROUTED -> "Routed"
+      :MISROUTED -> "Misrouted"
+      :NOT_ROUTED -> "Not routed"
+    end
+  end
+
+  def cargo_routed?(cargo), do: Cargo.routing_status(cargo) != :NOT_ROUTED
+
+  def cargo_misrouted?(cargo), do: Cargo.routing_status(cargo) == :MISROUTED
+
+  def cargo_misdirected?(cargo), do: Cargo.misdirected?(cargo)
+
+  def cargo_transport_status(cargo) do
+    case Cargo.transport_status(cargo) do
+      :IN_PORT ->
+        "#{cargo.tracking_id} is now in port at #{cargo_last_known_location(cargo)}"
+
+      :ONBOARD_CARRIER ->
+        voyage_number = Cargo.current_voyage_number(cargo)
+        "#{cargo.tracking_id} is now onboard carrier in voyage #{voyage_number}"
+
+      :CLAIMED ->
+        "#{cargo.tracking_id} has been claimed"
+
+      :NOT_RECEIVED ->
+        "#{cargo.tracking_id} has not been received"
+
+      _ ->
+        "#{cargo.tracking_id} has an unknown status"
+    end
+  end
+
+  def cargo_next_expected_activity(cargo) do
+    activity = Cargo.next_expected_activity(cargo)
 
     if is_nil(activity) do
       "None"
@@ -169,64 +218,7 @@ defmodule CargoShippingWeb.LiveHelpers do
     end
   end
 
-  def cargo_misdirected?(%{delivery: nil}), do: false
-  def cargo_misdirected?(%{delivery: delivery} = _cargo), do: delivery.misdirected?
-
-  def cargo_origin(cargo) do
-    cargo.origin |> location_name()
-  end
-
-  def cargo_last_known_location(%{delivery: nil}), do: "None"
-
-  def cargo_last_known_location(%{delivery: delivery} = _cargo) do
-    case delivery.last_known_location do
-      nil -> "None"
-      location -> location_name(location)
-    end
-  end
-
-  def cargo_destination(cargo) do
-    Cargo.destination(cargo) |> location_name()
-  end
-
-  def cargo_routing_status(cargo) do
-    case Cargo.routing_status(cargo) do
-      :ROUTED -> "Routed"
-      :MISROUTED -> "Misrouted"
-      :NOT_ROUTED -> "Not routed"
-    end
-  end
-
-  def cargo_routed?(cargo), do: Cargo.routing_status(cargo) != :NOT_ROUTED
-
-  def cargo_misrouted?(cargo), do: Cargo.routing_status(cargo) == :MISROUTED
-
-  def cargo_transport_status(%{delivery: nil} = cargo) do
-    "#{cargo.tracking_id} has no delivery information"
-  end
-
-  def cargo_transport_status(%{delivery: delivery} = cargo) do
-    case delivery.transport_status do
-      :IN_PORT ->
-        "#{cargo.tracking_id} is now in port at #{cargo_last_known_location(cargo)}"
-
-      :ONBOARD_CARRIER ->
-        voyage_number =
-          delivery.current_voyage_id
-          |> VoyageService.get_voyage_number_for_id()
-
-        "#{cargo.tracking_id} is now onboard carrier in voyage #{voyage_number}"
-
-      :CLAIMED ->
-        "#{cargo.tracking_id} has been claimed"
-
-      :NOT_RECEIVED ->
-        "#{cargo.tracking_id} has not been received"
-
-      _ ->
-        "#{cargo.tracking_id} has an unknown status"
-    end
-  end
+  ## Itinerary helpers
 
   def voyage_number_for(leg_or_event) do
     case leg_or_event.voyage_id do
@@ -278,6 +270,8 @@ defmodule CargoShippingWeb.LiveHelpers do
       carrier_movement -> event_time(carrier_movement, :arrival_time)
     end
   end
+
+  ## HandlingEvent helpers
 
   def handling_event_expected_text(cargo, handling_event) do
     case CargoBookings.handling_event_expected(cargo, handling_event) do

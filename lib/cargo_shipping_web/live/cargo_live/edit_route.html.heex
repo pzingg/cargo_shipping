@@ -17,6 +17,8 @@
   </article>
 </section>
 
+<h1><%= @page_title %></h1>
+
 <h2>Current routing for <%= @tracking_id %></h2>
 
 <ul>
@@ -32,27 +34,38 @@
   </li>
 </ul>
 
-<h1><%= @page_title %></h1>
-
 <%= if @completed_legs == [] do %>
+
+<%= if is_nil(@cargo.itinerary) do %>
+
+<p><strong>No itinerary has been defined.</strong><br>
+If a new route is selected below it will be applied from location
+<strong><%= location_name(@remaining_route_spec.origin) %></strong>.</p>
+
+<% else %>
+
 <p>No legs of the current itinerary have been completed. If a new route is selected below it will be applied from location
 <strong><%= location_name(@remaining_route_spec.origin) %></strong>.</p>
+
+<% end %>
 
 <% else %>
 
 <h2>Completed itinerary</h2>
 
-<.show_itinerary socket={@socket} back_link_label={@back_link_label} back_link_path={@back_link_path} indexed_legs={@completed_legs} selected_index={-1} />
+<.show_itinerary socket={@socket}
+  back_link_label={@back_link_label} back_link_path={@back_link_path}
+  indexed_legs={@completed_legs} selected_index={-1} />
 
 <p>The completed legs of the current itinerary shown above will not be changed.
 If a new route is selected below it will be applied from location
 <strong><%= location_name(@remaining_route_spec.origin) %></strong>.</p>
 <% end %>
 
-<%= if !@route_candidates do %>
+<%= if @route_candidates == [] do %>
 
-<p>No routes were found that satisfy the route specification. Try setting an arrival
-deadline futher into the future (a few weeks at least).</p>
+<p><strong>No routes were found that satisfy the route specification.</strong><br>
+Try setting an arrival deadline futher into the future (a few weeks at least).</p>
 <%= live_redirect "Return to #{@tracking_id}", to: Routes.cargo_show_path(@socket, :show, @cargo) %>
 
 <% else %>
@@ -60,7 +73,10 @@ deadline futher into the future (a few weeks at least).</p>
 <p>Select a new route from these candidates:</p>
 
 <%= for candidate <- @route_candidates do %>
-  <.select_itinerary_form title={candidate.title} index={candidate.index}
-    is_internal={candidate.is_internal} indexed_legs={candidate.indexed_legs} />
+  <.select_itinerary_form socket={@socket}
+    back_link_label={@back_link_label} back_link_path={@back_link_path}
+    title={candidate.title} index={candidate.index}
+    is_internal={candidate.is_internal}
+    indexed_legs={candidate.indexed_legs} />
 <% end %>
 <% end %>

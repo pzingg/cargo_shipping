@@ -55,36 +55,34 @@ https://github.com/citerus/dddsample-core/tree/master/src/main/resources/templat
 
 There are three Phoenix router scopes in the web application:
 
-### Shipping clerk web interface at /tracking
+### Shipping clerks web interface at /clerks
 
-* `live "/", CargoLive.Search, :index` (from track.html, to get information on
+* `get "/", PageController, :clerks` (clerks landing page)
+* `live "/tracking", CargoLive.Search, :index` (from track.html, to get information on
   an existing cargo booking)
 
-### Operation manager web interface at /managers
+### Operation managers web interface at /managers
 
-Implemented:
-
+* `get "/", PageController, :managers` (managers landing page)
 * `live "/cargos", CargoLive.Index, :index` (from admin/list.html, to list all available
   cargo bookings)
-* `live "/cargos/:id", CargoLive.Show, :show` (from admin/show.html, to show detailed
-  information on a cargo booking)
-* `live "/cargos/:id/destination/edit", CargoLive.EditDestination, :edit` (from
-  admin/pickNewDestination.html, to change the final destination for a cargo booking)
-* `live "/cargos/:id/route/edit", CargoLive.EditRoute, :edit` (from
-  admin/selectItinerary.html, to re-route a cargo booking)
-* `live "/events", HandlingEventLive.Index, :all` (to list all recent handling events)
-* `live "/events/:tracking_id", HandlingEventLive.Index, :index` (to
-  list handling events for a cargo booking)
-* `live "/reports/new", HandlingReportLive.Edit, :new` (to file a cargo handling
-  report directly)
-
-TODO:
-
-* `live "/cargos/new", CargoLive.Index, :new` (from admin/registrationForm.html, to create
+* `live "/cargos/new", CargoLive.New, :new` (from admin/registrationForm.html, to create
   a new cargo booking)
+* `live "/cargos/id/:tracking_id", CargoLive.Show, :show` (from admin/show.html, to show detailed
+  information on a cargo booking)
+* `live "/cargos/id/:tracking_id/destination/edit", CargoLive.EditDestination, :edit` (from
+  admin/pickNewDestination.html, to change the final destination for a cargo booking)
+* `live "/cargos/id/:tracking_id/route/edit", CargoLive.EditRoute, :edit` (from
+  admin/selectItinerary.html, to re-route a cargo booking)
 * `live "/voyages", VoyageLive.Search, :index` (to list all voyages or voyages by ports)
-* `live "/voyages/new", VoyageLive.Index, :new` (to create a new voyage)
-
+* `live "/voyages/new", VoyageLive.New, :new` (to create a new voyage)
+* `live "/voyages/number/:voyage_number", VoyageLive.Show, :show` (to show information on
+  a voyage)
+* `live "/events", HandlingEventLive.Index, :all` (to list all recent handling events)
+* `live "/events/id/:tracking_id", HandlingEventLive.Index, :index` (to
+  list handling events for a cargo booking)
+* `live "/reports/new", HandlingReportLive.New, :new` (to file a cargo handling
+  report directly)
 
 ### Handling Report REST API web interface at /api
 

@@ -39,32 +39,36 @@
 
 <%= live_redirect "Change destination", to: Routes.cargo_edit_destination_path(@socket, :edit, @cargo), class: "button", type: "button" %>
 
+<%= if !is_nil(@cargo.itinerary) do %>
+
 <h2>Complete current itinerary</h2>
 
 <p>Last completed leg of itinerary is <span style="background-color: khaki;">highlighted</span>.</p>
 
 <%= if cargo_misrouted?(@cargo) do %>
-<ul>
-  <li>
-    <strong>Cargo is misrouted!</strong> The itinerary below does not match the currently selected
-    origin and destination.
-  </li>
-</ul>
+
+<p><strong>Cargo is misrouted!</strong><br>
+The itinerary below does not match the currently selected origin and destination.</p>
 
 <%= live_redirect "Select new route", to: Routes.cargo_edit_route_path(@socket, :edit, @cargo), class: "button", type: "button" %>
 <button type="button" phx-click="revert_destination"><%= "Change destination to #{location_name(@revert_destination)}" %></button>
 
 <% end %>
 
-<.show_itinerary socket={@socket} back_link_label={@back_link_label} back_link_path={@back_link_path}
+<.show_itinerary socket={@socket}
+  back_link_label={@back_link_label} back_link_path={@back_link_path}
   indexed_legs={@indexed_legs} selected_index={@selected_index} />
 
 <%= if !cargo_routed?(@cargo) do %>
-<ul>
-  <li>
-    <strong>Cargo has not been routed!</strong>
-  </li>
-</ul>
+
+<p><strong>Cargo has not been routed!</strong></p>
 <%= live_redirect "Select a route", to: Routes.cargo_edit_route_path(@socket, :edit, @cargo), class: "button", type: "button" %>
+
 <% end %>
 
+<% else %>
+
+<p><strong>No itinerary has been defined.</strong></p>
+<%= live_redirect "Select a route", to: Routes.cargo_edit_route_path(@socket, :edit, @cargo), class: "button", type: "button" %>
+
+<% end %>

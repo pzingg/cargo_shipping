@@ -50,7 +50,8 @@ defmodule CargoShippingWeb.CargoLive.ItineraryComponents do
       <p>This itinerary does not require a change of voyages from the current itinerary.</p>
       <% end %>
 
-      <.show_itinerary socket={@socket} back_link_label={@back_link_label} back_link_path={@back_link_path}
+      <.show_itinerary socket={@socket}
+        back_link_label={@back_link_label} back_link_path={@back_link_path}
         indexed_legs={@indexed_legs} selected_index={-1} />
 
       <div id="route-form-#{@index}">
