@@ -7,19 +7,6 @@ defmodule CargoShipping.Reports.HandlingReport do
 
   @event_type_values [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
-  @timestamps_opts [type: :utc_datetime]
-  schema "handling_reports" do
-    field :event_type, Ecto.Enum, values: @event_type_values
-    field :tracking_id, :string
-    field :voyage_number, :string
-    field :location, :string
-    field :completed_at, :utc_datetime
-
-    timestamps(inserted_at: :received_at, updated_at: false)
-  end
-
   defimpl String.Chars, for: HandlingReport do
     def to_string(handling_report) do
       voyage_number =
@@ -31,6 +18,19 @@ defmodule CargoShipping.Reports.HandlingReport do
 
       "#{handling_report.tracking_id} #{handling_report.event_type} at #{handling_report.location}#{voyage_number}"
     end
+  end
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+  @timestamps_opts [type: :utc_datetime]
+  schema "handling_reports" do
+    field :event_type, Ecto.Enum, values: @event_type_values
+    field :tracking_id, :string
+    field :voyage_number, :string
+    field :location, :string
+    field :completed_at, :utc_datetime
+
+    timestamps(inserted_at: :received_at, updated_at: false)
   end
 
   @doc false

@@ -14,6 +14,26 @@ defmodule CargoShipping.CargoBookings.RouteSpecification do
   alias CargoShipping.Locations
   alias __MODULE__
 
+  defimpl Phoenix.Param, for: RouteSpecification do
+    def to_param(route_specifcation) do
+      [
+        route_specifcation.origin,
+        route_specifcation.destination,
+        DateTime.to_unix(route_specifcation.earliest_departure, :millisecond)
+        |> Integer.to_string(),
+        DateTime.to_unix(route_specifcation.arrival_deadline, :millisecond)
+        |> Integer.to_string()
+      ]
+      |> Enum.join("|")
+    end
+  end
+
+  defimpl String.Chars, for: RouteSpecification do
+    def to_string(route_specification) do
+      "from #{route_specification.origin} to #{route_specification.destination}"
+    end
+  end
+
   @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
     field :origin, :string
@@ -22,10 +42,21 @@ defmodule CargoShipping.CargoBookings.RouteSpecification do
     field :arrival_deadline, :utc_datetime
   end
 
-  defimpl String.Chars, for: RouteSpecification do
-    def to_string(route_specification) do
-      "from #{route_specification.origin} to #{route_specification.destination}"
-    end
+  def decode_param(phoenix_param) do
+    [origin, destination, departure_millis, arrival_millis] = String.split(phoenix_param, "|")
+
+    {:ok, earliest_departure} =
+      String.to_integer(departure_millis) |> DateTime.from_unix(:millisecond)
+
+    {:ok, arrival_deadline} =
+      String.to_integer(arrival_millis) |> DateTime.from_unix(:millisecond)
+
+    %RouteSpecification{
+      origin: origin,
+      destination: destination,
+      earliest_departure: earliest_departure,
+      arrival_deadline: arrival_deadline
+    }
   end
 
   @doc false

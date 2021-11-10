@@ -8,7 +8,7 @@ defmodule CargoShipping.VoyagePlans.CarrierMovement do
 
   require Logger
 
-  alias CargoShipping.{LocationService, Utils}
+  alias CargoShipping.Utils
 
   @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
@@ -20,25 +20,6 @@ defmodule CargoShipping.VoyagePlans.CarrierMovement do
     field :arrival_time, :utc_datetime
     field :temp_id, :string, virtual: true
     field :delete, :boolean, virtual: true
-  end
-
-  def new_params(departure_location, departure_time, set_previous \\ false) do
-    params = %{
-      departure_location: departure_location,
-      departure_time: departure_time,
-      arrival_location: LocationService.other_than(departure_location),
-      arrival_time: DateTime.add(departure_time, 48 * 3600, :second)
-    }
-
-    if set_previous do
-      params
-      |> Map.merge(%{
-        previous_arrival_location: departure_location,
-        previous_arrival_time: departure_time
-      })
-    else
-      params
-    end
   end
 
   @doc false

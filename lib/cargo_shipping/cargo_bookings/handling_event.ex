@@ -26,22 +26,18 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
   alias __MODULE__
 
   @event_type_values [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
-
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
-  @timestamps_opts [type: :utc_datetime]
-  schema "handling_events" do
-    field :event_type, Ecto.Enum, values: @event_type_values
-    field :voyage_id, Ecto.UUID
-    field :location, :string
-    field :completed_at, :utc_datetime
-    field :voyage_number, :string, virtual: true
-    field :tracking_id, :string, virtual: true
-
-    belongs_to :cargo, Cargo
-
-    timestamps(inserted_at: :registered_at, updated_at: false)
-  end
+  @cast_fields [
+    :cargo_id,
+    :tracking_id,
+    :event_type,
+    :voyage_id,
+    :voyage_number,
+    :location,
+    :completed_at,
+    :registered_at
+  ]
+  @cargo_id_required_fields [:cargo_id, :event_type, :location, :completed_at]
+  @tracking_id_required_fields [:event_type, :location, :completed_at]
 
   defimpl String.Chars, for: HandlingEvent do
     def to_string(handling_event) do
@@ -58,18 +54,21 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
     end
   end
 
-  @cast_fields [
-    :cargo_id,
-    :tracking_id,
-    :event_type,
-    :voyage_id,
-    :voyage_number,
-    :location,
-    :completed_at,
-    :registered_at
-  ]
-  @cargo_id_required_fields [:cargo_id, :event_type, :location, :completed_at]
-  @tracking_id_required_fields [:event_type, :location, :completed_at]
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+  @timestamps_opts [type: :utc_datetime]
+  schema "handling_events" do
+    field :event_type, Ecto.Enum, values: @event_type_values
+    field :voyage_id, Ecto.UUID
+    field :location, :string
+    field :completed_at, :utc_datetime
+    field :voyage_number, :string, virtual: true
+    field :tracking_id, :string, virtual: true
+
+    belongs_to :cargo, Cargo
+
+    timestamps(inserted_at: :registered_at, updated_at: false)
+  end
 
   @doc false
   def changeset(attrs) do

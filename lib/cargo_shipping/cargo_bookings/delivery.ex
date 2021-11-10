@@ -19,23 +19,6 @@ defmodule CargoShipping.CargoBookings.Delivery do
   @routing_status_values [:NOT_ROUTED, :ROUTED, :MISROUTED]
   @last_event_type_values [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
   @eta_unknown nil
-
-  @primary_key false
-  embedded_schema do
-    field :transport_status, Ecto.Enum, values: @transport_status_values
-    field :routing_status, Ecto.Enum, values: @routing_status_values
-    field :current_voyage_id, Ecto.UUID
-    field :last_event_id, Ecto.UUID
-    field :last_known_location, :string
-    field :last_event_type, Ecto.Enum, values: @last_event_type_values
-    field :misdirected?, :boolean
-    field :unloaded_at_destination?, :boolean
-    field :eta, :utc_datetime
-    field :calculated_at, :utc_datetime
-
-    embeds_one :next_expected_activity, HandlingActivity, on_replace: :delete
-  end
-
   @cast_fields [
     :transport_status,
     :routing_status,
@@ -81,6 +64,22 @@ defmodule CargoShipping.CargoBookings.Delivery do
 
       "#{delivery.routing_status} #{delivery.transport_status}#{misdirect}#{location}"
     end
+  end
+
+  @primary_key false
+  embedded_schema do
+    field :transport_status, Ecto.Enum, values: @transport_status_values
+    field :routing_status, Ecto.Enum, values: @routing_status_values
+    field :current_voyage_id, Ecto.UUID
+    field :last_event_id, Ecto.UUID
+    field :last_known_location, :string
+    field :last_event_type, Ecto.Enum, values: @last_event_type_values
+    field :misdirected?, :boolean
+    field :unloaded_at_destination?, :boolean
+    field :eta, :utc_datetime
+    field :calculated_at, :utc_datetime
+
+    embeds_one :next_expected_activity, HandlingActivity, on_replace: :delete
   end
 
   def delivery_details(delivery) do
@@ -253,7 +252,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
     end
   end
 
-  defp calculate_misdirection_status(itinerary, nil, update_itinerary?), do: {itinerary, false}
+  defp calculate_misdirection_status(itinerary, nil, _update_itinerary?), do: {itinerary, false}
 
   defp calculate_misdirection_status(itinerary, last_event, update_itinerary?) do
     case Itinerary.matches_handling_event(itinerary, last_event, update_itinerary?) do

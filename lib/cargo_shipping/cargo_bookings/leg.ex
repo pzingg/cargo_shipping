@@ -14,18 +14,23 @@ defmodule CargoShipping.CargoBookings.Leg do
 
   @status_values [:NOT_LOADED, :ONBOARD_CARRIER, :SKIPPED, :COMPLETED, :IN_CUSTOMS, :CLAIMED]
   @completed_values [:SKIPPED, :COMPLETED, :IN_CUSTOMS, :CLAIMED]
-
-  @primary_key {:id, :binary_id, autogenerate: true}
-  embedded_schema do
-    field :status, Ecto.Enum, values: @status_values
-    field :voyage_id, Ecto.UUID
-    field :load_location, :string
-    field :unload_location, :string
-    field :actual_load_location, :string
-    field :actual_unload_location, :string
-    field :load_time, :utc_datetime
-    field :unload_time, :utc_datetime
-  end
+  @cast_fields [
+    :status,
+    :voyage_id,
+    :load_location,
+    :unload_location,
+    :actual_load_location,
+    :actual_unload_location,
+    :load_time,
+    :unload_time
+  ]
+  @required_fields [
+    :status,
+    :load_location,
+    :unload_location,
+    :load_time,
+    :unload_time
+  ]
 
   defimpl String.Chars, for: Leg do
     @doc """
@@ -54,24 +59,17 @@ defmodule CargoShipping.CargoBookings.Leg do
     end
   end
 
-  @cast_fields [
-    :status,
-    :voyage_id,
-    :load_location,
-    :unload_location,
-    :actual_load_location,
-    :actual_unload_location,
-    :load_time,
-    :unload_time
-  ]
-
-  @required_fields [
-    :status,
-    :load_location,
-    :unload_location,
-    :load_time,
-    :unload_time
-  ]
+  @primary_key {:id, :binary_id, autogenerate: true}
+  embedded_schema do
+    field :status, Ecto.Enum, values: @status_values
+    field :voyage_id, Ecto.UUID
+    field :load_location, :string
+    field :unload_location, :string
+    field :actual_load_location, :string
+    field :actual_unload_location, :string
+    field :load_time, :utc_datetime
+    field :unload_time, :utc_datetime
+  end
 
   @doc false
   def changeset(leg, attrs) do

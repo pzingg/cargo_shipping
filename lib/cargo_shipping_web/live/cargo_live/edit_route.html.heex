@@ -66,6 +66,9 @@ If a new route is selected below it will be applied from location
 
 <p><strong>No routes were found that satisfy the route specification.</strong><br>
 Try setting an arrival deadline futher into the future (a few weeks at least).</p>
+
+<%= live_redirect "Create a new voyage for this route", to: Routes.voyage_new_path(@socket, :new, route_specification: @remaining_route_spec) %>
+
 <%= live_redirect "Return to #{@tracking_id}", to: Routes.cargo_show_path(@socket, :show, @cargo) %>
 
 <% else %>

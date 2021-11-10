@@ -6,6 +6,7 @@ defmodule CargoShippingWeb.VoyageLive.New do
   import Ecto.Changeset, only: [get_change: 3, put_embed: 4]
 
   alias CargoShipping.{LocationService, Utils, VoyagePlans}
+  alias CargoShipping.CargoBookings.RouteSpecification
   alias CargoShipping.VoyagePlans.{CarrierMovement, Voyage}
   alias CargoShippingWeb.SharedComponents.Datepicker
 
@@ -15,10 +16,36 @@ defmodule CargoShippingWeb.VoyageLive.New do
   end
 
   @impl true
-  def handle_params(_params, _uri, socket) do
+  def handle_params(params, _uri, socket) do
     # Create an initial carrier movement
-    departure_location = LocationService.all_locodes() |> Enum.random()
-    item_changeset = new_item_changeset(departure_location, DateTime.utc_now(), nil)
+
+    item_params =
+      case Map.get(params, "route_specification") do
+        nil ->
+          # Create a carrier movement with a random departure and arrival
+          departure_location = LocationService.all_locodes() |> Enum.random()
+          departure_time = DateTime.utc_now()
+
+          %{
+            departure_location: departure_location,
+            departure_time: departure_time,
+            arrival_location: LocationService.other_than(departure_location),
+            arrival_time: DateTime.add(departure_time, 48 * 3600, :second)
+          }
+
+        encoded_route_specification ->
+          # Create a carrier movement that will satisfy the route specification
+          route_specification = RouteSpecification.decode_param(encoded_route_specification)
+
+          %{
+            departure_location: route_specification.origin,
+            departure_time: route_specification.earliest_departure,
+            arrival_location: route_specification.destination,
+            arrival_time: route_specification.arrival_deadline
+          }
+      end
+
+    item_changeset = new_item_changeset(item_params, nil)
 
     changeset =
       VoyagePlans.change_voyage(%Voyage{})
@@ -40,25 +67,30 @@ defmodule CargoShippingWeb.VoyageLive.New do
 
     last_item = List.last(existing_items)
 
-    {last_arrival_location, departure_time} =
+    {previous_arrival_location, previous_arrival_time} =
       case last_item do
         nil ->
           {nil, DateTime.utc_now()}
 
         last_changeset ->
           arrival_location = get_change(last_changeset, :arrival_location, nil)
-
-          arrival_time =
-            case get_change(last_changeset, :arrival_time, nil) do
-              nil -> DateTime.utc_now()
-              dt -> DateTime.add(dt, 18 * 3600, :second)
-            end
+          arrival_time = get_change(last_changeset, :arrival_time, DateTime.utc_now())
 
           {arrival_location, arrival_time}
       end
 
+    departure_time = DateTime.add(previous_arrival_time, 18 * 3600, :second)
+
     item_changeset =
-      new_item_changeset(last_arrival_location, departure_time, Utils.get_temp_id())
+      %{
+        previous_arrival_location: previous_arrival_location,
+        previous_arrival_time: previous_arrival_time,
+        departure_location: previous_arrival_location,
+        departure_time: departure_time,
+        arrival_location: LocationService.other_than(previous_arrival_location),
+        arrival_time: DateTime.add(departure_time, 48 * 3600, :second)
+      }
+      |> new_item_changeset(Utils.get_temp_id())
 
     changeset =
       socket.assigns.changeset
@@ -111,11 +143,9 @@ defmodule CargoShippingWeb.VoyageLive.New do
     end
   end
 
-  defp new_item_changeset(departure_location, departure_time, temp_id) do
-    item_params = CarrierMovement.new_params(departure_location, departure_time, !is_nil(temp_id))
-
+  defp new_item_changeset(params, temp_id) do
     %CarrierMovement{temp_id: temp_id}
-    |> VoyagePlans.change_carrier_movement(item_params)
+    |> VoyagePlans.change_carrier_movement(params)
   end
 
   # schedule_items is something like:
@@ -136,8 +166,8 @@ defmodule CargoShippingWeb.VoyageLive.New do
           if is_nil(previous_item) do
             item
           else
-            previous_arrival_location = Map.get(previous_item, "departure_location", nil)
-            previous_arrival_time = Map.get(previous_item, "departure_time", nil)
+            previous_arrival_location = Map.get(previous_item, "arrival_location", nil)
+            previous_arrival_time = Map.get(previous_item, "arrival_time", nil)
 
             item
             |> Map.put("previous_arrival_location", previous_arrival_location)
