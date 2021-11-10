@@ -22,13 +22,23 @@ defmodule CargoShipping.VoyagePlans.CarrierMovement do
     field :delete, :boolean, virtual: true
   end
 
-  def new_params(departure_location, departure_time) do
-    %{
+  def new_params(departure_location, departure_time, set_previous \\ false) do
+    params = %{
       departure_location: departure_location,
       departure_time: departure_time,
       arrival_location: LocationService.other_than(departure_location),
       arrival_time: DateTime.add(departure_time, 48 * 3600, :second)
     }
+
+    if set_previous do
+      params
+      |> Map.merge(%{
+        previous_arrival_location: departure_location,
+        previous_arrival_time: departure_time
+      })
+    else
+      params
+    end
   end
 
   @doc false

@@ -60,6 +60,8 @@
           <%= error_tag item_f, :arrival_time, force: true %>
         </td>
         <td>
+          <%= hidden_input item_f, :previous_arrival_location %>
+          <%= hidden_input item_f, :previous_arrival_time %>
           <%= if item_f.data.temp_id do %>
           <%= hidden_input item_f, :temp_id %>
           <a href="#" phx-click="remove-item" phx-value-remove={item_f.data.temp_id}>&times</a>
