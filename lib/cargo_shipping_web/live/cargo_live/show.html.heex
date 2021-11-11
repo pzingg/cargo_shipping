@@ -17,47 +17,36 @@
 
 <h1>Details for cargo <%= @cargo.tracking_id %></h1>
 
-<h2><%= cargo_transport_status(@cargo) %></h2>
+<h2>Current status</h2>
+<h3>Cargo <%= cargo_transport_status(@cargo) %></h3>
 
-<ul>
-  <li><strong>Origin:</strong>
-    <%= cargo_origin(@cargo) %>
-  </li>
-  <li><strong>Destination:</strong>
-    <%= cargo_destination(@cargo) %>
-  </li>
-  <li>
-    <strong>Arrival deadline at destination:</strong>
-    <%= event_time(@cargo.route_specification, :arrival_deadline) %>
-  </li>
-  <li><strong>Last known location:</strong>
-    <%= cargo_last_known_location(@cargo) %>
-  </li>
-</ul>
+<h2>Current routing</h2>
+
+<.show_route_specification cargo={@cargo} />
 
 <%= live_redirect "Handling history", to: Routes.handling_event_index_path(@socket, :index, @cargo), class: "button", type: "button" %>
-
 <%= live_redirect "Change destination", to: Routes.cargo_edit_destination_path(@socket, :edit, @cargo), class: "button", type: "button" %>
 
 <%= if !is_nil(@cargo.itinerary) do %>
 
-<h2>Complete current itinerary</h2>
+<hr>
+<h2>Current itinerary</h2>
 
-<p>Last completed leg of itinerary is <span style="background-color: khaki;">highlighted</span>.</p>
+<p>The last completed leg (if any) of the itinerary is <span style="background-color: khaki;">highlighted</span> below.</p>
+
+<.show_itinerary socket={@socket}
+  back_link_label={@back_link_label} back_link_path={@back_link_path}
+  indexed_legs={@indexed_legs} selected_index={@selected_index} />
 
 <%= if cargo_misrouted?(@cargo) do %>
 
 <p><strong>Cargo is misrouted!</strong><br>
-The itinerary below does not match the currently selected origin and destination.</p>
+The itinerary above does not match the currently selected origin and destination.</p>
 
 <%= live_redirect "Select new route", to: Routes.cargo_edit_route_path(@socket, :edit, @cargo), class: "button", type: "button" %>
 <button type="button" phx-click="revert_destination"><%= "Change destination to #{location_name(@revert_destination)}" %></button>
 
 <% end %>
-
-<.show_itinerary socket={@socket}
-  back_link_label={@back_link_label} back_link_path={@back_link_path}
-  indexed_legs={@indexed_legs} selected_index={@selected_index} />
 
 <%= if !cargo_routed?(@cargo) do %>
 

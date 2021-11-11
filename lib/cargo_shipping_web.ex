@@ -55,7 +55,8 @@ defmodule CargoShippingWeb do
     quote do
       use Phoenix.Component
 
-      unquote(view_helpers())
+      import Phoenix.LiveView.Helpers
+      import CargoShippingWeb.LiveHelpers
     end
   end
 
@@ -92,6 +93,7 @@ defmodule CargoShippingWeb do
       # Import LiveView and .heex helpers (live_render, live_patch, <.form>, etc)
       import Phoenix.LiveView.Helpers
       import CargoShippingWeb.LiveHelpers
+      import CargoShippingWeb.SharedComponents
       import CargoShippingWeb.SharedComponents.DatepickerHelpers
 
       # Import basic rendering functionality (render, render_layout, etc)

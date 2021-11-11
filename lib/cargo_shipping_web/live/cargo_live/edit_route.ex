@@ -2,7 +2,6 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
   use CargoShippingWeb, :live_view
 
   alias CargoShipping.{CargoBookings, CargoBookingService}
-  import CargoShippingWeb.CargoLive.ItineraryComponents
 
   @impl true
   def mount(_params, _session, socket) do

@@ -18,8 +18,9 @@ defmodule CargoShippingWeb.CargoLive.Search do
        header: title,
        page_title: title,
        cargo: nil,
-       handling_events: [],
        tracking_id: "",
+       handling_events: [],
+       indexed_legs: [],
        matches: [],
        loading: false
      )}
@@ -58,8 +59,21 @@ defmodule CargoShippingWeb.CargoLive.Search do
         {:noreply, socket}
 
       cargo ->
+        indexed_legs =
+          if is_nil(cargo.itinerary) do
+            []
+          else
+            Enum.with_index(cargo.itinerary.legs)
+          end
+
         socket =
-          assign(socket, cargo: cargo, handling_events: cargo.handling_events, loading: false)
+          assign(socket,
+            cargo: cargo,
+            tracking_id: tracking_id,
+            handling_events: cargo.handling_events,
+            indexed_legs: indexed_legs,
+            loading: false
+          )
 
         {:noreply, socket}
     end

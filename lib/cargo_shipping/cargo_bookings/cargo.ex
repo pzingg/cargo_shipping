@@ -82,8 +82,8 @@ defmodule CargoShipping.CargoBookings.Cargo do
     cargo
     |> cast(attrs, [:tracking_id, :origin])
     |> validate_required([:tracking_id])
-    |> validate_format(:tracking_id, ~r/^[A-Z]{3,}[0-9]{3,}$/,
-      message: "should be at least 3 uppercase letters followed by at least 3 digits"
+    |> validate_format(:tracking_id, ~r/^[A-Z]{3,}[0-9]{0,6}$/,
+      message: "should be at least 3 uppercase letters, optionally followed by up to 6 digits"
     )
     |> unique_constraint(:tracking_id)
     |> cast_embed(:route_specification, with: &RouteSpecification.changeset/2)

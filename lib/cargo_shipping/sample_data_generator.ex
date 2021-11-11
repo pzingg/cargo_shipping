@@ -588,8 +588,8 @@ defmodule CargoShipping.SampleDataGenerator do
     )
     |> VoyageBuilder.add_destination(
       "USNYC",
-      ~U[2008-10-14 12:00:00Z],
-      ~U[2008-10-13 23:10:00Z]
+      ~U[2008-10-13 12:00:00Z],
+      ~U[2008-10-14 23:10:00Z]
     )
     |> VoyageBuilder.build()
   end
@@ -608,7 +608,7 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.add_destination(
       "USDAL",
       ~U[2008-10-24 21:25:00Z],
-      ~U[2008-10-15 19:30:00Z]
+      ~U[2008-10-25 19:30:00Z]
     )
     |> VoyageBuilder.build()
   end

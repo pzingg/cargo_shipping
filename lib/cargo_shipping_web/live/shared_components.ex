@@ -1,13 +1,35 @@
-defmodule CargoShippingWeb.CargoLive.ItineraryComponents do
+defmodule CargoShippingWeb.SharedComponents do
   @moduledoc """
   Components for displaying and selecting itineraries.
   """
   use CargoShippingWeb, :component
 
-  import CargoShippingWeb.LiveHelpers
+  @doc """
+  Required assigns: :cargo
+  """
+  def show_route_specification(assigns) do
+    ~H"""
+    <table>
+      <thead>
+        <th>Origin</th>
+        <th>Destination</th>
+        <th>Arrival deadline</th>
+        <th>Last location</th>
+      </thead>
+      <tbody>
+        <tr>
+          <td><%= cargo_origin(@cargo) %></td>
+          <td><%= cargo_destination(@cargo) %></td>
+          <td><%= event_time(@cargo.route_specification, :arrival_deadline) %></td>
+          <td><%= cargo_last_known_location(@cargo) %></td>
+        </tr>
+      </tbody>
+    </table>
+    """
+  end
 
   @doc """
-  Required assign: :socket, :back_link_label, :back_link_path, :indexed_legs, :selected_index
+  Required assigns: :socket, :back_link_label, :back_link_path, :indexed_legs, :selected_index
   """
   def show_itinerary(assigns) do
     ~H"""
@@ -26,7 +48,11 @@ defmodule CargoShippingWeb.CargoLive.ItineraryComponents do
         <%= for {leg, i} <- @indexed_legs do %>
           <tr class={class_highlight(i == @selected_index)} id={"leg-#{leg.load_location}-#{leg.unload_location}"}>
             <td><%= leg.status %></td>
+            <%= if @back_link_path do %>
             <td><%= voyage_link_for(leg, @socket, @back_link_label, @back_link_path) %></td>
+            <% else %>
+            <td><%= voyage_number_for(leg) %></td>
+            <% end %>
             <td><%= location_name(leg.load_location) %></td>
             <td><%= event_time(leg, :load_time) %></td>
             <td><%= location_name(leg.unload_location) %></td>

@@ -37,11 +37,13 @@
 </form>
 
 <%= if @cargo do %>
-<h2><%= cargo_transport_status(@cargo) %></h2>
+
+<h2>Current status</h2>
+<h3>Cargo <%= cargo_transport_status(@cargo) %></h3>
 
 <ul>
   <li><strong>Estimated time of arrival in <%= cargo_destination(@cargo) %>:</strong>
-    <%= event_time(@cargo.delivery, :eta) %>
+    <%= event_time(@cargo.delivery, :eta, oneline: true) %>
   </li>
   <li><strong>Next expected activity:</strong>
     <%= cargo_next_expected_activity(@cargo) %>
@@ -51,32 +53,24 @@
   <% end %>
 </ul>
 
-<h2>Itinerary</h2>
-<table>
-  <thead>
-    <tr>
-      <th>Voyage</th>
-      <th>Load in</th>
-      <th>Date</th>
-      <th>Unload in</th>
-      <th>Date</th>
-    </tr>
-  </thead>
-  <tbody id="itinerary-legs">
-    <%= for leg <- @cargo.itinerary.legs do %>
-      <tr id={"leg-#{leg.load_location}-#{leg.unload_location}"}>
-        <td><%= voyage_number_for(leg) %></td>
-        <td><%= location_name(leg.load_location) %></td>
-        <td><%= event_time(leg, :load_time) %></td>
-        <td><%= location_name(leg.unload_location) %></td>
-        <td><%= event_time(leg, :unload_time) %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+<hr>
+<h2>Current itinerary</h2>
+
+<%= if !is_nil(@cargo.itinerary) do %>
+
+<.show_itinerary back_link_path={nil} indexed_legs={@indexed_legs} selected_index={-1} />
+
+<% else %>
+
+<p><strong>No itinerary has been defined.</strong></p>
+
+<% end %>
+
 <% end %>
 
 <%= if !Enum.empty?(@handling_events) do %>
+
+<hr>
 <h2>Handling history</h2>
 <table>
   <thead>
@@ -96,4 +90,5 @@
     <% end %>
   </tbody>
 </table>
+
 <% end %>

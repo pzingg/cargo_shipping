@@ -3,7 +3,6 @@ defmodule CargoShippingWeb.CargoLive.Show do
 
   alias CargoShipping.CargoBookings
   alias CargoShipping.CargoBookings.Itinerary
-  import CargoShippingWeb.CargoLive.ItineraryComponents
 
   @impl true
   def mount(_params, _session, socket) do

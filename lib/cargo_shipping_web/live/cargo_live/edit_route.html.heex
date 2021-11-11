@@ -4,7 +4,7 @@
     <ul>
       <%= if @route_candidates do %>
       <li>
-        <%= live_redirect "Cancel edits and return to #{@tracking_id}", to: Routes.cargo_show_path(@socket, :show, @cargo) %>
+        <%= live_redirect "Cancel edits and return to cargo #{@tracking_id}", to: Routes.cargo_show_path(@socket, :show, @cargo) %>
       </li>
       <% end %>
       <li>
@@ -21,18 +21,7 @@
 
 <h2>Current routing for <%= @tracking_id %></h2>
 
-<ul>
-  <li><strong>Origin:</strong>
-    <%= cargo_origin(@cargo) %>
-  </li>
-  <li><strong>Destination:</strong>
-    <%= cargo_destination(@cargo) %>
-  </li>
-  <li>
-    <strong>Arrival deadline:</strong>
-    <%= event_time(@cargo.route_specification, :arrival_deadline) %>
-  </li>
-</ul>
+<.show_route_specification cargo={@cargo} />
 
 <%= if @completed_legs == [] do %>
 
@@ -65,21 +54,30 @@ If a new route is selected below it will be applied from location
 <%= if @route_candidates == [] do %>
 
 <p><strong>No routes were found that satisfy the route specification.</strong><br>
-Try setting an arrival deadline futher into the future (a few weeks at least).</p>
-
-<%= live_redirect "Create a new voyage for this route", to: Routes.voyage_new_path(@socket, :new, route_specification: @remaining_route_spec) %>
-
-<%= live_redirect "Return to #{@tracking_id}", to: Routes.cargo_show_path(@socket, :show, @cargo) %>
+Suggestions:</p>
+<ol>
+  <li>
+    On the <%= live_redirect "Edit destination", to: Routes.cargo_edit_destination_path(@socket, :edit, @cargo) %>
+    page, set an arrival deadline further into the future (a few weeks at least)
+    and then return to this page.
+  </li>
+  <li>
+    <%= live_redirect "Create a new voyage for this route", to: Routes.voyage_new_path(@socket, :new, route_specification: @remaining_route_spec) %>
+    and then return to this page after the voyage has been created.
+  </li>
+</ol>
 
 <% else %>
 
-<p>Select a new route from these candidates:</p>
+<p>Select a new route from one of these itineraries:</p>
 
 <%= for candidate <- @route_candidates do %>
+  <hr>
   <.select_itinerary_form socket={@socket}
     back_link_label={@back_link_label} back_link_path={@back_link_path}
     title={candidate.title} index={candidate.index}
     is_internal={candidate.is_internal}
     indexed_legs={candidate.indexed_legs} />
 <% end %>
+
 <% end %>

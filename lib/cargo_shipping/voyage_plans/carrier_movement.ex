@@ -67,7 +67,7 @@ defmodule CargoShipping.VoyagePlans.CarrierMovement do
     departure_time = get_change(changeset, :departure_time)
 
     if is_nil(previous_arrival_time) || is_nil(departure_time) ||
-         previous_arrival_time <= departure_time do
+         DateTime.compare(departure_time, previous_arrival_time) == :gt do
       changeset
     else
       add_error(changeset, :departure_time, "should be later than previous arrival time")
@@ -90,7 +90,8 @@ defmodule CargoShipping.VoyagePlans.CarrierMovement do
     departure_time = get_change(changeset, :departure_time)
     arrival_time = get_change(changeset, :arrival_time)
 
-    if is_nil(departure_time) || is_nil(arrival_time) || departure_time <= arrival_time do
+    if is_nil(departure_time) || is_nil(arrival_time) ||
+         DateTime.compare(arrival_time, departure_time) == :gt do
       changeset
     else
       add_error(changeset, :arrival_time, "should be later than departure time")

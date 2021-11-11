@@ -454,7 +454,7 @@ defmodule CargoShipping.CargoBookings do
   Returns true if the Cargo's Itinerary is expecting the HandlingEvent.
   """
   def handling_event_expected(cargo, handling_event) do
-    case Itinerary.matches_handling_event(cargo.itinerary, handling_event, false) do
+    case Itinerary.matches_handling_event(cargo.itinerary, handling_event, ignore_completion: true) do
       {:error, message, _updated_itinerary} ->
         Logger.error(message)
         {:error, message}

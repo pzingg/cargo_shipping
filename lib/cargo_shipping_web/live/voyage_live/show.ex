@@ -1,10 +1,6 @@
 defmodule CargoShippingWeb.VoyageLive.Show do
   use CargoShippingWeb, :live_view
 
-  import CargoShippingWeb.CargoLive.ItineraryComponents
-
-  require Logger
-
   alias CargoShipping.VoyagePlans
 
   @impl true
@@ -21,8 +17,6 @@ defmodule CargoShippingWeb.VoyageLive.Show do
         {label, path} when is_binary(label) and is_binary(path) -> {label, path}
         _ -> {"All voyages", Routes.voyage_index_path(socket, :index)}
       end
-
-    Logger.error("voyage.show #{inspect(params)}")
 
     {:noreply,
      socket

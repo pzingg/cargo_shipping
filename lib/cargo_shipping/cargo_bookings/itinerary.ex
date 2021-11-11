@@ -332,7 +332,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
   @doc """
   Test if the given handling event is expected when executing this itinerary.
   """
-  def matches_handling_event(itinerary, handling_event, update_itinerary?) do
+  def matches_handling_event(itinerary, handling_event, opts \\ []) do
     cond do
       is_nil(itinerary) ->
         {:error, "no itinerary", nil}
@@ -359,35 +359,49 @@ defmodule CargoShipping.CargoBookings.Itinerary do
               {:last, nil, :UNLOAD, :CLAIMED}
           end
 
-        {before, leg, rest} = split_for_scope(itinerary, scope, leg_location)
+        ignore_completion = Keyword.get(opts, :ignore_completion, false)
 
-        {voyage_matched?, location_matched?} =
-          case leg_location do
-            :LOAD ->
-              cond do
-                is_nil(leg) || (!is_nil(voyage_id) && voyage_id != leg.voyage_id) ->
-                  {false, false}
+        real_scope =
+          if scope == :first_uncompleted && ignore_completion do
+            :any
+          else
+            scope
+          end
 
-                handling_event.location != leg.load_location &&
-                    handling_event.location != leg.actual_load_location ->
-                  {true, false}
+        {before, leg, rest, voyage_matched?, location_matched?} =
+          if real_scope == :any do
+            count = Enum.count(itinerary.legs)
 
-                true ->
-                  {true, true}
-              end
+            {voyage_match, location_match} =
+              Enum.reduce_while(0..(count - 1), {-1, -1}, fn i, {vm_i, lc_i} ->
+                leg = Enum.at(itinerary.legs, i)
 
-            :UNLOAD ->
-              cond do
-                is_nil(leg) || (!is_nil(voyage_id) && voyage_id != leg.voyage_id) ->
-                  {false, false}
+                case test_event(leg_location, leg, voyage_id, handling_event.location) do
+                  {true, true} ->
+                    {:halt, {i, i}}
 
-                handling_event.location != leg.unload_location &&
-                    handling_event.location != leg.actual_unload_location ->
-                  {true, false}
+                  {true, false} ->
+                    {:cont, {i, lc_i}}
 
-                true ->
-                  {true, true}
-              end
+                  _ ->
+                    {:cont, {vm_i, lc_i}}
+                end
+              end)
+
+            if location_match >= 0 do
+              {b, l, r} = split_at(itinerary, location_match)
+              {b, l, r, true, true}
+            else
+              {b, l, r} = split_at(itinerary, voyage_match)
+              {b, l, r, voyage_match >= 0, false}
+            end
+          else
+            {b, l, r} = split_for_scope(itinerary, scope)
+
+            {voyage_match, location_match} =
+              test_event(leg_location, l, voyage_id, handling_event.location)
+
+            {b, l, r, voyage_match, location_match}
           end
 
         voyage_number =
@@ -399,19 +413,51 @@ defmodule CargoShipping.CargoBookings.Itinerary do
         error_message =
           "no match for #{handling_event.event_type} at #{handling_event.location}#{voyage_number} (scope: #{scope})"
 
-        if voyage_matched? && update_itinerary? do
-          updated_leg = update_leg(leg, leg_location, next_status, handling_event)
+        itinerary_to_return =
+          if voyage_matched? && Keyword.get(opts, :update_itinerary, false) do
+            updated_leg = update_leg(leg, leg_location, next_status, handling_event)
 
-          updated_itinerary = build_update(before, updated_leg, rest)
-          Itinerary.debug_itinerary(updated_itinerary, "updated_itinerary")
-
-          if location_matched? do
-            {:ok, updated_itinerary}
+            updated_itinerary = build_update(before, updated_leg, rest)
+            Itinerary.debug_itinerary(updated_itinerary, "updated_itinerary")
+            updated_itinerary
           else
-            {:error, error_message, updated_itinerary}
+            itinerary
           end
+
+        if location_matched? do
+          {:ok, itinerary_to_return}
         else
-          {:error, error_message, itinerary}
+          {:error, error_message, itinerary_to_return}
+        end
+    end
+  end
+
+  defp test_event(leg_location, leg, voyage_id, handling_event_location) do
+    case leg_location do
+      :LOAD ->
+        cond do
+          is_nil(leg) || (!is_nil(voyage_id) && voyage_id != leg.voyage_id) ->
+            {false, false}
+
+          handling_event_location != leg.load_location &&
+              handling_event_location != leg.actual_load_location ->
+            {true, false}
+
+          true ->
+            {true, true}
+        end
+
+      :UNLOAD ->
+        cond do
+          is_nil(leg) || (!is_nil(voyage_id) && voyage_id != leg.voyage_id) ->
+            {false, false}
+
+          handling_event_location != leg.unload_location &&
+              handling_event_location != leg.actual_unload_location ->
+            {true, false}
+
+          true ->
+            {true, true}
         end
     end
   end
@@ -450,15 +496,19 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
   defp do_split([a | rest]), do: {a, rest}
 
-  def split_for_scope(nil, _scope, _leg_location), do: {[], nil, []}
+  def split_at(%{legs: legs}, position) do
+    {before, current} = Enum.split(legs, max(0, position))
+    {leg, rest} = do_split(current)
+    {before, leg, rest}
+  end
 
-  def split_for_scope(%{legs: []}, _scope, _leg_location), do: {[], nil, []}
+  def split_for_scope(%{legs: []}, _scope), do: {[], nil, []}
 
-  def split_for_scope(%{legs: [leg | rest]}, :first, _) do
+  def split_for_scope(%{legs: [leg | rest]}, :first) do
     {[], leg, rest}
   end
 
-  def split_for_scope(%{legs: legs}, :last, _) do
+  def split_for_scope(%{legs: legs}, :last) do
     count = Enum.count(legs)
 
     if count < 2 do
@@ -470,7 +520,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     end
   end
 
-  def split_for_scope(%{legs: legs} = itinerary, :first_uncompleted, _) do
+  def split_for_scope(%{legs: legs} = itinerary, :first_uncompleted) do
     index = first_uncompleted_index(itinerary)
 
     {before, [leg | rest]} = Enum.split(legs, index)

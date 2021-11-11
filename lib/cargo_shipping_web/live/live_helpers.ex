@@ -127,10 +127,17 @@ defmodule CargoShippingWeb.LiveHelpers do
     |> Enum.sort()
   end
 
-  def event_time(map, key, default \\ "") do
+  def event_time(map, key, opts \\ []) do
     case Map.get(map, key) do
-      nil -> default
-      dt -> Timex.format!(dt, "%a %b %d, %Y %H:%M", :strftime)
+      nil ->
+        ""
+
+      dt ->
+        if Keyword.get(opts, :oneline, false) do
+          Timex.format!(dt, "%a %b %d, %Y %H:%M GMT", :strftime)
+        else
+          Timex.format!(dt, "%H:%M GMT<br>%a %b %d, %Y", :strftime) |> Phoenix.HTML.raw()
+        end
     end
   end
 
@@ -222,7 +229,7 @@ defmodule CargoShippingWeb.LiveHelpers do
 
   def voyage_number_for(leg_or_event) do
     case leg_or_event.voyage_id do
-      nil -> ""
+      nil -> "(Missing)"
       voyage_id -> VoyageService.get_voyage_number_for_id(voyage_id)
     end
   end

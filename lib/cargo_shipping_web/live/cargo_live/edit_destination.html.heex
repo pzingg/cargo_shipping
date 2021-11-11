@@ -3,7 +3,7 @@
     <h2>Navigation</h2>
     <ul>
       <li>
-        <%= live_redirect "Cancel edits and return to #{@tracking_id}", to: Routes.cargo_show_path(@socket, :show, @cargo) %>
+        <%= live_redirect "Cancel edits and return to cargo #{@tracking_id}", to: Routes.cargo_show_path(@socket, :show, @cargo) %>
       </li>
       <li>
         <%= link "Managers page", to: "/managers" %>
@@ -17,20 +17,9 @@
 
 <h1><%= @page_title %></h1>
 
-<h2>Current routing for <%= @tracking_id %></h2>
+<h2>Current routing</h2>
 
-<ul>
-  <li><strong>Origin:</strong>
-    <%= cargo_origin(@cargo) %>
-  </li>
-  <li><strong>Destination:</strong>
-    <%= cargo_destination(@cargo) %>
-  </li>
-  <li>
-    <strong>Arrival deadline:</strong>
-    <%= event_time(@cargo.route_specification, :arrival_deadline) %>
-  </li>
-</ul>
+<.show_route_specification cargo={@cargo} />
 
 <div>
   <.form
