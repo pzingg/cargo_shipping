@@ -1,4 +1,4 @@
-defmodule CargoShippingWeb.SharedComponents.Bulletin do
+defmodule CargoShippingSchemas.Bulletin do
   @moduledoc """
   Support "toasty" messages.
   """

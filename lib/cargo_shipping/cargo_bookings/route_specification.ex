@@ -5,58 +5,42 @@ defmodule CargoShipping.CargoBookings.RouteSpecification do
   A RouteSpecification describes where a cargo origin and destination is,
   and the arrival deadline.
   """
-  use Ecto.Schema
-
   import Ecto.Changeset
 
   require Logger
 
   alias CargoShipping.Locations
-  alias __MODULE__
 
-  defimpl Phoenix.Param, for: RouteSpecification do
-    def to_param(route_specifcation) do
-      [
-        route_specifcation.origin,
-        route_specifcation.destination,
-        DateTime.to_unix(route_specifcation.earliest_departure, :millisecond)
-        |> Integer.to_string(),
-        DateTime.to_unix(route_specifcation.arrival_deadline, :millisecond)
-        |> Integer.to_string()
-      ]
-      |> Enum.join("|")
-    end
-  end
+  defimpl String.Chars, for: CargoShippingSchemas.RouteSpecification do
+    use Boundary, classify_to: CargoShipping
 
-  defimpl String.Chars, for: RouteSpecification do
     def to_string(route_specification) do
-      "from #{route_specification.origin} to #{route_specification.destination}"
+      CargoShipping.CargoBookings.RouteSpecification.string_from(route_specification)
     end
   end
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  embedded_schema do
-    field :origin, :string
-    field :destination, :string
-    field :earliest_departure, :utc_datetime
-    field :arrival_deadline, :utc_datetime
+  defimpl Phoenix.Param, for: CargoShippingSchemas.RouteSpecification do
+    use Boundary, classify_to: CargoShippingWeb
+
+    def to_param(route_specification) do
+      CargoShipping.CargoBookings.RouteSpecification.phoenix_param_from(route_specification)
+    end
   end
 
-  def decode_param(phoenix_param) do
-    [origin, destination, departure_millis, arrival_millis] = String.split(phoenix_param, "|")
+  def string_from(route_specification) do
+    "from #{route_specification.origin} to #{route_specification.destination}"
+  end
 
-    {:ok, earliest_departure} =
-      String.to_integer(departure_millis) |> DateTime.from_unix(:millisecond)
-
-    {:ok, arrival_deadline} =
-      String.to_integer(arrival_millis) |> DateTime.from_unix(:millisecond)
-
-    %RouteSpecification{
-      origin: origin,
-      destination: destination,
-      earliest_departure: earliest_departure,
-      arrival_deadline: arrival_deadline
-    }
+  def phoenix_param_from(route_specifcation) do
+    [
+      route_specifcation.origin,
+      route_specifcation.destination,
+      DateTime.to_unix(route_specifcation.earliest_departure, :millisecond)
+      |> Integer.to_string(),
+      DateTime.to_unix(route_specifcation.arrival_deadline, :millisecond)
+      |> Integer.to_string()
+    ]
+    |> Enum.join("|")
   end
 
   @doc false
@@ -79,6 +63,6 @@ defmodule CargoShipping.CargoBookings.RouteSpecification do
 
   def debug_route_specification(route_specification, title \\ "route") do
     Logger.debug(title)
-    Logger.debug("  #{to_string(route_specification)}")
+    Logger.debug("  #{string_from(route_specification)}")
   end
 end

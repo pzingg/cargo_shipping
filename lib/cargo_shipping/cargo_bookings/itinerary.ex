@@ -4,23 +4,16 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
   An Itinerary consists of one or more Legs.
   """
-  use Ecto.Schema
-
   import Ecto.Changeset
 
   require Logger
 
   alias CargoShipping.{VoyageService, Utils}
-  alias CargoShipping.CargoBookings.{Leg, RouteSpecification}
-  alias __MODULE__
+  alias CargoShipping.CargoBookings.Leg
+  alias CargoShippingSchemas.{Itinerary, RouteSpecification}
 
   @start_of_days ~U[2000-01-01 00:00:00Z]
   @end_of_days ~U[2049-12-31 23:59:59Z]
-
-  @primary_key {:id, :binary_id, autogenerate: true}
-  embedded_schema do
-    embeds_many :legs, Leg, on_replace: :delete
-  end
 
   def new(legs) do
     %Itinerary{}
@@ -280,7 +273,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
         matched_leg ->
           # Done, the matched leg does it all.
-          {:halt, Utils.from_struct([matched_leg]) |> Itinerary.new()}
+          {:halt, Utils.from_struct([matched_leg]) |> new()}
       end
     end)
   end
@@ -311,14 +304,14 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
       matched_leg ->
         # Done, append remaining legs to the solution.
-        Utils.from_struct([matched_leg | remaining_legs]) |> Itinerary.new()
+        Utils.from_struct([matched_leg | remaining_legs]) |> new()
     end
   end
 
   def itinerary_for_voyage(voyage_id, route_specification) do
     case single_leg_for_voyage(voyage_id, route_specification) do
       nil -> nil
-      leg -> List.wrap(leg) |> Itinerary.new()
+      leg -> List.wrap(leg) |> new()
     end
   end
 
@@ -418,7 +411,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
             updated_leg = update_leg(leg, leg_location, next_status, handling_event)
 
             updated_itinerary = build_update(before, updated_leg, rest)
-            Itinerary.debug_itinerary(updated_itinerary, "updated_itinerary")
+            debug_itinerary(updated_itinerary, "updated_itinerary")
             updated_itinerary
           else
             itinerary
@@ -543,6 +536,6 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
   # Note: leg may NOT have status set (equivalent to :NOT_LOADED).
   defp debug_leg(leg) do
-    Logger.debug("  #{to_string(leg)}")
+    Logger.debug("  #{Leg.string_from(leg)}")
   end
 end

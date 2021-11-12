@@ -8,11 +8,10 @@ defmodule CargoShipping.CargoBookings.Leg do
 
   import Ecto.Changeset
 
-  alias CargoShipping.CargoBookings.RouteSpecification
   alias CargoShipping.VoyageService
-  alias __MODULE__
+  alias CargoShippingSchemas.Leg
+  alias CargoShippingSchemas.RouteSpecification
 
-  @status_values [:NOT_LOADED, :ONBOARD_CARRIER, :SKIPPED, :COMPLETED, :IN_CUSTOMS, :CLAIMED]
   @completed_values [:SKIPPED, :COMPLETED, :IN_CUSTOMS, :CLAIMED]
   @cast_fields [
     :status,
@@ -32,43 +31,37 @@ defmodule CargoShipping.CargoBookings.Leg do
     :unload_time
   ]
 
-  defimpl String.Chars, for: Leg do
-    @doc """
-    :actual_load_location, :actual_unload_location may be missing
-    """
+  defimpl String.Chars, for: CargoShippingSchemas.Leg do
+    use Boundary, classify_to: CargoShipping
+
     def to_string(leg) do
-      voyage_number =
-        VoyageService.get_voyage_number_for_id(leg.voyage_id)
-        |> String.pad_trailing(6)
-
-      status = Map.get(leg, :status, :NOT_LOADED)
-
-      load_location =
-        case Map.get(leg, :actual_load_location) do
-          nil -> leg.load_location
-          location -> "#{location} (ACTUAL)"
-        end
-
-      unload_location =
-        case Map.get(leg, :actual_unload_location) do
-          nil -> leg.unload_location
-          location -> "#{location} (ACTUAL)"
-        end
-
-      "on voyage #{voyage_number} from #{load_location} to #{unload_location} - #{status}"
+      CargoShipping.CargoBookings.Leg.string_from(leg)
     end
   end
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  embedded_schema do
-    field :status, Ecto.Enum, values: @status_values
-    field :voyage_id, Ecto.UUID
-    field :load_location, :string
-    field :unload_location, :string
-    field :actual_load_location, :string
-    field :actual_unload_location, :string
-    field :load_time, :utc_datetime
-    field :unload_time, :utc_datetime
+  @doc """
+  :actual_load_location, :actual_unload_location may be missing
+  """
+  def string_from(leg) do
+    voyage_number =
+      VoyageService.get_voyage_number_for_id(leg.voyage_id)
+      |> String.pad_trailing(6)
+
+    status = Map.get(leg, :status, :NOT_LOADED)
+
+    load_location =
+      case Map.get(leg, :actual_load_location) do
+        nil -> leg.load_location
+        location -> "#{location} (ACTUAL)"
+      end
+
+    unload_location =
+      case Map.get(leg, :actual_unload_location) do
+        nil -> leg.unload_location
+        location -> "#{location} (ACTUAL)"
+      end
+
+    "on voyage #{voyage_number} from #{load_location} to #{unload_location} - #{status}"
   end
 
   @doc false
@@ -76,7 +69,7 @@ defmodule CargoShipping.CargoBookings.Leg do
     leg
     |> cast(attrs, @cast_fields)
     |> validate_required(@required_fields)
-    |> validate_inclusion(:status, @status_values)
+    |> validate_inclusion(:status, Leg.status_values())
     |> validate_voyage_item()
   end
 

@@ -5,22 +5,9 @@ defmodule CargoShipping.VoyagePlans.Voyage do
   are treated as a unit for the purgpose of data changes. External references are
   restricted to one member of the AGGREGATE, designated as the root.
   """
-  use Ecto.Schema
-
   import Ecto.Changeset
 
   alias CargoShipping.VoyagePlans.CarrierMovement
-
-  @derive {Phoenix.Param, key: :voyage_number}
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
-  @timestamps_opts [type: :utc_datetime]
-  schema "voyages" do
-    field :voyage_number, :string
-    embeds_many :schedule_items, CarrierMovement, on_replace: :delete
-
-    timestamps()
-  end
 
   @doc false
   def changeset(voyage, attrs) do

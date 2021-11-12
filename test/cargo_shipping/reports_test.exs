@@ -5,6 +5,7 @@ defmodule CargoShipping.ReportsTest do
 
   describe "handling_reports" do
     alias CargoShipping.Reports.HandlingReport
+    alias CargoShippingSchemas.HandlingReport, as: HandlingReport_
 
     import CargoShipping.ReportsFixtures
 
@@ -38,7 +39,7 @@ defmodule CargoShipping.ReportsTest do
         voyage_number: voyage_number
       }
 
-      assert {:ok, %HandlingReport{} = handling_report} =
+      assert {:ok, %HandlingReport_{} = handling_report} =
                Reports.create_handling_report(valid_attrs)
 
       Process.sleep(100)
@@ -57,7 +58,7 @@ defmodule CargoShipping.ReportsTest do
 
     test "delete_handling_report/1 deletes the handling_report" do
       handling_report = handling_report_fixture()
-      assert {:ok, %HandlingReport{}} = Reports.delete_handling_report(handling_report)
+      assert {:ok, %HandlingReport_{}} = Reports.delete_handling_report(handling_report)
       assert_raise Ecto.NoResultsError, fn -> Reports.get_handling_report!(handling_report.id) end
     end
   end

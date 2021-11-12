@@ -2,7 +2,7 @@ defmodule CargoShippingWeb.CargoLive.New do
   use CargoShippingWeb, :live_view
 
   alias CargoShipping.{CargoBookings, LocationService}
-  alias CargoShipping.CargoBookings.Cargo
+  alias CargoShippingSchemas.Cargo
   alias CargoShippingWeb.SharedComponents.Datepicker
 
   @impl true

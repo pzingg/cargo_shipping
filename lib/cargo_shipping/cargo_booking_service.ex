@@ -3,7 +3,7 @@ defmodule CargoShipping.CargoBookingService do
   require Logger
 
   alias CargoShipping.{CargoBookings, RoutingService}
-  alias CargoShipping.CargoBookings.{Cargo, Delivery, Itinerary}
+  alias CargoShipping.CargoBookings.{Delivery, Itinerary}
 
   @doc false
   def book_new_cargo(origin, destination, arrival_deadline, earliest_departure \\ nil) do
@@ -74,7 +74,7 @@ defmodule CargoShipping.CargoBookingService do
     |> possible_routes_for_cargo()
   end
 
-  def possible_routes_for_cargo(%Cargo{} = cargo) do
+  def possible_routes_for_cargo(%CargoShippingSchemas.Cargo{} = cargo) do
     {remaining_route_spec, completed_legs, has_new_origin?, patch_uncompleted_leg?} =
       CargoBookings.get_remaining_route_specification(cargo)
 

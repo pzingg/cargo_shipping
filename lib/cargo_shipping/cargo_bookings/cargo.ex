@@ -35,28 +35,10 @@ defmodule CargoShipping.CargoBookings.Cargo do
   or not a cargo is misdirected, what the current status of the cargo is (on board carrier,
   in port etc), are captured in this aggregate.
   """
-  use Ecto.Schema
-
   import Ecto.Changeset
 
   alias CargoShipping.{Locations, VoyageService}
-  alias CargoShipping.CargoBookings.{Delivery, HandlingEvent, Itinerary, RouteSpecification}
-
-  @derive {Phoenix.Param, key: :tracking_id}
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
-  @timestamps_opts [type: :utc_datetime]
-  schema "cargos" do
-    field :tracking_id, :string
-    field :origin, :string
-    embeds_one :route_specification, RouteSpecification, on_replace: :update
-    embeds_one :itinerary, Itinerary, on_replace: :update
-    embeds_one :delivery, Delivery, on_replace: :update
-
-    has_many(:handling_events, HandlingEvent)
-
-    timestamps()
-  end
+  alias CargoShipping.CargoBookings.{Delivery, Itinerary, RouteSpecification}
 
   defmodule EditDestination do
     @moduledoc """

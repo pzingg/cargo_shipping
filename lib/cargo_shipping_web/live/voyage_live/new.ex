@@ -6,8 +6,7 @@ defmodule CargoShippingWeb.VoyageLive.New do
   import Ecto.Changeset, only: [get_change: 3, put_embed: 4]
 
   alias CargoShipping.{LocationService, Utils, VoyagePlans}
-  alias CargoShipping.CargoBookings.RouteSpecification
-  alias CargoShipping.VoyagePlans.{CarrierMovement, Voyage}
+  alias CargoShippingSchemas.{CarrierMovement, RouteSpecification, Voyage}
   alias CargoShippingWeb.SharedComponents.Datepicker
 
   @impl true

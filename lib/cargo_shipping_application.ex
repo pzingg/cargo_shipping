@@ -1,15 +1,19 @@
-defmodule CargoShipping.Application do
+defmodule CargoShippingApplication do
+  @moduledoc """
+  CargoShippingApplication is the top-level application boundary.
+  """
+
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
-  @moduledoc false
 
   use Application
+  use Boundary, deps: [CargoShipping, CargoShippingWeb], exports: []
 
   @impl true
   def start(_type, _args) do
     children = [
       # Start the Ecto repository
-      CargoShipping.Repo,
+      CargoShipping.Infra.Repo,
       # Start the Telemetry supervisor
       CargoShippingWeb.Telemetry,
       # Start the PubSub system

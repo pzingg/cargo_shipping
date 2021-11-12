@@ -5,6 +5,7 @@ defmodule CargoShipping.VoyagePlansTest do
 
   describe "voyages" do
     alias CargoShipping.VoyagePlans.Voyage
+    alias CargoShippingSchemas.Voyage, as: Voyage_
 
     import CargoShipping.VoyagePlansFixtures
 
@@ -54,7 +55,7 @@ defmodule CargoShipping.VoyagePlansTest do
         ]
       }
 
-      assert {:ok, %Voyage{} = voyage} = VoyagePlans.create_voyage(valid_attrs)
+      assert {:ok, %Voyage_{} = voyage} = VoyagePlans.create_voyage(valid_attrs)
       assert voyage.voyage_number == "V0042"
       assert Enum.count(voyage.schedule_items) == 3
       assert hd(voyage.schedule_items).departure_location == "DEHAM"
@@ -68,7 +69,7 @@ defmodule CargoShipping.VoyagePlansTest do
       voyage = voyage_fixture()
       update_attrs = %{"voyage_number" => "V0043", "schedule_items" => @schedule_update_attrs}
 
-      assert {:ok, %Voyage{} = voyage} = VoyagePlans.update_voyage(voyage, update_attrs)
+      assert {:ok, %Voyage_{} = voyage} = VoyagePlans.update_voyage(voyage, update_attrs)
       assert voyage.voyage_number == "V0043"
       assert Enum.count(voyage.schedule_items) == 1
       assert hd(voyage.schedule_items).departure_location == "NLRTM"
@@ -82,7 +83,7 @@ defmodule CargoShipping.VoyagePlansTest do
 
     test "delete_voyage/1 deletes the voyage" do
       voyage = voyage_fixture()
-      assert {:ok, %Voyage{}} = VoyagePlans.delete_voyage(voyage)
+      assert {:ok, %Voyage_{}} = VoyagePlans.delete_voyage(voyage)
       assert_raise Ecto.NoResultsError, fn -> VoyagePlans.get_voyage!(voyage.id) end
     end
 

@@ -13,7 +13,7 @@ config :cargo_shipping, :generators,
   sample_binary_id: "11111111-1111-1111-1111-111111111111"
 
 config :cargo_shipping,
-  ecto_repos: [CargoShipping.Repo]
+  ecto_repos: [CargoShipping.Infra.Repo]
 
 # Configures the endpoint
 config :cargo_shipping, CargoShippingWeb.Endpoint,

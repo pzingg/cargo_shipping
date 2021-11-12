@@ -7,6 +7,7 @@ defmodule CargoShipping.CargoBookingsTest do
 
   describe "cargos" do
     alias CargoShipping.CargoBookings.Cargo
+    alias CargoShippingSchemas.Cargo, as: Cargo_
 
     import CargoShipping.CargoBookingsFixtures
     import CargoShipping.VoyagePlansFixtures
@@ -57,7 +58,7 @@ defmodule CargoShipping.CargoBookingsTest do
         }
       }
 
-      assert {:ok, %Cargo{} = cargo} = CargoBookings.create_cargo(valid_attrs)
+      assert {:ok, %Cargo_{} = cargo} = CargoBookings.create_cargo(valid_attrs)
       Process.sleep(100)
       cargo = CargoBookings.get_cargo!(cargo.id)
       assert cargo.origin == "DEHAM"
@@ -95,7 +96,7 @@ defmodule CargoShipping.CargoBookingsTest do
         }
       }
 
-      assert {:ok, %Cargo{} = cargo} = CargoBookings.update_cargo(cargo, update_attrs)
+      assert {:ok, %Cargo_{} = cargo} = CargoBookings.update_cargo(cargo, update_attrs)
       Process.sleep(100)
       cargo = CargoBookings.get_cargo!(cargo.id)
       assert cargo.origin == "CNSHA"
@@ -109,7 +110,7 @@ defmodule CargoShipping.CargoBookingsTest do
 
     test "delete_cargo/1 deletes the cargo" do
       cargo = cargo_fixture()
-      assert {:ok, %Cargo{}} = CargoBookings.delete_cargo(cargo)
+      assert {:ok, %Cargo_{}} = CargoBookings.delete_cargo(cargo)
       assert_raise Ecto.NoResultsError, fn -> CargoBookings.get_cargo!(cargo.id) end
     end
 
@@ -121,6 +122,7 @@ defmodule CargoShipping.CargoBookingsTest do
 
   describe "handling_events" do
     alias CargoShipping.CargoBookings.HandlingEvent
+    alias CargoShippingSchemas.HandlingEvent, as: HandlingEvent_
 
     import CargoShipping.CargoBookingsFixtures
 
@@ -143,7 +145,7 @@ defmodule CargoShipping.CargoBookingsTest do
         "completed_at" => ~U[2021-10-14 20:32:00Z]
       }
 
-      assert {:ok, %HandlingEvent{} = handling_event} =
+      assert {:ok, %HandlingEvent_{} = handling_event} =
                CargoBookings.create_handling_event(cargo_fixture(), valid_attrs)
 
       Process.sleep(100)
@@ -158,7 +160,7 @@ defmodule CargoShipping.CargoBookingsTest do
 
     test "delete_handling_event/1 deletes the handling_event" do
       handling_event = handling_event_fixture()
-      assert {:ok, %HandlingEvent{}} = CargoBookings.delete_handling_event(handling_event)
+      assert {:ok, %HandlingEvent_{}} = CargoBookings.delete_handling_event(handling_event)
 
       assert_raise Ecto.NoResultsError, fn ->
         CargoBookings.get_handling_event!(handling_event.id)

@@ -1,4 +1,5 @@
 %{
+  "boundary": {:hex, :boundary, "0.8.0", "74fa1cc077e92e2e62c7ceb0116dcd6872cf0e6ab5094325a6460f60b3da2e6a", [:mix], [], "hexpm", "cafbd95ad4b4acdf9e5f42d9590cf49993062cfb5dd4bce4a28791974f362d16"},
   "castore": {:hex, :castore, "0.1.12", "b5755d7668668a74c0e3c4c68df91da927e063a5cade17d693eff04e6ab64805", [:mix], [], "hexpm", "981c79528f88ec4ffd627214ad4cdd25052dc56c002996c603011ae37ec1b4b0"},
   "certifi": {:hex, :certifi, "2.8.0", "d4fb0a6bb20b7c9c3643e22507e42f356ac090a1dcea9ab99e27e0376d695eba", [:rebar3], [], "hexpm", "6ac7efc1c6f8600b08d625292d4bbf584e14847ce1b6b5c44d983d273e1097ea"},
   "combine": {:hex, :combine, "0.10.0", "eff8224eeb56498a2af13011d142c5e7997a80c8f5b97c499f84c841032e429f", [:mix], [], "hexpm", "1b1dbc1790073076580d0d1d64e42eae2366583e7aecd455d1215b0d16f2451b"},

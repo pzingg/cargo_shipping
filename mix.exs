@@ -7,10 +7,17 @@ defmodule CargoShipping.MixProject do
       version: "0.8.0",
       elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
-      compilers: [:gettext] ++ Mix.compilers(),
+      compilers: [:boundary, :phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      boundary: [
+        default: [
+          check: [
+            apps: [:phoenix, :ecto, {:mix, :runtime}]
+          ]
+        ]
+      ]
     ]
   end
 
@@ -19,7 +26,7 @@ defmodule CargoShipping.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {CargoShipping.Application, []},
+      mod: {CargoShippingApplication, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -53,7 +60,8 @@ defmodule CargoShipping.MixProject do
       {:timex, "~> 3.7"},
       {:uuid, "~> 1.1"},
       {:event_bus, "~> 1.6"},
-      {:libgraph, "~> 0.13"}
+      {:libgraph, "~> 0.13"},
+      {:boundary, "~> 0.8", runtime: false}
     ]
   end
 

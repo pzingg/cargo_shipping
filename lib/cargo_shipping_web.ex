@@ -1,7 +1,10 @@
 defmodule CargoShippingWeb do
   @moduledoc """
-  The entrypoint for defining your web interface, such
-  as controllers, views, channels and so on.
+  CargoShippingWeb is the top-level boundary for the
+  web interface.
+
+  It is the entrypoint for defining your web interface,
+  such as controllers, views, channels and so on.
 
   This can be used in your application as:
 
@@ -16,6 +19,9 @@ defmodule CargoShippingWeb do
   below. Instead, define any helper function in modules
   and import those modules here.
   """
+  use Boundary,
+    deps: [Phoenix, Ecto.Changeset, CargoShipping, CargoShippingConfig, CargoShippingSchemas],
+    exports: [Endpoint]
 
   def controller do
     quote do

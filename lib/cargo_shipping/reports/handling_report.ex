@@ -1,36 +1,33 @@
 defmodule CargoShipping.Reports.HandlingReport do
-  use Ecto.Schema
+  @moduledoc """
+  The HandlingReport AGGREGATE.
+
+  HandlingReports are usually created via the REST API.
+  When validated, they trigger the asynchronous creation
+  of a HandlingEvent.
+  """
   import Ecto.Changeset
 
   alias CargoShipping.{CargoBookings, LocationService, VoyageService}
-  alias __MODULE__
+  alias CargoShippingSchemas.HandlingEvent
 
-  @event_type_values [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
+  defimpl String.Chars, for: CargoShippingSchemas.HandlingReport do
+    use Boundary, classify_to: CargoShipping
 
-  defimpl String.Chars, for: HandlingReport do
     def to_string(handling_report) do
-      voyage_number =
-        case handling_report.voyage_number do
-          nil -> ""
-          "" -> ""
-          number -> " on voyage #{number}"
-        end
-
-      "#{handling_report.tracking_id} #{handling_report.event_type} at #{handling_report.location}#{voyage_number}"
+      CargoShipping.Reports.HandlingReport.string_from(handling_report)
     end
   end
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
-  @timestamps_opts [type: :utc_datetime]
-  schema "handling_reports" do
-    field :event_type, Ecto.Enum, values: @event_type_values
-    field :tracking_id, :string
-    field :voyage_number, :string
-    field :location, :string
-    field :completed_at, :utc_datetime
+  def string_from(handling_report) do
+    voyage_number =
+      case handling_report.voyage_number do
+        nil -> ""
+        "" -> ""
+        number -> " on voyage #{number}"
+      end
 
-    timestamps(inserted_at: :received_at, updated_at: false)
+    "#{handling_report.tracking_id} #{handling_report.event_type} at #{handling_report.location}#{voyage_number}"
   end
 
   @doc false
@@ -38,7 +35,7 @@ defmodule CargoShipping.Reports.HandlingReport do
     handling_report
     |> cast(attrs, [:event_type, :tracking_id, :voyage_number, :location, :completed_at])
     |> validate_required([:event_type, :completed_at])
-    |> validate_inclusion(:event_type, @event_type_values)
+    |> validate_inclusion(:event_type, HandlingEvent.event_type_values())
     |> validate_tracking_id()
     |> validate_location()
     |> validate_voyage_number()

@@ -23,7 +23,10 @@ defmodule CargoShipping.CargoBookings do
 
   require Logger
 
-  alias CargoShipping.{Repo, Utils}
+  alias CargoShipping.Utils
+  alias CargoShipping.Infra.Repo
+  alias CargoShippingSchemas.Cargo, as: Cargo_
+  alias CargoShippingSchemas.HandlingEvent, as: HandlingEvent_
 
   alias CargoShipping.CargoBookings.{
     Cargo,
@@ -33,6 +36,8 @@ defmodule CargoShipping.CargoBookings do
     RouteSpecification
   }
 
+  alias CargoShipping.CargoBookings.Cargo.EditDestination
+
   ## Cargo module
 
   @doc """
@@ -41,12 +46,12 @@ defmodule CargoShipping.CargoBookings do
   ## Examples
 
       iex> list_cargos()
-      [%Cargo{}, ...]
+      [%Cargo_{}, ...]
 
   """
   def list_cargos do
     query =
-      from c in Cargo,
+      from c in Cargo_,
         order_by: c.tracking_id
 
     Repo.all(query)
@@ -60,7 +65,7 @@ defmodule CargoShipping.CargoBookings do
   ## Examples
 
       iex> get_cargo!(123)
-      %Cargo{}
+      %Cargo_{}
 
       iex> get_cargo!(456)
       ** (Ecto.NoResultsError)
@@ -69,36 +74,36 @@ defmodule CargoShipping.CargoBookings do
   def get_cargo!(id, opts \\ []) do
     if opts[:with_events] do
       query =
-        from c in Cargo,
+        from c in Cargo_,
           where: c.id == ^id,
           preload: [
             handling_events:
               ^from(
-                he in HandlingEvent,
+                he in HandlingEvent_,
                 order_by: he.completed_at
               )
           ]
 
       Repo.one!(query)
     else
-      Repo.get!(Cargo, id)
+      Repo.get!(Cargo_, id)
     end
   end
 
   def get_cargo_by_tracking_id!(tracking_id, opts \\ []) when is_binary(tracking_id) do
     query =
       if opts[:with_events] do
-        from c in Cargo,
+        from c in Cargo_,
           where: c.tracking_id == ^tracking_id,
           preload: [
             handling_events:
               ^from(
-                he in HandlingEvent,
+                he in HandlingEvent_,
                 order_by: he.completed_at
               )
           ]
       else
-        from c in Cargo,
+        from c in Cargo_,
           where: c.tracking_id == ^tracking_id
       end
 
@@ -109,7 +114,7 @@ defmodule CargoShipping.CargoBookings do
 
   def cargo_tracking_id_exists?(tracking_id) when is_binary(tracking_id) do
     query =
-      from c in Cargo,
+      from c in Cargo_,
         where: c.tracking_id == ^tracking_id
 
     Repo.exists?(query)
@@ -122,7 +127,7 @@ defmodule CargoShipping.CargoBookings do
       prefix_pattern = "#{prefix}%"
 
       query =
-        from c in Cargo,
+        from c in Cargo_,
           where: like(c.tracking_id, ^prefix_pattern),
           select: c.tracking_id,
           order_by: c.tracking_id
@@ -138,7 +143,7 @@ defmodule CargoShipping.CargoBookings do
   ## Examples
 
       iex> create_cargo(%{field: value})
-      {:ok, %Cargo{}}
+      {:ok, %Cargo_{}}
 
       iex> create_cargo(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
@@ -158,7 +163,7 @@ defmodule CargoShipping.CargoBookings do
         attrs
       end
 
-    Cargo.changeset(%Cargo{}, recalculated_attrs)
+    Cargo.changeset(%Cargo_{}, recalculated_attrs)
     |> Repo.insert()
   end
 
@@ -168,13 +173,13 @@ defmodule CargoShipping.CargoBookings do
   ## Examples
 
       iex> update_cargo(cargo, %{field: new_value})
-      {:ok, %Cargo{}}
+      {:ok, %Cargo_{}}
 
       iex> update_cargo(cargo, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_cargo(%Cargo{} = cargo, attrs) do
+  def update_cargo(%Cargo_{} = cargo, attrs) do
     Cargo.changeset(cargo, attrs)
     |> Repo.update()
   end
@@ -184,7 +189,7 @@ defmodule CargoShipping.CargoBookings do
   has a different destination.  The origin and arrival_deadline are
   not changed.
   """
-  def update_cargo_for_new_destination(%Cargo{} = cargo, destination, arrival_deadline \\ nil) do
+  def update_cargo_for_new_destination(%Cargo_{} = cargo, destination, arrival_deadline \\ nil) do
     route_specification =
       cargo.route_specification
       |> Map.put(:destination, destination)
@@ -377,13 +382,13 @@ defmodule CargoShipping.CargoBookings do
   ## Examples
 
       iex> delete_cargo(cargo)
-      {:ok, %Cargo{}}
+      {:ok, %Cargo_{}}
 
       iex> delete_cargo(cargo)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_cargo(%Cargo{} = cargo) do
+  def delete_cargo(%Cargo_{} = cargo) do
     Repo.delete(cargo)
   end
 
@@ -393,10 +398,10 @@ defmodule CargoShipping.CargoBookings do
   ## Examples
 
       iex> change_cargo(cargo)
-      %Ecto.Changeset{data: %Cargo{}}
+      %Ecto.Changeset{data: %Cargo_{}}
 
   """
-  def change_cargo(%Cargo{} = cargo, attrs \\ %{}) do
+  def change_cargo(%Cargo_{} = cargo, attrs \\ %{}) do
     Cargo.changeset(cargo, attrs)
   end
 
@@ -404,12 +409,12 @@ defmodule CargoShipping.CargoBookings do
   Returns a changeset that validates a change to the destination
   of a Cargo's RouteSpecification
   """
-  def change_cargo_destination(%Cargo{} = cargo, attrs \\ %{}) do
-    %Cargo.EditDestination{
+  def change_cargo_destination(%Cargo_{} = cargo, attrs \\ %{}) do
+    %EditDestination{
       destination: Cargo.destination(cargo),
       arrival_deadline: Cargo.arrival_deadline(cargo)
     }
-    |> Cargo.EditDestination.changeset(attrs)
+    |> EditDestination.changeset(attrs)
   end
 
   ## HandlingEvent module
@@ -420,13 +425,13 @@ defmodule CargoShipping.CargoBookings do
   ## Examples
 
       iex> list_handling_events()
-      [%HandlingEvent{}, ...]
+      [%HandlingEvent_{}, ...]
 
   """
   def list_handling_events do
     query =
-      from he in HandlingEvent,
-        left_join: c in Cargo,
+      from he in HandlingEvent_,
+        left_join: c in Cargo_,
         on: c.id == he.cargo_id,
         select_merge: %{tracking_id: c.tracking_id},
         order_by: [desc: he.completed_at]
@@ -440,8 +445,8 @@ defmodule CargoShipping.CargoBookings do
   """
   def lookup_handling_history(tracking_id) when is_binary(tracking_id) do
     query =
-      from he in HandlingEvent,
-        left_join: c in Cargo,
+      from he in HandlingEvent_,
+        left_join: c in Cargo_,
         on: c.id == he.cargo_id,
         select_merge: %{tracking_id: c.tracking_id},
         where: c.tracking_id == ^tracking_id,
@@ -467,7 +472,7 @@ defmodule CargoShipping.CargoBookings do
   @doc """
   Returns params that can be used to update a Cargo's itinerary and delivery.
   """
-  def derive_delivery_progress(%Cargo{} = cargo, handling_history) do
+  def derive_delivery_progress(%Cargo_{} = cargo, handling_history) do
     # The `Delivery` is a value object, so we can simply discard the old one
     # and replace it with a new one.
     Delivery.params_derived_from_history(
@@ -485,7 +490,7 @@ defmodule CargoShipping.CargoBookings do
   ## Examples
 
       iex> get_handling_event!(123)
-      %HandlingEvent{}
+      %HandlingEvent_{}
 
       iex> get_handling_event!(456)
       ** (Ecto.NoResultsError)
@@ -493,8 +498,8 @@ defmodule CargoShipping.CargoBookings do
   """
   def get_handling_event!(id) do
     query =
-      from he in HandlingEvent,
-        left_join: c in Cargo,
+      from he in HandlingEvent_,
+        left_join: c in Cargo_,
         on: c.id == he.cargo_id,
         select_merge: %{tracking_id: c.tracking_id},
         where: he.id == ^id
@@ -508,7 +513,7 @@ defmodule CargoShipping.CargoBookings do
   ## Examples
 
       iex> create_handling_event(cargo, %{field: value})
-      {:ok, %HandlingEvent{}}
+      {:ok, %HandlingEvent_{}}
 
       iex> create_handling_event(cargo, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
@@ -548,13 +553,13 @@ defmodule CargoShipping.CargoBookings do
   ## Examples
 
       iex> delete_handling_event(handling_event)
-      {:ok, %Cargo{}}
+      {:ok, %Cargo_{}}
 
       iex> delete_handling_event(handling_event)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_handling_event(%HandlingEvent{} = handling_event) do
+  def delete_handling_event(%HandlingEvent_{} = handling_event) do
     Repo.delete(handling_event)
   end
 

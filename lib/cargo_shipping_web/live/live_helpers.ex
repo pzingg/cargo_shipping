@@ -5,8 +5,8 @@ defmodule CargoShippingWeb.LiveHelpers do
 
   alias CargoShipping.{CargoBookings, VoyagePlans, VoyageService, LocationService}
   alias CargoShipping.CargoBookings.Cargo
+  alias CargoShippingSchemas.Bulletin
   alias CargoShippingWeb.Router.Helpers, as: Routes
-  alias CargoShippingWeb.SharedComponents.Bulletin
 
   @doc """
   Renders a component inside the `Example16Web.ModalComponent` component.

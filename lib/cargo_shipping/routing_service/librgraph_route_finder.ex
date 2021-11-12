@@ -17,8 +17,6 @@ defmodule CargoShipping.RoutingService.LibgraphRouteFinder do
 
     import Ecto.Changeset
 
-    alias __MODULE__
-
     @type_values [:DEPART, :ARRIVE, :ORIGIN, :DESTINATION]
 
     @primary_key false

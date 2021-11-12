@@ -5,7 +5,7 @@ defmodule CargoShipping.RoutingService.RandomRouteFinder do
   require Logger
 
   alias CargoShipping.{LocationService, Utils, VoyageService}
-  alias CargoShipping.CargoBookings.{Itinerary, Leg}
+  alias CargoShipping.CargoBookings.Itinerary
 
   defmodule TransitEdge do
     @moduledoc """
@@ -134,7 +134,7 @@ defmodule CargoShipping.RoutingService.RandomRouteFinder do
   defp leg_from_transit_edge(edge) do
     voyage_id = VoyageService.get_voyage_id_for_number(edge.id)
 
-    %Leg{
+    %CargoShippingSchemas.Leg{
       voyage_id: voyage_id,
       load_location: edge.from_node,
       unload_location: edge.to_node,
