@@ -4,7 +4,7 @@ defmodule CargoShippingWeb.LiveHelpers do
   require Logger
 
   alias CargoShipping.{CargoBookings, VoyagePlans, VoyageService, LocationService}
-  alias CargoShipping.CargoBookings.Cargo
+  alias CargoShipping.CargoBookings.Accessors, as: CargoAccessors
   alias CargoShippingSchemas.Bulletin
   alias CargoShippingWeb.Router.Helpers, as: Routes
 
@@ -111,7 +111,7 @@ defmodule CargoShippingWeb.LiveHelpers do
     VoyagePlans.list_voyages()
     |> Enum.map(fn voyage ->
       label =
-        "#{voyage.voyage_number} from #{voyage_origin(voyage)} to #{voyage_destination(voyage)}"
+        "#{voyage.voyage_number} from #{voyage_origin_text(voyage)} to #{voyage_destination_text(voyage)}"
 
       {label, voyage.voyage_number}
     end)
@@ -121,7 +121,9 @@ defmodule CargoShippingWeb.LiveHelpers do
   def all_cargo_options() do
     CargoBookings.list_cargos()
     |> Enum.map(fn cargo ->
-      label = "#{cargo.tracking_id} from #{cargo_origin(cargo)} to #{cargo_destination(cargo)}"
+      label =
+        "#{cargo.tracking_id} from #{cargo_origin_text(cargo)} to #{cargo_destination_text(cargo)}"
+
       {label, cargo.tracking_id}
     end)
     |> Enum.sort()
@@ -141,44 +143,39 @@ defmodule CargoShippingWeb.LiveHelpers do
     end
   end
 
-  def cargo_origin(cargo) do
-    cargo.origin |> location_name()
+  ## Route specification delegates
+
+  def cargo_origin_text(cargo) do
+    CargoAccessors.cargo_origin(cargo) |> location_name()
   end
 
-  def cargo_destination(cargo) do
-    Cargo.destination(cargo) |> location_name()
+  def cargo_destination_text(cargo) do
+    CargoAccessors.cargo_destination(cargo) |> location_name()
   end
 
-  ## Delivery helpers
+  ## Delivery delegates
 
-  def cargo_last_known_location(cargo) do
-    case Cargo.last_known_location(cargo) do
-      nil -> "None"
-      location -> location_name(location)
-    end
-  end
+  defdelegate cargo_misdirected?(cargo), to: CargoAccessors
 
-  def cargo_routing_status(cargo) do
-    case Cargo.routing_status(cargo) do
+  defdelegate cargo_routed?(cargo), to: CargoAccessors
+
+  defdelegate cargo_misrouted?(cargo), to: CargoAccessors
+
+  def cargo_routing_status_text(cargo) do
+    case CargoAccessors.cargo_routing_status(cargo) do
       :ROUTED -> "Routed"
       :MISROUTED -> "Misrouted"
       :NOT_ROUTED -> "Not routed"
     end
   end
 
-  def cargo_routed?(cargo), do: Cargo.routing_status(cargo) != :NOT_ROUTED
-
-  def cargo_misrouted?(cargo), do: Cargo.routing_status(cargo) == :MISROUTED
-
-  def cargo_misdirected?(cargo), do: Cargo.misdirected?(cargo)
-
-  def cargo_transport_status(cargo) do
-    case Cargo.transport_status(cargo) do
+  def cargo_transport_status_text(cargo) do
+    case CargoAccessors.cargo_transport_status(cargo) do
       :IN_PORT ->
-        "#{cargo.tracking_id} is now in port at #{cargo_last_known_location(cargo)}"
+        "#{cargo.tracking_id} is now in port at #{cargo_last_known_location_text(cargo)}"
 
       :ONBOARD_CARRIER ->
-        voyage_number = Cargo.current_voyage_number(cargo)
+        voyage_number = CargoAccessors.cargo_current_voyage_number(cargo)
         "#{cargo.tracking_id} is now onboard carrier in voyage #{voyage_number}"
 
       :CLAIMED ->
@@ -192,8 +189,15 @@ defmodule CargoShippingWeb.LiveHelpers do
     end
   end
 
-  def cargo_next_expected_activity(cargo) do
-    activity = Cargo.next_expected_activity(cargo)
+  def cargo_last_known_location_text(cargo) do
+    case CargoAccessors.cargo_last_known_location(cargo) do
+      nil -> "None"
+      location -> location_name(location)
+    end
+  end
+
+  def cargo_next_expected_activity_text(cargo) do
+    activity = CargoAccessors.cargo_next_expected_activity(cargo)
 
     if is_nil(activity) do
       "None"
@@ -250,7 +254,7 @@ defmodule CargoShippingWeb.LiveHelpers do
     end
   end
 
-  def voyage_origin(voyage) do
+  def voyage_origin_text(voyage) do
     case List.first(voyage.schedule_items) do
       nil -> "_"
       carrier_movement -> carrier_movement.departure_location |> location_name()
@@ -264,7 +268,7 @@ defmodule CargoShippingWeb.LiveHelpers do
     end
   end
 
-  def voyage_destination(voyage) do
+  def voyage_destination_text(voyage) do
     case List.last(voyage.schedule_items) do
       nil -> "_"
       carrier_movement -> carrier_movement.arrival_location |> location_name()

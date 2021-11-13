@@ -20,7 +20,7 @@ defmodule CargoShipping.CargoBookings.RouteSpecification do
   end
 
   defimpl Phoenix.Param, for: CargoShippingSchemas.RouteSpecification do
-    use Boundary, classify_to: CargoShippingWeb
+    use Boundary, classify_to: CargoShipping
 
     def to_param(route_specification) do
       CargoShipping.CargoBookings.RouteSpecification.phoenix_param_from(route_specification)
@@ -61,7 +61,7 @@ defmodule CargoShipping.CargoBookings.RouteSpecification do
     end
   end
 
-  def debug_route_specification(route_specification, title \\ "route") do
+  def debug_route_specification(route_specification, title) do
     Logger.debug(title)
     Logger.debug("  #{string_from(route_specification)}")
   end

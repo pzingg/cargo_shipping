@@ -57,7 +57,7 @@ defmodule CargoShipping.LocationService do
         location
 
       _ ->
-        query = from l in Location, where: l.id == ^id
+        query = from l in Location_, where: l.id == ^id
         raise Ecto.NoResultsError, queryable: query
     end
   end

@@ -7,7 +7,7 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
   require Logger
 
   alias CargoShipping.{CargoInspectionService, HandlingEventService, Utils}
-  alias CargoShipping.CargoBookings.{Cargo, Delivery, HandlingEvent, Itinerary}
+  alias CargoShipping.CargoBookings.Accessors
 
   ## GenServer public API
 
@@ -73,7 +73,9 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   defp handle_event(:cargo_arrived, _config, event) do
     # Payload is the cargo
-    Logger.info("[cargo_arrived] #{event.data.tracking_id} at #{Cargo.destination(event.data)}")
+    Logger.info(
+      "[cargo_arrived] #{event.data.tracking_id} at #{Accessors.cargo_destination(event.data)}"
+    )
   end
 
   defp handle_event(:cargo_misdirected, _config, event) do
@@ -84,7 +86,7 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
   defp handle_event(:cargo_was_handled, _config, event) do
     # Payload is the handling_event
     Logger.info("[cargo_was_handled] #{to_string(event.data)}")
-    HandlingEvent.debug_handling_event(event.data)
+    Accessors.debug_handling_event(event.data)
 
     # Respond to the event by updating the delivery status
     CargoInspectionService.inspect_cargo(event.data.tracking_id)
@@ -102,8 +104,8 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
       "[cargo_delivery_updated] #{event.data.tracking_id} #{to_string(event.data.delivery)}"
     )
 
-    Itinerary.debug_itinerary(event.data.itinerary)
-    Delivery.debug_delivery(event.data.delivery)
+    Accessors.debug_itinerary(event.data.itinerary, "itinerary")
+    Accessors.debug_delivery(event.data.delivery)
   end
 
   defp handle_event(:cargo_delivery_update_failed, _config, event) do

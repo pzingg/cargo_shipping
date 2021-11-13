@@ -39,14 +39,14 @@
 <%= if @cargo do %>
 
 <h2>Current status</h2>
-<h3>Cargo <%= cargo_transport_status(@cargo) %></h3>
+<h3>Cargo <%= cargo_transport_status_text(@cargo) %></h3>
 
 <ul>
-  <li><strong>Estimated time of arrival in <%= cargo_destination(@cargo) %>:</strong>
+  <li><strong>Estimated time of arrival in <%= cargo_destination_text(@cargo) %>:</strong>
     <%= event_time(@cargo.delivery, :eta, oneline: true) %>
   </li>
   <li><strong>Next expected activity:</strong>
-    <%= cargo_next_expected_activity(@cargo) %>
+    <%= cargo_next_expected_activity_text(@cargo) %>
   </li>
   <%= if cargo_misdirected?(@cargo) do %>
   <li><strong>Cargo is misdirected!</strong></li>

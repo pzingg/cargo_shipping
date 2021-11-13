@@ -12,7 +12,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
   require Logger
 
   alias CargoShipping.{Utils, VoyageService}
-  alias CargoShipping.CargoBookings.{HandlingActivity, Itinerary, Leg}
+  alias CargoShipping.CargoBookings.{Accessors, HandlingActivity, Itinerary}
 
   @eta_unknown nil
 
@@ -207,7 +207,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
   defp calculate_routing_status(nil, _route_specification), do: :NOT_ROUTED
 
   defp calculate_routing_status(itinerary, route_specification) do
-    if Itinerary.satisfies?(itinerary, route_specification) do
+    if Accessors.itinerary_satisfies?(itinerary, route_specification) do
       :ROUTED
     else
       :MISROUTED
@@ -258,7 +258,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
   end
 
   defp calculate_eta(_itinerary, false), do: @eta_unknown
-  defp calculate_eta(itinerary, _on_track), do: Itinerary.final_arrival_date(itinerary)
+  defp calculate_eta(itinerary, _on_track), do: Accessors.itinerary_final_arrival_date(itinerary)
 
   defp calculate_next_expected_activity(_route_specification, _itinerary, _last_event, false),
     do: nil
@@ -283,7 +283,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
 
       :UNLOAD ->
         case Enum.find_index(itinerary.legs, fn leg ->
-               Leg.actual_unload_location(leg) == last_event.location
+               Accessors.leg_actual_unload_location(leg) == last_event.location
              end) do
           nil ->
             nil

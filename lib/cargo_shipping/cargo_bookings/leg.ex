@@ -8,11 +8,12 @@ defmodule CargoShipping.CargoBookings.Leg do
 
   import Ecto.Changeset
 
+  require Logger
+
   alias CargoShipping.VoyageService
   alias CargoShippingSchemas.Leg
   alias CargoShippingSchemas.RouteSpecification
 
-  @completed_values [:SKIPPED, :COMPLETED, :IN_CUSTOMS, :CLAIMED]
   @cast_fields [
     :status,
     :voyage_id,
@@ -100,8 +101,6 @@ defmodule CargoShipping.CargoBookings.Leg do
   @doc """
   Note: leg may NOT have status set (equivalent to :NOT_LOADED).
   """
-  def completed?(leg), do: Enum.member?(@completed_values, Map.get(leg, :status, :NOT_LOADED))
-
   def unexpected_load?(leg) do
     !is_nil(Map.get(leg, :actual_load_location))
   end
@@ -110,12 +109,9 @@ defmodule CargoShipping.CargoBookings.Leg do
     !is_nil(Map.get(leg, :actual_unload_location))
   end
 
-  def actual_load_location(leg) do
-    Map.get(leg, :actual_load_location) || leg.load_location
-  end
-
-  def actual_unload_location(leg) do
-    Map.get(leg, :actual_unload_location) || leg.unload_location
+  # Note: leg may NOT have status set (equivalent to :NOT_LOADED).
+  def debug_leg(leg) do
+    Logger.debug("  #{string_from(leg)}")
   end
 
   defp requires_voyage_id?(status, actual_unload_location) do

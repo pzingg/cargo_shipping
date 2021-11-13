@@ -4,7 +4,7 @@ defmodule CargoShipping.ItineraryTest do
   require Logger
 
   alias CargoShipping.{VoyagePlans, VoyageService}
-  alias CargoShipping.CargoBookings.Itinerary
+  alias CargoShipping.CargoBookings.{Accessors, Itinerary}
   alias CargoShipping.VoyagePlans.VoyageBuilder
 
   @base_time DateTime.utc_now() |> Timex.beginning_of_day() |> Timex.to_datetime()
@@ -82,7 +82,7 @@ defmodule CargoShipping.ItineraryTest do
       Itinerary.matches_handling_event(itinerary, handling_event, update_itinerary: true)
 
     assert message == "no match for RECEIVE at FIHEL (scope: first)"
-    first_leg = Itinerary.initial_leg(updated_itinerary)
+    first_leg = Accessors.itinerary_initial_leg(updated_itinerary)
     assert first_leg.actual_load_location == "FIHEL"
     assert first_leg.status == :NOT_LOADED
   end
@@ -99,7 +99,7 @@ defmodule CargoShipping.ItineraryTest do
       Itinerary.matches_handling_event(itinerary, handling_event, update_itinerary: true)
 
     assert message == "no match for LOAD at FIHEL on voyage TEST01 (scope: first_uncompleted)"
-    first_leg = Itinerary.initial_leg(updated_itinerary)
+    first_leg = Accessors.itinerary_initial_leg(updated_itinerary)
     assert first_leg.actual_load_location == "FIHEL"
     assert first_leg.status == :ONBOARD_CARRIER
   end
@@ -116,7 +116,7 @@ defmodule CargoShipping.ItineraryTest do
       Itinerary.matches_handling_event(itinerary, handling_event, update_itinerary: true)
 
     assert message == "no match for UNLOAD at FIHEL on voyage TEST01 (scope: first_uncompleted)"
-    first_leg = Itinerary.initial_leg(updated_itinerary)
+    first_leg = Accessors.itinerary_initial_leg(updated_itinerary)
     assert first_leg.actual_unload_location == "FIHEL"
     assert first_leg.status == :COMPLETED
   end
@@ -127,9 +127,9 @@ defmodule CargoShipping.ItineraryTest do
       |> Enum.map(fn {leg, status} -> Map.from_struct(leg) |> Map.put(:status, status) end)
       |> Itinerary.new()
 
-    assert Itinerary.last_completed_index(test_itinerary) == 1
+    assert Accessors.itinerary_last_completed_index(test_itinerary) == 1
 
-    {completed, uncompleted} = Itinerary.split_completed_legs(test_itinerary)
+    {completed, uncompleted} = Accessors.itinerary_split_completed_legs(test_itinerary)
     assert Enum.count(completed) == 2
     assert Enum.count(uncompleted) == 1
   end
@@ -140,7 +140,7 @@ defmodule CargoShipping.ItineraryTest do
       |> Enum.map(fn {leg, status} -> Map.from_struct(leg) |> Map.put(:status, status) end)
       |> Itinerary.new()
 
-    assert Itinerary.last_completed_index(test_itinerary) == 0
+    assert Accessors.itinerary_last_completed_index(test_itinerary) == 0
 
     # Simulate an unexpected LOAD at FIHEL
     route_specification = %{

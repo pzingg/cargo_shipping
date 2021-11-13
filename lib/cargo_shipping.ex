@@ -17,14 +17,10 @@ defmodule CargoShipping do
       Locations,
       Reports,
       VoyagePlans,
-      # Utilities
+      # Helpers
+      CargoBookings.Accessors,
+      # Seeding and testing
       SampleDataGenerator,
-      Utils,
-      # Sub-modules - these should probably NOT be exposed,
-      CargoBookings.Cargo,
-      CargoBookings.Delivery,
-      CargoBookings.Itinerary,
-      CargoBookings.RouteSpecification,
       # Service modules
       CargoBookingService,
       CargoInspectionService,

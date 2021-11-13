@@ -29,6 +29,7 @@ defmodule CargoShipping.CargoBookings do
   alias CargoShippingSchemas.HandlingEvent, as: HandlingEvent_
 
   alias CargoShipping.CargoBookings.{
+    Accessors,
     Cargo,
     Delivery,
     HandlingEvent,
@@ -237,7 +238,7 @@ defmodule CargoShipping.CargoBookings do
       Itinerary.to_route_specification(merged_itinerary, cargo.route_specification)
 
     Itinerary.debug_itinerary(merged_itinerary, "merged_itinerary")
-    RouteSpecification.debug_route_specification(route_specification, "from merged_itinerary")
+    Accessors.debug_route_specification(route_specification, "from merged_itinerary")
 
     params = new_route_params(cargo, cargo.delivery, route_specification, merged_itinerary)
     update_cargo(cargo, params)
@@ -261,7 +262,7 @@ defmodule CargoShipping.CargoBookings do
   end
 
   def merge_itinerary(old_itinerary, new_itinerary, patch_uncompleted_leg?) do
-    {uncompleted_legs, active_legs} = Itinerary.split_completed_legs(old_itinerary)
+    {uncompleted_legs, active_legs} = Accessors.itinerary_split_completed_legs(old_itinerary)
 
     new_legs =
       if patch_uncompleted_leg? do
@@ -311,11 +312,11 @@ defmodule CargoShipping.CargoBookings do
   """
   def get_remaining_route_specification(cargo) do
     # TODO: set :earliest_departure
-    location = Cargo.last_known_location(cargo)
-    event_type = Cargo.last_event_type(cargo)
-    completed_legs = Cargo.completed_itinerary_legs(cargo)
+    location = Accessors.cargo_last_known_location(cargo)
+    event_type = Accessors.cargo_last_event_type(cargo)
+    completed_legs = Accessors.itinerary_completed_legs(cargo)
 
-    case {Cargo.routing_status(cargo), Cargo.transport_status(cargo)} do
+    case {Accessors.cargo_routing_status(cargo), Accessors.cargo_transport_status(cargo)} do
       {:NOT_ROUTED, _} ->
         Logger.debug("Cargo not routed, rrs is original route specification")
         {cargo.route_specification, completed_legs, false, false}
@@ -411,8 +412,8 @@ defmodule CargoShipping.CargoBookings do
   """
   def change_cargo_destination(%Cargo_{} = cargo, attrs \\ %{}) do
     %EditDestination{
-      destination: Cargo.destination(cargo),
-      arrival_deadline: Cargo.arrival_deadline(cargo)
+      destination: Accessors.cargo_destination(cargo),
+      arrival_deadline: Accessors.cargo_arrival_deadline(cargo)
     }
     |> EditDestination.changeset(attrs)
   end

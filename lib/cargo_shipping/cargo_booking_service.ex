@@ -3,7 +3,7 @@ defmodule CargoShipping.CargoBookingService do
   require Logger
 
   alias CargoShipping.{CargoBookings, RoutingService}
-  alias CargoShipping.CargoBookings.{Delivery, Itinerary}
+  alias CargoShipping.CargoBookings.{Accessors, Delivery, Itinerary}
 
   @doc false
   def book_new_cargo(origin, destination, arrival_deadline, earliest_departure \\ nil) do
@@ -124,11 +124,11 @@ defmodule CargoShipping.CargoBookingService do
       |> Keyword.put(:arrival_deadline, route_specification.arrival_deadline)
     )
     |> Enum.filter(fn %{itinerary: itinerary} ->
-      filter = Itinerary.satisfies?(itinerary, route_specification)
+      filter = Accessors.itinerary_satisfies?(itinerary, route_specification)
 
       if !filter do
         Logger.error("itinerary fails to satisfy route specification")
-        Itinerary.debug_itinerary(itinerary)
+        Itinerary.debug_itinerary(itinerary, "itinerary")
       end
 
       filter

@@ -17,6 +17,8 @@ defmodule CargoShippingSchemas.HandlingEvent do
   """
   use Ecto.Schema
 
+  alias CargoShippingSchemas.Cargo
+
   @event_type_values [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
 
   @primary_key {:id, :binary_id, autogenerate: true}

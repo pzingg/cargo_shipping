@@ -31,9 +31,9 @@
     <%= for cargo <- @cargos do %>
       <tr id={"cargo-#{cargo.id}"}>
         <td><%= cargo.tracking_id %></td>
-        <td><%= cargo_origin(cargo) %></td>
-        <td><%= cargo_destination(cargo) %></td>
-        <td><%= cargo_routing_status(cargo) %></td>
+        <td><%= cargo_origin_text(cargo) %></td>
+        <td><%= cargo_destination_text(cargo) %></td>
+        <td><%= cargo_routing_status_text(cargo) %></td>
         <td>
           <span><%= live_redirect "Show", to: Routes.cargo_show_path(@socket, :show, cargo) %></span>
         </td>
