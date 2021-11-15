@@ -4,7 +4,7 @@ defmodule CargoShipping.SampleDataGenerator do
   """
   require Logger
 
-  alias CargoShipping.{CargoBookings, VoyagePlans}
+  alias CargoShipping.{CargoBookings, CargoBookingService, HandlingEventService, VoyagePlans}
   alias CargoShipping.CargoBookings.Itinerary
   alias CargoShipping.VoyagePlans.VoyageBuilder
 
@@ -117,7 +117,7 @@ defmodule CargoShipping.SampleDataGenerator do
           legs: legs_from_voyage(voyages, :voyage_0101)
         }
       }
-      |> CargoBookings.create_cargo()
+      |> CargoBookingService.create_cargo()
 
     # Cargo ABC: AUMEL - FIHEL - DEHAM - SESTO - USCHI - JPTYO
     {:ok, cargo_abc} =
@@ -134,7 +134,7 @@ defmodule CargoShipping.SampleDataGenerator do
           legs: legs_from_voyage(voyages, :voyage_0303) |> Enum.drop(1)
         }
       }
-      |> CargoBookings.create_cargo()
+      |> CargoBookingService.create_cargo()
 
     # Cargo ZYX: AUMEL - USCHI - DEHAM - SESTO
     {:ok, cargo_zyx} =
@@ -151,7 +151,7 @@ defmodule CargoShipping.SampleDataGenerator do
           legs: legs_from_voyage(voyages, :voyage_0202) |> Enum.take(3)
         }
       }
-      |> CargoBookings.create_cargo()
+      |> CargoBookingService.create_cargo()
 
     # Cargo CBA: AUMEL - USCHI - DEHAM - SESTO
     # Cargo is MISROUTED!
@@ -169,7 +169,7 @@ defmodule CargoShipping.SampleDataGenerator do
           legs: legs_from_voyage(voyages, :voyage_0303) |> Enum.take(4)
         }
       }
-      |> CargoBookings.create_cargo()
+      |> CargoBookingService.create_cargo()
 
     :MISROUTED = cargo_cba.delivery.routing_status
 
@@ -187,7 +187,7 @@ defmodule CargoShipping.SampleDataGenerator do
         },
         itinerary: itinerary_fgh(voyages)
       }
-      |> CargoBookings.create_cargo()
+      |> CargoBookingService.create_cargo()
 
     # Cargo JKL: DEHAM - SESTO - USCHI - JPTYO
     {:ok, cargo_jkl} =
@@ -204,7 +204,7 @@ defmodule CargoShipping.SampleDataGenerator do
           legs: legs_from_voyage(voyages, :voyage_0303) |> Enum.drop(3)
         }
       }
-      |> CargoBookings.create_cargo()
+      |> CargoBookingService.create_cargo()
 
     %{
       cargo_xyz: cargo_xyz,
@@ -277,7 +277,7 @@ defmodule CargoShipping.SampleDataGenerator do
       registered_at: registered_at
     }
 
-    CargoBookings.create_handling_event(cargo, attrs)
+    HandlingEventService.create_handling_event(cargo, attrs)
     wait_for_events()
   end
 
@@ -310,7 +310,7 @@ defmodule CargoShipping.SampleDataGenerator do
       }
     }
 
-    {:ok, cargo_abc123} = CargoBookings.create_cargo(attrs)
+    {:ok, cargo_abc123} = CargoBookingService.create_cargo(attrs)
     wait_for_events()
     cargo_id = cargo_abc123.id
 
@@ -321,7 +321,7 @@ defmodule CargoShipping.SampleDataGenerator do
       completed_at: ~U[2009-03-01 00:00:00Z]
     }
 
-    {:ok, _event1} = CargoBookings.create_handling_event(cargo_abc123, attrs)
+    {:ok, _event1} = HandlingEventService.create_handling_event(cargo_abc123, attrs)
     wait_for_events()
     cargo_abc123 = CargoBookings.get_cargo!(cargo_id)
 
@@ -332,7 +332,7 @@ defmodule CargoShipping.SampleDataGenerator do
       completed_at: ~U[2009-03-02 00:00:00Z]
     }
 
-    {:ok, _event2} = CargoBookings.create_handling_event(cargo_abc123, attrs)
+    {:ok, _event2} = HandlingEventService.create_handling_event(cargo_abc123, attrs)
     wait_for_events()
     cargo_abc123 = CargoBookings.get_cargo!(cargo_id)
 
@@ -343,7 +343,7 @@ defmodule CargoShipping.SampleDataGenerator do
       completed_at: ~U[2009-03-05 00:00:00Z]
     }
 
-    {:ok, _event3} = CargoBookings.create_handling_event(cargo_abc123, attrs)
+    {:ok, _event3} = HandlingEventService.create_handling_event(cargo_abc123, attrs)
     wait_for_events()
 
     # Note: create_handling_event will automatically derive the delivery.
@@ -400,7 +400,7 @@ defmodule CargoShipping.SampleDataGenerator do
       }
     }
 
-    {:ok, cargo_jkl567} = CargoBookings.create_cargo(attrs)
+    {:ok, cargo_jkl567} = CargoBookingService.create_cargo(attrs)
     wait_for_events()
     cargo_id = cargo_jkl567.id
 
@@ -411,7 +411,7 @@ defmodule CargoShipping.SampleDataGenerator do
       completed_at: ~U[2009-03-01 00:00:00Z]
     }
 
-    {:ok, _event1} = CargoBookings.create_handling_event(cargo_jkl567, attrs)
+    {:ok, _event1} = HandlingEventService.create_handling_event(cargo_jkl567, attrs)
     wait_for_events()
     cargo_jkl567 = CargoBookings.get_cargo!(cargo_id)
 
@@ -422,7 +422,7 @@ defmodule CargoShipping.SampleDataGenerator do
       completed_at: ~U[2009-03-03 00:00:00Z]
     }
 
-    {:ok, _event2} = CargoBookings.create_handling_event(cargo_jkl567, attrs)
+    {:ok, _event2} = HandlingEventService.create_handling_event(cargo_jkl567, attrs)
     wait_for_events()
     cargo_jkl567 = CargoBookings.get_cargo!(cargo_id)
 
@@ -433,7 +433,7 @@ defmodule CargoShipping.SampleDataGenerator do
       completed_at: ~U[2009-03-05 00:00:00Z]
     }
 
-    {:ok, _event3} = CargoBookings.create_handling_event(cargo_jkl567, attrs)
+    {:ok, _event3} = HandlingEventService.create_handling_event(cargo_jkl567, attrs)
     wait_for_events()
     cargo_jkl567 = CargoBookings.get_cargo!(cargo_id)
 
@@ -444,7 +444,7 @@ defmodule CargoShipping.SampleDataGenerator do
       completed_at: ~U[2009-03-06 00:00:00Z]
     }
 
-    {:ok, _event4} = CargoBookings.create_handling_event(cargo_jkl567, attrs)
+    {:ok, _event4} = HandlingEventService.create_handling_event(cargo_jkl567, attrs)
     wait_for_events()
 
     # Note: create_handling_event will automatically derive the delivery.

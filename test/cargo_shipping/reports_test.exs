@@ -4,6 +4,7 @@ defmodule CargoShipping.ReportsTest do
   alias CargoShipping.Reports
 
   describe "handling_reports" do
+    alias CargoShipping.HandlingReportService
     alias CargoShipping.Reports.HandlingReport
     alias CargoShippingSchemas.HandlingReport, as: HandlingReport_
 
@@ -27,7 +28,7 @@ defmodule CargoShipping.ReportsTest do
       assert Reports.get_handling_report!(handling_report.id) == handling_report
     end
 
-    test "create_handling_report/1 with valid data creates a handling_report" do
+    test "submit_report/1 with valid data creates a handling_report" do
       cargo = CargoShipping.CargoBookingsFixtures.cargo_fixture()
       voyage_number = CargoShipping.VoyagePlansFixtures.voyage_fixture_number()
 
@@ -40,7 +41,7 @@ defmodule CargoShipping.ReportsTest do
       }
 
       assert {:ok, %HandlingReport_{} = handling_report} =
-               Reports.create_handling_report(valid_attrs)
+               HandlingReportService.submit_report(valid_attrs)
 
       Process.sleep(100)
 
@@ -51,8 +52,8 @@ defmodule CargoShipping.ReportsTest do
       assert handling_report.voyage_number == voyage_number
     end
 
-    test "create_handling_report/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Reports.create_handling_report(@invalid_attrs)
+    test "submit_report/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = HandlingReportService.submit_report(@invalid_attrs)
       Process.sleep(100)
     end
 

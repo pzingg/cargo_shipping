@@ -4,7 +4,6 @@ defmodule CargoShipping.Reports do
   """
   import Ecto.Query, warn: false
 
-  alias CargoShipping.HandlingReportService
   alias CargoShipping.Infra.Repo
   alias CargoShipping.Reports.HandlingReport
   alias CargoShippingSchemas.HandlingReport, as: HandlingReport_
@@ -43,24 +42,6 @@ defmodule CargoShipping.Reports do
   def get_handling_report!(id), do: Repo.get!(HandlingReport_, id)
 
   @doc """
-  Creates a handling_report.
-
-  ## Examples
-
-      iex> create_handling_report(%{field: value})
-      {:ok, %HandlingReport_{}}
-
-      iex> create_handling_report(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_handling_report(attrs \\ %{}) do
-    result = change_handling_report(attrs) |> Repo.insert()
-    HandlingReportService.register_handling_report_attempt(result, attrs)
-    result
-  end
-
-  @doc """
   Deletes a handling report.
 
   ## Examples
@@ -85,7 +66,6 @@ defmodule CargoShipping.Reports do
       %Ecto.Changeset{data: %HandlingReport_{}}
   """
   def change_handling_report(attrs \\ %{}) do
-    %HandlingReport_{}
-    |> HandlingReport.changeset(attrs)
+    HandlingReport.changeset(attrs)
   end
 end

@@ -56,6 +56,8 @@ config :phoenix, :json_library, Jason
 config :event_bus,
   id_generator: CargoShipping.ApplicationEvents.Producer,
   topics: [
+    :cargo_booked,
+    :cargo_booking_failed,
     :cargo_arrived,
     :cargo_misdirected,
     :cargo_was_handled,

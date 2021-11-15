@@ -19,7 +19,7 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
 
   require Logger
 
-  alias CargoShipping.{CargoBookings, LocationService, VoyageService}
+  alias CargoShipping.{CargoBookings, LocationService, Utils, VoyageService}
   alias CargoShippingSchemas.HandlingEvent
 
   @cast_fields [
@@ -57,7 +57,11 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
   end
 
   @doc false
-  def changeset(attrs) do
+  def cargo_changeset(cargo, attrs) do
+    set_cargo_id(cargo, attrs) |> cargo_id_changeset()
+  end
+
+  def cargo_id_changeset(attrs) do
     %HandlingEvent{}
     |> cast(attrs, @cast_fields)
     |> validate_required(@cargo_id_required_fields)
@@ -82,9 +86,9 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
   it cannot find the cargo.
   """
   def handling_report_changeset(attrs) do
-    case CargoBookings.set_cargo_id_from_tracking_id(attrs) do
+    case set_cargo_id_from_tracking_id(attrs) do
       {:ok, event_attrs} ->
-        changeset(event_attrs)
+        cargo_id_changeset(event_attrs)
 
       {:error, message} ->
         tracking_id_changeset(attrs)
@@ -209,6 +213,37 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
           nil -> {:error, "is invalid"}
           c -> {:ok, c}
         end
+    end
+  end
+
+  ## Utility functions
+
+  def set_cargo_id(cargo, attrs) do
+    {cargo_id_key, tracking_id_key} =
+      if Utils.atom_keys?(attrs) do
+        {:cargo_id, :tracking_id}
+      else
+        {"cargo_id", "tracking_id"}
+      end
+
+    attrs
+    |> Map.put(cargo_id_key, cargo.id)
+    |> Map.put(tracking_id_key, cargo.tracking_id)
+  end
+
+  defp set_cargo_id_from_tracking_id(attrs) do
+    tracking_id = Utils.get(attrs, :tracking_id)
+
+    if is_nil(tracking_id) do
+      {:error, "can't be blank"}
+    else
+      case CargoBookings.get_cargo_by_tracking_id!(tracking_id) do
+        nil ->
+          {:error, "is_invalid"}
+
+        cargo ->
+          {:ok, set_cargo_id(cargo, attrs)}
+      end
     end
   end
 

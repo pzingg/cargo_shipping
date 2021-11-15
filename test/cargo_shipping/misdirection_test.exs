@@ -68,7 +68,7 @@ defmodule CargoShipping.MisdirectionTest do
       |> Itinerary.new()
 
     {:ok, cargo} =
-      CargoBookings.create_cargo(%{
+      CargoBookingService.create_cargo(%{
         tracking_id: "TST442",
         origin: "SESTO",
         route_specification: %{

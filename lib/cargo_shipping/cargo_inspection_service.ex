@@ -31,7 +31,7 @@ defmodule CargoShipping.CargoInspectionService do
     end
   end
 
-  def publish_event(topic, payload) do
+  defp publish_event(topic, payload) do
     CargoShipping.ApplicationEvents.Producer.publish_event(
       topic,
       "CargoInspectionService",

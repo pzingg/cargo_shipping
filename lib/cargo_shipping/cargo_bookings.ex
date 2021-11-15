@@ -32,9 +32,7 @@ defmodule CargoShipping.CargoBookings do
     Accessors,
     Cargo,
     Delivery,
-    HandlingEvent,
-    Itinerary,
-    RouteSpecification
+    Itinerary
   }
 
   alias CargoShipping.CargoBookings.Cargo.EditDestination
@@ -136,36 +134,6 @@ defmodule CargoShipping.CargoBookings do
       query
       |> Repo.all()
     end
-  end
-
-  @doc """
-  Creates a cargo.
-
-  ## Examples
-
-      iex> create_cargo(%{field: value})
-      {:ok, %Cargo_{}}
-
-      iex> create_cargo(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_cargo(raw_attrs \\ %{}) do
-    # Because we need to pre-process the attributes, we must convert
-    # the keys into atoms.
-    attrs = Utils.atomize(raw_attrs)
-    route_specification = Map.get(attrs, :route_specification)
-    itinerary = Map.get(attrs, :itinerary)
-
-    recalculated_attrs =
-      if itinerary do
-        derived_routing_params(attrs, route_specification, itinerary)
-      else
-        attrs
-      end
-
-    Cargo.changeset(%Cargo_{}, recalculated_attrs)
-    |> Repo.insert()
   end
 
   @doc """
@@ -509,46 +477,6 @@ defmodule CargoShipping.CargoBookings do
   end
 
   @doc """
-  Creates a handling_event.
-
-  ## Examples
-
-      iex> create_handling_event(cargo, %{field: value})
-      {:ok, %HandlingEvent_{}}
-
-      iex> create_handling_event(cargo, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_handling_event(cargo, attrs \\ %{}) do
-    create_attrs = set_cargo_id(cargo, attrs)
-    changeset = HandlingEvent.changeset(create_attrs)
-    create_and_publish_handling_event(changeset)
-  end
-
-  def create_handling_event_from_report(attrs \\ %{}) do
-    changeset = HandlingEvent.handling_report_changeset(attrs)
-    create_and_publish_handling_event(changeset)
-  end
-
-  defp create_and_publish_handling_event(changeset) do
-    tracking_id = Ecto.Changeset.get_field(changeset, :tracking_id)
-
-    case Repo.insert(changeset) do
-      {:ok, handling_event} ->
-        # Publish an event stating that a cargo has been handled.
-        payload = Map.put(handling_event, :tracking_id, tracking_id)
-        publish_event(:cargo_was_handled, payload)
-        {:ok, handling_event}
-
-      {:error, changeset} ->
-        # Publish an event stating that the event was rejected.
-        publish_event(:cargo_handling_rejected, changeset)
-        {:error, changeset}
-    end
-  end
-
-  @doc """
   Deletes a handling event.
 
   ## Examples
@@ -562,40 +490,5 @@ defmodule CargoShipping.CargoBookings do
   """
   def delete_handling_event(%HandlingEvent_{} = handling_event) do
     Repo.delete(handling_event)
-  end
-
-  ## Utility functions
-
-  def publish_event(topic, payload) do
-    CargoShipping.ApplicationEvents.Producer.publish_event(topic, "CargoBookings", payload)
-  end
-
-  def set_cargo_id_from_tracking_id(attrs) do
-    tracking_id = Utils.get(attrs, :tracking_id)
-
-    if is_nil(tracking_id) do
-      {:error, "can't be blank"}
-    else
-      case get_cargo_by_tracking_id!(tracking_id) do
-        nil ->
-          {:error, "is_invalid"}
-
-        cargo ->
-          {:ok, set_cargo_id(cargo, attrs)}
-      end
-    end
-  end
-
-  def set_cargo_id(cargo, attrs) do
-    {cargo_id_key, tracking_id_key} =
-      if Utils.atom_keys?(attrs) do
-        {:cargo_id, :tracking_id}
-      else
-        {"cargo_id", "tracking_id"}
-      end
-
-    attrs
-    |> Map.put(cargo_id_key, cargo.id)
-    |> Map.put(tracking_id_key, cargo.tracking_id)
   end
 end

@@ -9,7 +9,7 @@ defmodule CargoShipping.Reports.HandlingReport do
   import Ecto.Changeset
 
   alias CargoShipping.{CargoBookings, LocationService, VoyageService}
-  alias CargoShippingSchemas.HandlingEvent
+  alias CargoShippingSchemas.{HandlingEvent, HandlingReport}
 
   defimpl String.Chars, for: CargoShippingSchemas.HandlingReport do
     use Boundary, classify_to: CargoShipping
@@ -31,8 +31,8 @@ defmodule CargoShipping.Reports.HandlingReport do
   end
 
   @doc false
-  def changeset(handling_report, attrs) do
-    handling_report
+  def changeset(attrs) do
+    %HandlingReport{}
     |> cast(attrs, [:event_type, :tracking_id, :voyage_number, :location, :completed_at])
     |> validate_required([:event_type, :completed_at])
     |> validate_inclusion(:event_type, HandlingEvent.event_type_values())

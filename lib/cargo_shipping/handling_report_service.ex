@@ -5,18 +5,36 @@ defmodule CargoShipping.HandlingReportService do
   """
   require Logger
 
-  def register_handling_report_attempt({:ok, handling_report}, _params) do
+  alias CargoShipping.Reports.HandlingReport
+  alias CargoShipping.Infra.Repo
+
+  @doc """
+  Creates a handling_report, generating an application event.
+
+  ## Examples
+
+      iex> submit_report(%{field: value})
+      {:ok, %HandlingReport_{}}
+
+      iex> submit_report(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def submit_report(attrs \\ %{}) do
+    result = HandlingReport.changeset(attrs) |> Repo.insert()
+    register_handling_report_attempt(result, attrs)
+    result
+  end
+
+  defp register_handling_report_attempt({:ok, handling_report}, _params) do
     publish_event(:handling_report_received, handling_report)
   end
 
-  @doc """
-  The changeset is a HandlingReport changeset.
-  """
-  def register_handling_report_attempt({:error, changeset}, params) do
+  defp register_handling_report_attempt({:error, changeset}, params) do
     publish_event(:handling_report_rejected, Map.put(params, :errors, changeset.errors))
   end
 
-  def publish_event(topic, payload) do
+  defp publish_event(topic, payload) do
     CargoShipping.ApplicationEvents.Producer.publish_event(
       topic,
       "HandlingReportService",

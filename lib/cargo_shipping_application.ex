@@ -20,10 +20,17 @@ defmodule CargoShippingApplication do
       {Phoenix.PubSub, name: CargoShipping.PubSub},
       # Start the Endpoint (http/https)
       CargoShippingWeb.Endpoint,
-      # Start a worker by calling: CargoShipping.Worker.start_link(arg)
-      CargoShipping.ApplicationEvents.Consumer,
+      # Start agents
       CargoShipping.LocationService,
-      CargoShipping.VoyageService
+      CargoShipping.VoyageService,
+      # Start a worker by calling: CargoShipping.Worker.start_link(arg)
+      {CargoShipping.ApplicationEvents.Consumer,
+       name: CargoShipping.ApplicationEvents.DebugConsumer},
+      {CargoShipping.ApplicationEvents.Consumer,
+       name: CargoShipping.ApplicationEvents.CargoHandledConsumer, topics: :cargo_was_handled},
+      {CargoShipping.ApplicationEvents.Consumer,
+       name: CargoShipping.ApplicationEvents.HandlingEventRegistrationAttemptConsumer,
+       topics: :handling_report_received}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

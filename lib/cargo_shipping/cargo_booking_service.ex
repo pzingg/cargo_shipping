@@ -2,8 +2,10 @@ defmodule CargoShipping.CargoBookingService do
   @moduledoc false
   require Logger
 
-  alias CargoShipping.{CargoBookings, RoutingService}
-  alias CargoShipping.CargoBookings.{Accessors, Delivery, Itinerary}
+  alias CargoShipping.{CargoBookings, RoutingService, Utils}
+  alias CargoShipping.Infra.Repo
+  alias CargoShipping.CargoBookings.{Accessors, Cargo, Delivery, Itinerary}
+  alias CargoShippingSchemas.Cargo, as: Cargo_
 
   @doc false
   def book_new_cargo(origin, destination, arrival_deadline, earliest_departure \\ nil) do
@@ -20,15 +22,42 @@ defmodule CargoShipping.CargoBookingService do
           delivery: Delivery.not_routed()
         }
 
-        {:ok, cargo} = CargoBookings.create_cargo(attrs)
-
-        Logger.info("Booked new cargo with tracking id #{cargo.tracking_id}")
+        {:ok, cargo} = create_cargo_and_publish_event(attrs)
 
         cargo.tracking_id
 
       {:error, _} ->
         nil
     end
+  end
+
+  @doc """
+  Creates a cargo.
+
+  ## Examples
+
+      iex> create_cargo(%{field: value})
+      {:ok, %Cargo_{}}
+
+      iex> create_cargo(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_cargo(raw_attrs \\ %{}) do
+    # Because we need to pre-process the attributes, we must convert
+    # the keys into atoms.
+    attrs = Utils.atomize(raw_attrs)
+    route_specification = Map.get(attrs, :route_specification)
+    itinerary = Map.get(attrs, :itinerary)
+
+    recalculated_attrs =
+      if itinerary do
+        CargoBookings.derived_routing_params(attrs, route_specification, itinerary)
+      else
+        attrs
+      end
+
+    create_cargo_and_publish_event(recalculated_attrs)
   end
 
   def unique_tracking_id(try \\ 5)
@@ -47,8 +76,6 @@ defmodule CargoShipping.CargoBookingService do
 
         acc <> to_string(val)
       end)
-
-    Logger.debug("new tracking_id #{tracking_id}")
 
     if CargoBookings.cargo_tracking_id_exists?(tracking_id) do
       unique_tracking_id(try - 1)
@@ -133,5 +160,29 @@ defmodule CargoShipping.CargoBookingService do
 
       filter
     end)
+  end
+
+  defp create_cargo_and_publish_event(params) do
+    result =
+      Cargo.changeset(%Cargo_{}, params)
+      |> Repo.insert()
+
+    case result do
+      {:ok, cargo} ->
+        publish_event(:cargo_booked, cargo)
+
+      {:error, changeset} ->
+        publish_event(:cargo_booking_failed, changeset)
+    end
+
+    result
+  end
+
+  defp publish_event(topic, payload) do
+    CargoShipping.ApplicationEvents.Producer.publish_event(
+      topic,
+      "CargoBookingService",
+      payload
+    )
   end
 end

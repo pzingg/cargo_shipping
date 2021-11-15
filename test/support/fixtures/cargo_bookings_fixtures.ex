@@ -61,7 +61,7 @@ defmodule CargoShipping.CargoBookingsFixtures do
       CargoShipping.CargoBookings.get_cargo_by_tracking_id!(attrs.tracking_id)
     rescue
       Ecto.NoResultsError ->
-        {:ok, _cargo} = CargoShipping.CargoBookings.create_cargo(attrs)
+        {:ok, _cargo} = CargoShipping.CargoBookingService.create_cargo(attrs)
         Process.sleep(100)
         CargoShipping.CargoBookings.get_cargo_by_tracking_id!(attrs.tracking_id)
     end
@@ -80,7 +80,7 @@ defmodule CargoShipping.CargoBookingsFixtures do
         completed_at: ~U[2015-01-24 00:00:00Z]
       })
 
-    {:ok, handling_event} = CargoShipping.CargoBookings.create_handling_event(cargo, attrs)
+    {:ok, handling_event} = CargoShipping.HandlingEventService.create_handling_event(cargo, attrs)
     handling_event
   end
 end
