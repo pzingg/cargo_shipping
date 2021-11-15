@@ -2,6 +2,7 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
   use CargoShippingWeb, :live_view
 
   alias CargoShipping.{CargoBookings, CargoBookingService}
+  alias CargoShipping.CargoBookings.Accessors
 
   @impl true
   def mount(_params, _session, socket) do
@@ -12,7 +13,7 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
   def handle_params(%{"tracking_id" => tracking_id}, this_uri, socket) do
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
 
-    {remaining_route_spec, completed_legs, itineraries, patch_uncompleted_leg?} =
+    {remaining_route_spec, itineraries, patch_uncompleted_leg?} =
       CargoBookingService.possible_routes_for_cargo(cargo)
 
     route_candidates =
@@ -28,6 +29,7 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
       end)
 
     title = page_title(cargo.tracking_id, socket.assigns.live_action)
+    completed_legs = Accessors.itinerary_completed_legs(cargo)
 
     {:noreply,
      socket

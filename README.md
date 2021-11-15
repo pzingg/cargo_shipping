@@ -11,11 +11,18 @@ Leverages code and patterns from:
 Central concepts and patterns:
 
 1. Bounded contexts, like "CargoBookings" are implmented as Phoenix contexts.
-2. Aggregates are implemented as Ecto Schemas, and their states are saved in the PostgreSQL database.
+2. Aggregates and entities are implemented as Ecto Schemas, and their states are saved
+  in the PostgreSQL database.
 3. Value objects are implemented as embbeded schemas within the aggregates.
 4. Domain events are published using the [EventBus](https://github.com/otobus/event_bus) library.
 5. Domain events are consumed asynchronously and can update aggregates.
 
+Module architecture:
+
+1. Uses Sasa Juric's [boundary](https://github.com/sasa1977/boundary) library to
+  enforce interface and core layers.
+2. Uses Phoenix contexts for simple bounded-context operations.
+3. Uses Service modules (based on the dddsample) that coordinate complex operations.
 
 ## Route finding implementation
 
@@ -23,7 +30,6 @@ The original Java implementation used a stub algorithm to re-route cargos. This 
 uses the [libgraph](https://github.com/bitwalker/libgraph) Elixir library to search
 the space of all available voyages to find the shortest sequence of voyage segments
 for re-routing.
-
 
 ## Installation
 
@@ -44,7 +50,6 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
   * Docs: https://hexdocs.pm/phoenix
   * Forum: https://elixirforum.com/c/phoenix-forum
   * Source: https://github.com/phoenixframework/phoenix
-
 
 ## Web interface
 
@@ -89,9 +94,15 @@ There are three Phoenix router scopes in the web application:
 * `resources "/handling_reports", HandlingReportController` (to create a handling report
   via an HTTP POST request)
 
-
 ## Testing
 
 The test at `cargo_lifecycle_scenario_test.exs` is closely based on the
 [CargoLifecycleScenarioTest.java](https://github.com/citerus/dddsample-core/blob/master/src/test/java/se/citerus/dddsample/scenario/CargoLifecycleScenarioTest.java)
 in the original Java implementation.
+
+## TODO
+
+* Search page for voyages
+* Apply all handling history events to a cargo (route specification + virgin itinerary).
+  May need to save the cargo's original route specification in the aggregate, and create
+  a new event type for a route specification / itinerary update for this to work.

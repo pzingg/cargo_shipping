@@ -1,6 +1,7 @@
 defmodule CargoShipping.RoutingService.RandomRouteFinder do
   @moduledoc """
-  Original algorithm from Java dddsample.
+  Original algorithm from Java dddsample, as implemented in the
+  `ExternalRoutingService` Java class.
   """
   require Logger
 
@@ -23,12 +24,15 @@ defmodule CargoShipping.RoutingService.RandomRouteFinder do
     end
   end
 
-  def find_itineraries(origin, destination, opts) do
-    find_transit_paths(origin, destination, opts)
+  @doc """
+  The RouteSpecification is picked apart and adapted to the external API.
+  """
+  def fetch_routes_for_specification(route_specification, opts) do
+    find_transit_paths(route_specification.origin, route_specification.destination, opts)
     |> Enum.map(fn path -> %{itinerary: itinerary_from_transit_path(path), cost: 0} end)
   end
 
-  defp find_transit_paths(origin, destination, _limitations) do
+  defp find_transit_paths(origin, destination, _opts) do
     start_date = DateTime.utc_now()
     voyage_numbers = VoyageService.all_voyage_numbers()
     candidate_count = Enum.random(3..6)

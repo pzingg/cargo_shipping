@@ -4,7 +4,6 @@ defmodule CargoShipping.VoyagePlansTest do
   alias CargoShipping.VoyagePlans
 
   describe "voyages" do
-    alias CargoShipping.VoyagePlans.Voyage
     alias CargoShippingSchemas.Voyage, as: Voyage_
 
     import CargoShipping.VoyagePlansFixtures

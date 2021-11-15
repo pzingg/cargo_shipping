@@ -31,9 +31,13 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   ## EventBus public API
 
-  @doc false
-  def process(event_shadow) do
-    GenServer.cast(__MODULE__, event_shadow)
+  @doc """
+  Entry point for receiving EventBus messages. `config.name` is the GenServer
+  server id, so cast the information there.
+  """
+  def process({config, _topic, _id} = event_shadow) do
+    GenServer.cast(config.name, event_shadow)
+
     :ok
   end
 
@@ -72,10 +76,11 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
   end
 
   @impl true
-  def handle_cast({config, topic, id}, %{name: name} = state) do
+  def handle_cast({config, topic, id}, state) do
     event = EventBus.fetch_event({topic, id})
 
-    Kernel.apply(name, :handle_event, [topic, config, event])
+    # Forward the event to the subscriber module's :handle_event method
+    _ = Kernel.apply(config.name, :handle_event, [topic, config, event])
 
     subscriber = {__MODULE__, config}
     EventBus.mark_as_completed({subscriber, topic, id})

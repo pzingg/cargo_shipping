@@ -5,7 +5,6 @@ defmodule CargoShipping.ReportsTest do
 
   describe "handling_reports" do
     alias CargoShipping.HandlingReportService
-    alias CargoShipping.Reports.HandlingReport
     alias CargoShippingSchemas.HandlingReport, as: HandlingReport_
 
     import CargoShipping.ReportsFixtures

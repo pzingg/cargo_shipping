@@ -40,32 +40,37 @@ defmodule CargoShipping.RoutingService.LibgraphRouteFinder do
     def new(attrs), do: changeset(attrs) |> apply_changes()
   end
 
-  def find_itineraries(origin, destination, limitations) do
-    earliest_load_time = Keyword.get(limitations, :earliest_departure, ~U[2000-01-01 00:00:00Z])
-    latest_unload_time = Keyword.get(limitations, :arrival_deadline, ~U[2049-12-31 23:59:59Z])
-
+  @doc """
+  The RouteSpecification is picked apart and adapted to the external API.
+  """
+  def fetch_routes_for_specification(
+        %{origin: origin, destination: destination} = route_specification,
+        opts
+      ) do
     v_origin = %Vertex{
       name: "#{origin}:ORG",
       type: :ORIGIN,
       location: origin,
-      time: earliest_load_time
+      time: route_specification.earliest_departure
     }
 
     v_destination = %Vertex{
       name: "#{destination}:DST",
       type: :DESTINATION,
       location: destination,
-      time: latest_unload_time
+      time: route_specification.arrival_deadline
     }
 
-    graph = build_world_graph(v_origin, v_destination, earliest_load_time, latest_unload_time)
+    graph = build_world_graph(v_origin, v_destination, opts)
 
-    {:ok, dot} = Graph.Serializers.DOT.serialize(graph)
-    file_name = "#{origin}-#{destination}.dot"
-    File.write(file_name, dot)
-    Logger.debug("route graph written to #{file_name}")
+    if Keyword.get(opts, :write_dot, false) do
+      {:ok, dot} = Graph.Serializers.DOT.serialize(graph)
+      file_name = "#{origin}-#{destination}.dot"
+      File.write(file_name, dot)
+      Logger.debug("route graph written to #{file_name}")
+    end
 
-    case Keyword.get(limitations, :find, :shortest) do
+    case Keyword.get(opts, :find, :shortest) do
       :shortest ->
         case find_shortest_path(graph, v_origin, v_destination) do
           nil ->
@@ -92,51 +97,8 @@ defmodule CargoShipping.RoutingService.LibgraphRouteFinder do
     end
   end
 
-  defp cost_for_path(graph, vertices) do
-    {_last_id, total_cost} =
-      Enum.reduce(vertices, {nil, 0}, fn v2, {v1_id, acc} ->
-        v2_id = vertex_id(v2)
-
-        if is_nil(v1_id) do
-          {v2_id, 0}
-        else
-          {v2_id, acc + cost(graph, v1_id, v2_id, v2)}
-        end
-      end)
-
-    total_cost
-  end
-
-  defp cost(%Graph{} = g, v1_id, v2_id, v2) do
-    edge_weight(g, v1_id, v2_id) + vertex_cost(v2)
-  end
-
-  defp vertex_cost(_vertex), do: 0
-
-  defp itinerary_from_path(vertices) do
-    # Skip 0 and Enum.count - 1
-    last_index = Enum.count(vertices) - 2
-
-    Enum.map(1..last_index//2, fn i ->
-      v_depart = Enum.at(vertices, i)
-      v_arrive = Enum.at(vertices, i + 1)
-      leg_from_edge(v_depart, v_arrive)
-    end)
-    |> Itinerary.new()
-  end
-
-  defp leg_from_edge(v_depart, v_arrive) do
-    %{
-      voyage_id: v_depart.voyage_id,
-      load_location: v_depart.location,
-      unload_location: v_arrive.location,
-      load_time: v_depart.time,
-      unload_time: v_arrive.time,
-      status: :NOT_LOADED
-    }
-  end
-
-  def build_world_graph(v_origin, v_destination, _earliest_load_time, _latest_unload_time) do
+  def build_world_graph(v_origin, v_destination, opts) do
+    minimum_layover_in_seconds = Keyword.get(opts, :mininum_layover_hours, 4) * 3_600
     voyages = VoyagePlans.list_voyages()
 
     internal_edges =
@@ -158,7 +120,7 @@ defmodule CargoShipping.RoutingService.LibgraphRouteFinder do
       Enum.reduce(arrival_vertices, [], fn v_arrive, acc ->
         at_origin? = v_arrive.type == :ORIGIN
         arrival_location = v_arrive.location
-        earliest_departure = DateTime.add(v_arrive.time, 12 * 3_600, :second)
+        earliest_departure = DateTime.add(v_arrive.time, minimum_layover_in_seconds, :second)
         arrival_voyage_number = v_arrive.voyage_number
 
         departure_index =
@@ -229,7 +191,9 @@ defmodule CargoShipping.RoutingService.LibgraphRouteFinder do
   def find_all_paths(graph, v_origin, v_destination),
     do: Graph.get_paths(graph, v_origin, v_destination)
 
-  def internal_voyage_edges(voyage, acc_0) do
+  ## Private functions
+
+  defp internal_voyage_edges(voyage, acc_0) do
     last_index = Enum.count(voyage.schedule_items) - 1
 
     {edges, _count, _} =
@@ -240,7 +204,7 @@ defmodule CargoShipping.RoutingService.LibgraphRouteFinder do
     edges
   end
 
-  def internal_leg_edges(voyage, leg, {edges, i, last}) do
+  defp internal_leg_edges(voyage, leg, {edges, i, last}) do
     v_depart = %Vertex{
       name: "#{leg.departure_location}:DEP:#{voyage.voyage_number}:#{i}",
       type: :DEPART,
@@ -270,5 +234,49 @@ defmodule CargoShipping.RoutingService.LibgraphRouteFinder do
 
     label = "ONB:#{voyage.voyage_number}:#{i}#{is_last}"
     {[{v_depart, v_arrive, [label: label, weight: 1]} | edges], i + 1, last}
+  end
+
+  defp cost_for_path(graph, vertices) do
+    {_last_id, total_cost} =
+      Enum.reduce(vertices, {nil, 0}, fn v2, {v1_id, acc} ->
+        v2_id = vertex_id(v2)
+
+        if is_nil(v1_id) do
+          {v2_id, 0}
+        else
+          {v2_id, acc + cost(graph, v1_id, v2_id, v2)}
+        end
+      end)
+
+    total_cost
+  end
+
+  defp cost(%Graph{} = g, v1_id, v2_id, v2) do
+    edge_weight(g, v1_id, v2_id) + vertex_cost(v2)
+  end
+
+  defp vertex_cost(_vertex), do: 0
+
+  defp itinerary_from_path(vertices) do
+    # Skip 0 and Enum.count - 1
+    last_index = Enum.count(vertices) - 2
+
+    Enum.map(1..last_index//2, fn i ->
+      v_depart = Enum.at(vertices, i)
+      v_arrive = Enum.at(vertices, i + 1)
+      leg_from_edge(v_depart, v_arrive)
+    end)
+    |> Itinerary.new()
+  end
+
+  defp leg_from_edge(v_depart, v_arrive) do
+    %{
+      voyage_id: v_depart.voyage_id,
+      load_location: v_depart.location,
+      unload_location: v_arrive.location,
+      load_time: v_depart.time,
+      unload_time: v_arrive.time,
+      status: :NOT_LOADED
+    }
   end
 end

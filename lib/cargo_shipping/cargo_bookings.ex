@@ -272,76 +272,73 @@ defmodule CargoShipping.CargoBookings do
   end
 
   @doc """
-  Returns a tuple
-    * route specification, or nil if at destination
-    * boolean, true if the route specification has a different origin from cargo
-    * boolean, true true if the merged itinerary should use data from the last
+  Returns a 2-tuple
+    * a route specification, or nil if at destination
+    * a boolean, true if the merged itinerary should use data from the last
       uncompleted leg when merging, or false if the new itinerary can just be appended
   """
   def get_remaining_route_specification(cargo) do
     # TODO: set :earliest_departure
     location = Accessors.cargo_last_known_location(cargo)
     event_type = Accessors.cargo_last_event_type(cargo)
-    completed_legs = Accessors.itinerary_completed_legs(cargo)
 
     case {Accessors.cargo_routing_status(cargo), Accessors.cargo_transport_status(cargo)} do
       {:NOT_ROUTED, _} ->
         Logger.debug("Cargo not routed, rrs is original route specification")
-        {cargo.route_specification, completed_legs, false, false}
+        {cargo.route_specification, false}
 
       {_, :CLAIMED} ->
         Logger.debug("Cargo has been claimed, rrs is nil")
-        {nil, completed_legs, false, false}
+        {nil, false}
 
       {_, :IN_PORT} ->
         # :RECEIVE or :UNLOAD
-        {route_spec, new_origin?} =
+        route_spec =
           maybe_route_specification(
             cargo.route_specification,
             location,
             "After #{event_type}, cargo is (misdirected) in port at"
           )
 
-        {route_spec, completed_legs, new_origin?, false}
+        {route_spec, false}
 
       {_, :ONBOARD_CARRIER} ->
         #  :LOAD
-        {route_spec, new_origin?} =
+        route_spec =
           maybe_route_specification(
             cargo.route_specification,
             location,
             "After #{event_type}, cargo is on board (misdirected) from"
           )
 
-        {route_spec, completed_legs, new_origin?, true}
+        {route_spec, true}
 
       {_, other} ->
         Logger.debug(
           "After #{event_type}, cargo transport is #{other}, rrs is original route specification"
         )
 
-        {cargo.route_specification, completed_legs, false, false}
+        {cargo.route_specification, false}
     end
   end
 
   @doc """
-  Returns tuple of a route specification and a the possible new origin for the
-  remaining part of the cargo's delivery.
+  Returns a route specification if the origin specified is not the destination.
   """
   def maybe_route_specification(route_specification, new_origin, status) do
     cond do
       new_origin == route_specification.origin ->
         Logger.debug("#{status} origin, rrs is original route specification")
-        {route_specification, false}
+        route_specification
 
-      new_origin == route_specification.destination ->
-        Logger.debug("#{status} final destination, rrs is nil")
-        {nil, false}
-
-      true ->
+      new_origin != route_specification.destination ->
         # TODO: set :earliest_departure
         Logger.debug("#{status} rrs set with this location as origin")
-        {%{route_specification | origin: new_origin}, true}
+        %{route_specification | origin: new_origin}
+
+      true ->
+        Logger.debug("#{status} final destination, rrs is nil")
+        nil
     end
   end
 

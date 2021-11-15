@@ -10,7 +10,7 @@ defmodule CargoShipping.ApplicationEvents.CargoHandledConsumer do
 
   def handle_event(:cargo_was_handled, _config, event) do
     # Payload is the handling_event
-    Logger.info("CargoHandled [cargo_was_handled] #{to_string(event.data)}")
+    Logger.info("CargoHandled [cargo_was_handled] #{to_string(event.data.tracking_id)}")
 
     # Respond to the event by updating the delivery status
     CargoInspectionService.inspect_cargo(event.data.tracking_id)

@@ -47,7 +47,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     # The cargo is then assigned to the selected route, described by an itinerary.
 
-    {remaining_route_spec, _completed_legs, itineraries, patch_uncompleted_leg?} =
+    {remaining_route_spec, itineraries, patch_uncompleted_leg?} =
       CargoBookingService.possible_routes_for_cargo(cargo)
 
     assert remaining_route_spec
@@ -63,7 +63,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
         patch_uncompleted_leg?
       )
 
-    Logger.warn("Line 62, after routing")
+    Logger.warn("Line 66, after routing")
 
     # Wait for event bus
     Process.sleep(500)
@@ -151,7 +151,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :LOAD
     }
 
-    Logger.warn("Line 150: bad handling params will fail!")
+    Logger.warn("Line 154: bad handling params will fail!")
 
     {:error, changeset} = HandlingEventService.register_handling_event(handling_params)
     assert changeset.errors[:voyage_number] == {"is invalid", []}
@@ -193,7 +193,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       arrival_deadline: arrival_deadline
     }
 
-    Logger.warn("Line 192, rerouting")
+    Logger.warn("Line 196, rerouting")
 
     {:ok, _cargo} = CargoBookings.update_cargo_for_new_route(cargo, from_shanghai)
 
@@ -207,19 +207,13 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     # Repeat procedure of selecting one out of a number of possible
     # routes satisfying the route spec.
 
-    {remaining_route_spec, completed_legs, itineraries, patch_uncompleted_leg?} =
+    {remaining_route_spec, itineraries, patch_uncompleted_leg?} =
       CargoBookingService.possible_routes_for_cargo(cargo)
 
     assert remaining_route_spec
     assert remaining_route_spec.origin == "CNSHA"
 
-    assert Enum.count(completed_legs) == 1
-    leg = List.first(completed_legs)
-    assert leg.unload_location == "USNYC"
-    assert leg.actual_unload_location == "CNSHA"
-
-    {completed_legs, _uncompleted_legs} =
-      Accessors.itinerary_split_completed_legs(cargo.itinerary)
+    completed_legs = Accessors.itinerary_completed_legs(cargo)
 
     assert Enum.count(completed_legs) == 1
     leg = List.first(completed_legs)
@@ -231,7 +225,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     itinerary = select_prefered_itinerary(itineraries)
 
-    Logger.warn("Line 224, prefered itinerary")
+    Logger.warn("Line 228, prefered itinerary")
 
     Accessors.debug_itinerary(itinerary, "itinerary")
 
@@ -251,7 +245,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     Process.sleep(500)
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
 
-    Logger.warn("Line 253, after re-routing")
+    Logger.warn("Line 248, after re-routing")
 
     Accessors.debug_route_specification(cargo.route_specification, "route")
     Accessors.debug_itinerary(cargo.itinerary, "itinerary")

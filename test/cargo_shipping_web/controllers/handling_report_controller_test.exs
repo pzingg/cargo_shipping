@@ -1,10 +1,6 @@
 defmodule CargoShippingWeb.HandlingReportControllerTest do
   use CargoShippingWeb.ConnCase
 
-  import CargoShipping.ReportsFixtures
-
-  alias CargoShipping.Reports.HandlingReport
-
   @invalid_attrs %{
     completed_at: nil,
     event_type: nil,
@@ -55,11 +51,6 @@ defmodule CargoShippingWeb.HandlingReportControllerTest do
 
       assert json_response(conn, 422)["errors"] != %{}
     end
-  end
-
-  defp create_handling_report(_) do
-    handling_report = handling_report_fixture()
-    %{handling_report: handling_report}
   end
 
   defp create_attrs(cargo, voyage) do

@@ -85,9 +85,8 @@ defmodule CargoShipping.CargoBookingService do
   end
 
   @doc """
-  Returns a 4-tuple
+  Returns a 3-tuple
     * the remaining route specification for the cargo
-    * the completed legs of the cargo's current itinerary
     * a list of possible replacement itineraries for the uncompleted legs
     * boolean, true if the merged itinerary should use data from the
       last uncompleted leg when merging, or false if the new itinerary can just be
@@ -102,7 +101,7 @@ defmodule CargoShipping.CargoBookingService do
   end
 
   def possible_routes_for_cargo(%CargoShippingSchemas.Cargo{} = cargo) do
-    {remaining_route_spec, completed_legs, has_new_origin?, patch_uncompleted_leg?} =
+    {remaining_route_spec, patch_uncompleted_leg?} =
       CargoBookings.get_remaining_route_specification(cargo)
 
     if is_nil(remaining_route_spec) do
@@ -110,7 +109,7 @@ defmodule CargoShipping.CargoBookingService do
       {nil, nil}
     else
       internal_itinerary =
-        if has_new_origin? do
+        if remaining_route_spec.origin != cargo.route_specification.origin do
           case Itinerary.internal_itinerary_for_route_specification(
                  cargo.itinerary,
                  remaining_route_spec
@@ -135,21 +134,12 @@ defmodule CargoShipping.CargoBookingService do
         [internal_itinerary | other_itineraries]
         |> Enum.reject(&is_nil(&1))
 
-      {remaining_route_spec, completed_legs, itineraries, patch_uncompleted_leg?}
+      {remaining_route_spec, itineraries, patch_uncompleted_leg?}
     end
   end
 
-  @doc """
-  The RouteSpecification is picked apart and adapted to the external API.
-  """
   def ranked_itineraries_for_route_specification(route_specification, opts \\ []) do
-    RoutingService.find_itineraries(
-      route_specification.origin,
-      route_specification.destination,
-      opts
-      |> Keyword.put(:earliest_departure, route_specification.earliest_departure)
-      |> Keyword.put(:arrival_deadline, route_specification.arrival_deadline)
-    )
+    RoutingService.fetch_routes_for_specification(route_specification, opts)
     |> Enum.filter(fn %{itinerary: itinerary} ->
       filter = Accessors.itinerary_satisfies?(itinerary, route_specification)
 

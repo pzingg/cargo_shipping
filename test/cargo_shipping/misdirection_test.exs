@@ -3,7 +3,7 @@ defmodule CargoShipping.MisdirectionTest do
 
   require Logger
 
-  alias CargoShipping.{CargoBookings, HandlingEventService, VoyagePlans, VoyageService}
+  alias CargoShipping.{CargoBookings, CargoBookingService, HandlingEventService, VoyagePlans}
   alias CargoShipping.CargoBookings.{Accessors, Itinerary}
   alias CargoShipping.VoyagePlans.VoyageBuilder
 
@@ -97,10 +97,9 @@ defmodule CargoShipping.MisdirectionTest do
       cargo = post_report_and_get_cargo(handling_report)
       # itinerary on voyage TEST01 from FIHEL (ACTUAL) to DEHAM - NOT_LOADED
       # delivery TST442 ROUTED IN_PORT MISDIRECTED at FIHEL
-      {new_route_spec, _completed_legs, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
-      assert new_origin?
       assert new_route_spec
       assert new_route_spec.origin == "FIHEL"
       assert new_route_spec.destination == "CNHGH"
@@ -140,10 +139,9 @@ defmodule CargoShipping.MisdirectionTest do
       cargo = post_report_and_get_cargo(handling_report)
       # itinerary on voyage TEST01 from USNYC (ACTUAL) to DEHAM - NOT_LOADED
       # delivery TST442 ROUTED IN_PORT MISDIRECTED at USNYC
-      {new_route_spec, _completed_legs, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
-      assert new_origin?
       assert new_route_spec
       assert new_route_spec.origin == "USNYC"
       assert new_route_spec.destination == "CNHGH"
@@ -186,10 +184,9 @@ defmodule CargoShipping.MisdirectionTest do
       # itinerary on voyage TEST01 from SESTO to FIHEL (ACTUAL) - COMPLETED
       # delivery TST442 ROUTED IN_PORT MISDIRECTED at FIHEL
 
-      {new_route_spec, _completed_legs, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
-      assert new_origin?
       assert new_route_spec
       assert new_route_spec.origin == "FIHEL"
       assert new_route_spec.destination == "CNHGH"
@@ -230,10 +227,9 @@ defmodule CargoShipping.MisdirectionTest do
       # itinerary on voyage TEST01 from SESTO to USNYC (ACTUAL) - COMPLETED
       # delivery TST442 ROUTED IN_PORT MISDIRECTED at USNYC
 
-      {new_route_spec, _completed_legs, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
-      assert new_origin?
       assert new_route_spec
       assert new_route_spec.origin == "USNYC"
       assert new_route_spec.destination == "CNHGH"
@@ -275,10 +271,9 @@ defmodule CargoShipping.MisdirectionTest do
       cargo = post_report_and_get_cargo(handling_report)
       # itinerary on voyage TEST01 from FIHEL (ACTUAL) to DEHAM - ONBOARD_CARRIER
       # delivery TST442 ROUTED ONBOARD_CARRIER MISDIRECTED from FIHEL on voyage TEST01
-      {new_route_spec, _completed_legs, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
-      assert new_origin?
       assert new_route_spec
       assert new_route_spec.origin == "FIHEL"
       assert new_route_spec.destination == "CNHGH"
@@ -318,10 +313,9 @@ defmodule CargoShipping.MisdirectionTest do
       cargo = post_report_and_get_cargo(handling_report)
       # itinerary on voyage TEST01 from USNYC (ACTUAL) to DEHAM - ONBOARD_CARRIER
       # delivery TST442 ROUTED ONBOARD_CARRIER MISDIRECTED from USNYC on voyage TEST01
-      {new_route_spec, _completed_legs, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
-      assert new_origin?
       assert new_route_spec
       assert new_route_spec.origin == "USNYC"
       assert new_route_spec.destination == "CNHGH"
@@ -350,9 +344,12 @@ defmodule CargoShipping.MisdirectionTest do
   end
 
   defp post_report_and_get_cargo(params) do
-    {:ok, _event} = HandlingEventService.register_handling_event(params)
+    {:ok, event} = HandlingEventService.register_handling_event(params)
     Process.sleep(100)
-    CargoBookings.get_cargo_by_tracking_id!("TST442")
+    cargo = CargoBookings.get_cargo_by_tracking_id!("TST442")
+
+    assert cargo.delivery.last_event_id == event.id
+    cargo
   end
 
   defp update_and_get_cargo(cargo, params) do
