@@ -1,7 +1,7 @@
 defmodule CargoShippingWeb.HandlingReportLive.New do
   use CargoShippingWeb, :live_view
 
-  alias CargoShipping.Reports
+  alias CargoShipping.{HandlingReportService, Reports}
   alias CargoShippingWeb.SharedComponents.Datepicker
 
   @impl true
@@ -45,7 +45,7 @@ defmodule CargoShippingWeb.HandlingReportLive.New do
   def handle_event("save", raw_params, socket) do
     params = Datepicker.handle_form_change("handling-report-form", "handling_report", raw_params)
 
-    case Reports.create_handling_report(params) do
+    case HandlingReportService.submit_report(params) do
       {:ok, handling_report} ->
         Process.sleep(100)
         received_at = event_time(handling_report, :received_at)

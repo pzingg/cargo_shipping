@@ -4,8 +4,9 @@ defmodule CargoShipping.Reports do
   """
   import Ecto.Query, warn: false
 
-  alias CargoShipping.{HandlingReportService, Repo}
+  alias CargoShipping.Infra.Repo
   alias CargoShipping.Reports.HandlingReport
+  alias CargoShippingSchemas.HandlingReport, as: HandlingReport_
 
   @doc """
   Returns the list of handling_reports.
@@ -13,12 +14,12 @@ defmodule CargoShipping.Reports do
   ## Examples
 
       iex> list_handling_reports()
-      [%HandlingReport{}, ...]
+      [%HandlingReport_{}, ...]
 
   """
   def list_handling_reports do
     query =
-      from hr in HandlingReport,
+      from hr in HandlingReport_,
         order_by: hr.received_at
 
     Repo.all(query)
@@ -32,31 +33,13 @@ defmodule CargoShipping.Reports do
   ## Examples
 
       iex> get_handling_report!(123)
-      %HandlingReport{}
+      %HandlingReport_{}
 
       iex> get_handling_report!(456)
       ** (Ecto.NoResultsError)
 
   """
-  def get_handling_report!(id), do: Repo.get!(HandlingReport, id)
-
-  @doc """
-  Creates a handling_report.
-
-  ## Examples
-
-      iex> create_handling_report(%{field: value})
-      {:ok, %HandlingReport{}}
-
-      iex> create_handling_report(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_handling_report(attrs \\ %{}) do
-    result = change_handling_report(attrs) |> Repo.insert()
-    HandlingReportService.register_handling_report_attempt(result, attrs)
-    result
-  end
+  def get_handling_report!(id), do: Repo.get!(HandlingReport_, id)
 
   @doc """
   Deletes a handling report.
@@ -70,7 +53,7 @@ defmodule CargoShipping.Reports do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_handling_report(%HandlingReport{} = handling_report) do
+  def delete_handling_report(%HandlingReport_{} = handling_report) do
     Repo.delete(handling_report)
   end
 
@@ -80,10 +63,9 @@ defmodule CargoShipping.Reports do
   ## Examples
 
       iex> change_handling_report(attrs)
-      %Ecto.Changeset{data: %HandlingReport{}}
+      %Ecto.Changeset{data: %HandlingReport_{}}
   """
   def change_handling_report(attrs \\ %{}) do
-    %HandlingReport{}
-    |> HandlingReport.changeset(attrs)
+    HandlingReport.changeset(attrs)
   end
 end

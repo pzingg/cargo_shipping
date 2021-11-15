@@ -1,8 +1,7 @@
 defmodule CargoShippingWeb.HandlingReportController do
   use CargoShippingWeb, :controller
 
-  alias CargoShipping.Reports
-  alias CargoShipping.Reports.HandlingReport
+  alias CargoShipping.{HandlingReportService, Reports}
 
   action_fallback CargoShippingWeb.FallbackController
 
@@ -12,8 +11,8 @@ defmodule CargoShippingWeb.HandlingReportController do
   end
 
   def create(conn, %{"handling_report" => handling_report_params}) do
-    with {:ok, %HandlingReport{} = handling_report} <-
-           Reports.create_handling_report(handling_report_params) do
+    with {:ok, handling_report} <-
+           HandlingReportService.submit_report(handling_report_params) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.handling_report_path(conn, :show, handling_report))

@@ -4,23 +4,13 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
   An Itinerary consists of one or more Legs.
   """
-  use Ecto.Schema
-
   import Ecto.Changeset
 
   require Logger
 
   alias CargoShipping.{VoyageService, Utils}
-  alias CargoShipping.CargoBookings.{Leg, RouteSpecification}
-  alias __MODULE__
-
-  @start_of_days ~U[2000-01-01 00:00:00Z]
-  @end_of_days ~U[2049-12-31 23:59:59Z]
-
-  @primary_key {:id, :binary_id, autogenerate: true}
-  embedded_schema do
-    embeds_many :legs, Leg, on_replace: :delete
-  end
+  alias CargoShipping.CargoBookings.{Accessors, Leg}
+  alias CargoShippingSchemas.{Itinerary, RouteSpecification}
 
   def new(legs) do
     %Itinerary{}
@@ -56,100 +46,15 @@ defmodule CargoShipping.CargoBookings.Itinerary do
     next_changeset
   end
 
-  def initial_leg(itinerary), do: List.first(itinerary.legs)
-
-  def initial_departure_location(itinerary) do
-    case initial_leg(itinerary) do
-      nil ->
-        "_"
-
-      leg ->
-        Leg.actual_load_location(leg)
-    end
-  end
-
-  def initial_departure_date(itinerary) do
-    case initial_leg(itinerary) do
-      nil ->
-        @start_of_days
-
-      leg ->
-        leg.load_time
-    end
-  end
-
-  def final_leg(itinerary), do: List.last(itinerary.legs)
-
-  def final_arrival_location(itinerary) do
-    case final_leg(itinerary) do
-      nil ->
-        "_"
-
-      leg ->
-        Leg.actual_unload_location(leg)
-    end
-  end
-
-  def final_arrival_date(itinerary) do
-    case final_leg(itinerary) do
-      nil ->
-        @end_of_days
-
-      leg ->
-        leg.unload_time
-    end
-  end
-
-  def first_uncompleted_leg(%{legs: legs}) do
-    Enum.drop_while(legs, &Leg.completed?(&1)) |> List.first()
-  end
-
-  def last_completed_leg(%{legs: legs} = _itinerary) do
-    Enum.reduce_while(legs, nil, fn leg, acc ->
-      if Leg.completed?(leg) do
-        {:cont, leg}
-      else
-        {:halt, acc}
-      end
-    end)
-  end
-
-  @doc """
-  Returns the first leg index not marked as :COMPLETED or :CLAIMED
-  Returns 0 if no legs are completed.
-  """
-  def first_uncompleted_index(%{legs: legs} = _itinerary) do
-    first_uncompleted =
-      Enum.with_index(legs)
-      |> Enum.drop_while(fn {leg, _index} -> Leg.completed?(leg) end)
-      |> Enum.take(1)
-
-    case first_uncompleted do
-      [] -> 0
-      [{_leg, index} | _] -> index
-    end
-  end
-
-  def last_completed_index(itinerary), do: first_uncompleted_index(itinerary) - 1
-
-  @doc """
-  Can be called for a cargo that has no itinerary defined yet.
-  """
-  def split_completed_legs(nil), do: {[], []}
-
-  def split_completed_legs(%{legs: legs} = itinerary) do
-    Enum.split(legs, first_uncompleted_index(itinerary))
-  end
-
   def find_leg(:LOAD, itinerary, location) do
     Enum.find(itinerary.legs, fn leg ->
-      Leg.actual_load_location(leg) == location
+      Accessors.leg_actual_load_location(leg) == location
     end)
   end
 
   def find_leg(:UNLOAD, itinerary, location) do
     Enum.find(itinerary.legs, fn leg ->
-      Leg.actual_unload_location(leg) == location
+      Accessors.leg_actual_unload_location(leg) == location
     end)
   end
 
@@ -216,10 +121,10 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
   def to_route_specification(itinerary, original_route_spec \\ nil) do
     route_specification = %RouteSpecification{
-      origin: initial_departure_location(itinerary),
-      destination: final_arrival_location(itinerary),
-      earliest_departure: initial_departure_date(itinerary),
-      arrival_deadline: final_arrival_date(itinerary)
+      origin: Accessors.itinerary_initial_departure_location(itinerary),
+      destination: Accessors.itinerary_final_arrival_location(itinerary),
+      earliest_departure: Accessors.itinerary_initial_departure_date(itinerary),
+      arrival_deadline: Accessors.itinerary_final_arrival_date(itinerary)
     }
 
     if is_nil(original_route_spec) do
@@ -230,31 +135,6 @@ defmodule CargoShipping.CargoBookings.Itinerary do
         | earliest_departure: original_route_spec.earliest_departure,
           arrival_deadline: original_route_spec.arrival_deadline
       }
-    end
-  end
-
-  @doc """
-  Test that itinerary matches origin and destination requirements.
-  """
-  def satisfies?(itinerary, route_specification, opts \\ [])
-
-  def satisfies?(nil, _route_specification, _opts), do: false
-
-  def satisfies?(itinerary, route_specification, opts) do
-    must_satisfy_dates = Keyword.get(opts, :strict, false)
-
-    cond do
-      !(initial_departure_location(itinerary) == route_specification.origin &&
-            final_arrival_location(itinerary) == route_specification.destination) ->
-        false
-
-      must_satisfy_dates &&
-          !(initial_departure_date(itinerary) >= route_specification.earliest_departure &&
-                final_arrival_date(itinerary) <= route_specification.arrival_deadline) ->
-        false
-
-      true ->
-        true
     end
   end
 
@@ -280,7 +160,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
         matched_leg ->
           # Done, the matched leg does it all.
-          {:halt, Utils.from_struct([matched_leg]) |> Itinerary.new()}
+          {:halt, Utils.from_struct([matched_leg]) |> new()}
       end
     end)
   end
@@ -311,14 +191,14 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
       matched_leg ->
         # Done, append remaining legs to the solution.
-        Utils.from_struct([matched_leg | remaining_legs]) |> Itinerary.new()
+        Utils.from_struct([matched_leg | remaining_legs]) |> new()
     end
   end
 
   def itinerary_for_voyage(voyage_id, route_specification) do
     case single_leg_for_voyage(voyage_id, route_specification) do
       nil -> nil
-      leg -> List.wrap(leg) |> Itinerary.new()
+      leg -> List.wrap(leg) |> new()
     end
   end
 
@@ -418,7 +298,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
             updated_leg = update_leg(leg, leg_location, next_status, handling_event)
 
             updated_itinerary = build_update(before, updated_leg, rest)
-            Itinerary.debug_itinerary(updated_itinerary, "updated_itinerary")
+            debug_itinerary(updated_itinerary, "updated_itinerary")
             updated_itinerary
           else
             itinerary
@@ -521,13 +401,13 @@ defmodule CargoShipping.CargoBookings.Itinerary do
   end
 
   def split_for_scope(%{legs: legs} = itinerary, :first_uncompleted) do
-    index = first_uncompleted_index(itinerary)
+    index = Accessors.itinerary_first_uncompleted_index(itinerary)
 
     {before, [leg | rest]} = Enum.split(legs, index)
     {before, leg, rest}
   end
 
-  def debug_itinerary(itinerary, title \\ "itinerary") do
+  def debug_itinerary(itinerary, title) do
     Logger.debug(title)
 
     cond do
@@ -538,11 +418,6 @@ defmodule CargoShipping.CargoBookings.Itinerary do
   end
 
   defp debug_legs(legs) do
-    for leg <- legs, do: debug_leg(leg)
-  end
-
-  # Note: leg may NOT have status set (equivalent to :NOT_LOADED).
-  defp debug_leg(leg) do
-    Logger.debug("  #{to_string(leg)}")
+    for leg <- legs, do: Leg.debug_leg(leg)
   end
 end

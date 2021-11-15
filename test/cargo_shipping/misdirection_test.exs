@@ -4,7 +4,7 @@ defmodule CargoShipping.MisdirectionTest do
   require Logger
 
   alias CargoShipping.{CargoBookings, HandlingEventService, VoyagePlans, VoyageService}
-  alias CargoShipping.CargoBookings.Itinerary
+  alias CargoShipping.CargoBookings.{Accessors, Itinerary}
   alias CargoShipping.VoyagePlans.VoyageBuilder
 
   @base_time DateTime.utc_now() |> Timex.beginning_of_day() |> Timex.to_datetime()
@@ -68,7 +68,7 @@ defmodule CargoShipping.MisdirectionTest do
       |> Itinerary.new()
 
     {:ok, cargo} =
-      CargoBookings.create_cargo(%{
+      CargoBookingService.create_cargo(%{
         tracking_id: "TST442",
         origin: "SESTO",
         route_specification: %{
@@ -97,7 +97,7 @@ defmodule CargoShipping.MisdirectionTest do
       cargo = post_report_and_get_cargo(handling_report)
       # itinerary on voyage TEST01 from FIHEL (ACTUAL) to DEHAM - NOT_LOADED
       # delivery TST442 ROUTED IN_PORT MISDIRECTED at FIHEL
-      {new_route_spec, completed_legs, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, _completed_legs, new_origin?, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
       assert new_origin?
@@ -109,8 +109,8 @@ defmodule CargoShipping.MisdirectionTest do
         Itinerary.internal_itinerary_for_route_specification(cargo.itinerary, new_route_spec)
 
       assert new_itinerary
-      assert Itinerary.initial_departure_location(new_itinerary) == "FIHEL"
-      assert Itinerary.final_arrival_location(new_itinerary) == "CNHGH"
+      assert Accessors.itinerary_initial_departure_location(new_itinerary) == "FIHEL"
+      assert Accessors.itinerary_final_arrival_location(new_itinerary) == "CNHGH"
       refute patch_uncompleted_leg?
 
       merged_itinerary =
@@ -121,7 +121,7 @@ defmodule CargoShipping.MisdirectionTest do
       final_route_spec =
         Itinerary.to_route_specification(merged_itinerary, cargo.route_specification)
 
-      assert Itinerary.satisfies?(merged_itinerary, final_route_spec)
+      assert Accessors.itinerary_satisfies?(merged_itinerary, final_route_spec)
 
       params = CargoBookings.derived_routing_params(cargo, final_route_spec, merged_itinerary)
       update_and_get_cargo(cargo, params)
@@ -140,7 +140,7 @@ defmodule CargoShipping.MisdirectionTest do
       cargo = post_report_and_get_cargo(handling_report)
       # itinerary on voyage TEST01 from USNYC (ACTUAL) to DEHAM - NOT_LOADED
       # delivery TST442 ROUTED IN_PORT MISDIRECTED at USNYC
-      {new_route_spec, completed_legs, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, _completed_legs, new_origin?, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
       assert new_origin?
@@ -152,8 +152,8 @@ defmodule CargoShipping.MisdirectionTest do
         Itinerary.internal_itinerary_for_route_specification(cargo.itinerary, new_route_spec)
 
       assert new_itinerary
-      assert Itinerary.initial_departure_location(new_itinerary) == "USNYC"
-      assert Itinerary.final_arrival_location(new_itinerary) == "CNHGH"
+      assert Accessors.itinerary_initial_departure_location(new_itinerary) == "USNYC"
+      assert Accessors.itinerary_final_arrival_location(new_itinerary) == "CNHGH"
       refute patch_uncompleted_leg?
 
       merged_itinerary =
@@ -164,7 +164,7 @@ defmodule CargoShipping.MisdirectionTest do
       final_route_spec =
         Itinerary.to_route_specification(merged_itinerary, cargo.route_specification)
 
-      assert Itinerary.satisfies?(merged_itinerary, final_route_spec)
+      assert Accessors.itinerary_satisfies?(merged_itinerary, final_route_spec)
 
       params = CargoBookings.derived_routing_params(cargo, final_route_spec, merged_itinerary)
       update_and_get_cargo(cargo, params)
@@ -186,7 +186,7 @@ defmodule CargoShipping.MisdirectionTest do
       # itinerary on voyage TEST01 from SESTO to FIHEL (ACTUAL) - COMPLETED
       # delivery TST442 ROUTED IN_PORT MISDIRECTED at FIHEL
 
-      {new_route_spec, completed_legs, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, _completed_legs, new_origin?, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
       assert new_origin?
@@ -198,8 +198,8 @@ defmodule CargoShipping.MisdirectionTest do
         Itinerary.internal_itinerary_for_route_specification(cargo.itinerary, new_route_spec)
 
       assert new_itinerary
-      assert Itinerary.initial_departure_location(new_itinerary) == "FIHEL"
-      assert Itinerary.final_arrival_location(new_itinerary) == "CNHGH"
+      assert Accessors.itinerary_initial_departure_location(new_itinerary) == "FIHEL"
+      assert Accessors.itinerary_final_arrival_location(new_itinerary) == "CNHGH"
       refute patch_uncompleted_leg?
 
       merged_itinerary =
@@ -210,7 +210,7 @@ defmodule CargoShipping.MisdirectionTest do
       final_route_spec =
         Itinerary.to_route_specification(merged_itinerary, cargo.route_specification)
 
-      assert Itinerary.satisfies?(merged_itinerary, final_route_spec)
+      assert Accessors.itinerary_satisfies?(merged_itinerary, final_route_spec)
 
       params = CargoBookings.derived_routing_params(cargo, final_route_spec, merged_itinerary)
       update_and_get_cargo(cargo, params)
@@ -230,7 +230,7 @@ defmodule CargoShipping.MisdirectionTest do
       # itinerary on voyage TEST01 from SESTO to USNYC (ACTUAL) - COMPLETED
       # delivery TST442 ROUTED IN_PORT MISDIRECTED at USNYC
 
-      {new_route_spec, completed_legs, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, _completed_legs, new_origin?, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
       assert new_origin?
@@ -242,8 +242,8 @@ defmodule CargoShipping.MisdirectionTest do
         Itinerary.internal_itinerary_for_route_specification(cargo.itinerary, new_route_spec)
 
       assert new_itinerary
-      assert Itinerary.initial_departure_location(new_itinerary) == "USNYC"
-      assert Itinerary.final_arrival_location(new_itinerary) == "CNHGH"
+      assert Accessors.itinerary_initial_departure_location(new_itinerary) == "USNYC"
+      assert Accessors.itinerary_final_arrival_location(new_itinerary) == "CNHGH"
       refute patch_uncompleted_leg?
 
       merged_itinerary =
@@ -254,7 +254,7 @@ defmodule CargoShipping.MisdirectionTest do
       final_route_spec =
         Itinerary.to_route_specification(merged_itinerary, cargo.route_specification)
 
-      assert Itinerary.satisfies?(merged_itinerary, final_route_spec)
+      assert Accessors.itinerary_satisfies?(merged_itinerary, final_route_spec)
 
       params = CargoBookings.derived_routing_params(cargo, final_route_spec, merged_itinerary)
       update_and_get_cargo(cargo, params)
@@ -275,7 +275,7 @@ defmodule CargoShipping.MisdirectionTest do
       cargo = post_report_and_get_cargo(handling_report)
       # itinerary on voyage TEST01 from FIHEL (ACTUAL) to DEHAM - ONBOARD_CARRIER
       # delivery TST442 ROUTED ONBOARD_CARRIER MISDIRECTED from FIHEL on voyage TEST01
-      {new_route_spec, completed_legs, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, _completed_legs, new_origin?, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
       assert new_origin?
@@ -287,8 +287,8 @@ defmodule CargoShipping.MisdirectionTest do
         Itinerary.internal_itinerary_for_route_specification(cargo.itinerary, new_route_spec)
 
       assert new_itinerary
-      assert Itinerary.initial_departure_location(new_itinerary) == "FIHEL"
-      assert Itinerary.final_arrival_location(new_itinerary) == "CNHGH"
+      assert Accessors.itinerary_initial_departure_location(new_itinerary) == "FIHEL"
+      assert Accessors.itinerary_final_arrival_location(new_itinerary) == "CNHGH"
       assert patch_uncompleted_leg?
 
       merged_itinerary =
@@ -299,7 +299,7 @@ defmodule CargoShipping.MisdirectionTest do
       final_route_spec =
         Itinerary.to_route_specification(merged_itinerary, cargo.route_specification)
 
-      assert Itinerary.satisfies?(merged_itinerary, final_route_spec)
+      assert Accessors.itinerary_satisfies?(merged_itinerary, final_route_spec)
 
       params = CargoBookings.derived_routing_params(cargo, final_route_spec, merged_itinerary)
       update_and_get_cargo(cargo, params)
@@ -318,7 +318,7 @@ defmodule CargoShipping.MisdirectionTest do
       cargo = post_report_and_get_cargo(handling_report)
       # itinerary on voyage TEST01 from USNYC (ACTUAL) to DEHAM - ONBOARD_CARRIER
       # delivery TST442 ROUTED ONBOARD_CARRIER MISDIRECTED from USNYC on voyage TEST01
-      {new_route_spec, completed_legs, new_origin?, patch_uncompleted_leg?} =
+      {new_route_spec, _completed_legs, new_origin?, patch_uncompleted_leg?} =
         CargoBookings.get_remaining_route_specification(cargo)
 
       assert new_origin?
@@ -330,8 +330,8 @@ defmodule CargoShipping.MisdirectionTest do
         Itinerary.internal_itinerary_for_route_specification(cargo.itinerary, new_route_spec)
 
       assert new_itinerary
-      assert Itinerary.initial_departure_location(new_itinerary) == "USNYC"
-      assert Itinerary.final_arrival_location(new_itinerary) == "CNHGH"
+      assert Accessors.itinerary_initial_departure_location(new_itinerary) == "USNYC"
+      assert Accessors.itinerary_final_arrival_location(new_itinerary) == "CNHGH"
       assert patch_uncompleted_leg?
 
       merged_itinerary =
@@ -342,7 +342,7 @@ defmodule CargoShipping.MisdirectionTest do
       final_route_spec =
         Itinerary.to_route_specification(merged_itinerary, cargo.route_specification)
 
-      assert Itinerary.satisfies?(merged_itinerary, final_route_spec)
+      assert Accessors.itinerary_satisfies?(merged_itinerary, final_route_spec)
 
       params = CargoBookings.derived_routing_params(cargo, final_route_spec, merged_itinerary)
       update_and_get_cargo(cargo, params)

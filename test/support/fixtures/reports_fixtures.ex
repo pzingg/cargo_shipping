@@ -1,7 +1,7 @@
 defmodule CargoShipping.ReportsFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `CargoShipping.Reports` context.
+  entities via the `CargoShipping.HandlingReportService` service.
   """
 
   @doc """
@@ -18,7 +18,7 @@ defmodule CargoShipping.ReportsFixtures do
         location: cargo.origin,
         tracking_id: cargo.tracking_id
       })
-      |> CargoShipping.Reports.create_handling_report()
+      |> CargoShipping.HandlingReportService.submit_report()
 
     Process.sleep(100)
     handling_report

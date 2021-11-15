@@ -5,8 +5,11 @@ defmodule CargoShipping.VoyagePlans do
 
   import Ecto.Query, warn: false
 
-  alias CargoShipping.{Repo, VoyageService}
+  alias CargoShipping.Infra.Repo
+  alias CargoShipping.VoyageService
   alias CargoShipping.VoyagePlans.{Voyage, CarrierMovement}
+  alias CargoShippingSchemas.Voyage, as: Voyage_
+  alias CargoShippingSchemas.CarrierMovement, as: CarrierMovement_
 
   ## Voyage module
 
@@ -16,12 +19,12 @@ defmodule CargoShipping.VoyagePlans do
   ## Examples
 
       iex> list_voyages()
-      [%Voyage{}, ...]
+      [%Voyage_{}, ...]
 
   """
   def list_voyages do
     query =
-      from v in Voyage,
+      from v in Voyage_,
         order_by: v.voyage_number
 
     Repo.all(query)
@@ -35,13 +38,13 @@ defmodule CargoShipping.VoyagePlans do
   ## Examples
 
       iex> get_voyage!(123)
-      %Voyage{}
+      %Voyage_{}
 
       iex> get_voyage!(456)
       ** (Ecto.NoResultsError)
 
   """
-  def get_voyage!(id), do: Repo.get!(Voyage, id)
+  def get_voyage!(id), do: Repo.get!(Voyage_, id)
 
   def get_voyage_number_for_id(nil), do: nil
 
@@ -53,7 +56,7 @@ defmodule CargoShipping.VoyagePlans do
 
   def get_voyage_by_number(voyage_number) do
     query =
-      from v in Voyage,
+      from v in Voyage_,
         where: [voyage_number: ^voyage_number]
 
     Repo.one(query)
@@ -61,7 +64,7 @@ defmodule CargoShipping.VoyagePlans do
 
   def get_voyage_by_number!(voyage_number) do
     query =
-      from v in Voyage,
+      from v in Voyage_,
         where: [voyage_number: ^voyage_number]
 
     Repo.one!(query)
@@ -73,7 +76,7 @@ defmodule CargoShipping.VoyagePlans do
   ## Examples
 
       iex> create_voyage(%{field: value})
-      {:ok, %Voyage{}}
+      {:ok, %Voyage_{}}
 
       iex> create_voyage(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
@@ -81,7 +84,7 @@ defmodule CargoShipping.VoyagePlans do
   """
   def create_voyage(attrs \\ %{}) do
     result =
-      %Voyage{}
+      %Voyage_{}
       |> Voyage.changeset(attrs)
       |> Repo.insert()
 
@@ -96,13 +99,13 @@ defmodule CargoShipping.VoyagePlans do
   ## Examples
 
       iex> update_voyage(voyage, %{field: new_value})
-      {:ok, %Voyage{}}
+      {:ok, %Voyage_{}}
 
       iex> update_voyage(voyage, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_voyage(%Voyage{} = voyage, attrs) do
+  def update_voyage(%Voyage_{} = voyage, attrs) do
     result =
       voyage
       |> Voyage.changeset(attrs)
@@ -119,13 +122,13 @@ defmodule CargoShipping.VoyagePlans do
   ## Examples
 
       iex> delete_voyage(voyage)
-      {:ok, %Voyage{}}
+      {:ok, %Voyage_{}}
 
       iex> delete_voyage(voyage)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_voyage(%Voyage{} = voyage) do
+  def delete_voyage(%Voyage_{} = voyage) do
     result = Repo.delete(voyage)
 
     VoyageService.update_cache()
@@ -139,10 +142,10 @@ defmodule CargoShipping.VoyagePlans do
   ## Examples
 
       iex> change_voyage(voyage)
-      %Ecto.Changeset{data: %Voyage{}}
+      %Ecto.Changeset{data: %Voyage_{}}
 
   """
-  def change_voyage(%Voyage{} = voyage, attrs \\ %{}) do
+  def change_voyage(%Voyage_{} = voyage, attrs \\ %{}) do
     Voyage.changeset(voyage, attrs)
   end
 
@@ -152,10 +155,10 @@ defmodule CargoShipping.VoyagePlans do
   ## Examples
 
       iex> change_carrier_movement(movement)
-      %Ecto.Changeset{data: %CarrierMovement{}}
+      %Ecto.Changeset{data: %CarrierMovement_{}}
 
   """
-  def change_carrier_movement(%CarrierMovement{} = movement, attrs \\ %{}) do
+  def change_carrier_movement(%CarrierMovement_{} = movement, attrs \\ %{}) do
     CarrierMovement.changeset(movement, attrs)
   end
 end

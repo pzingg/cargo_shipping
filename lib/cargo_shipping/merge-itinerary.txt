@@ -1,0 +1,35 @@
+
+
+patch_uncompleted_leg? is false
+last_completed_index = -1
+active_index is 0
+LOAD at FIHEL original: %CargoShipping.CargoBookings.Itinerary{legs: [
+%Leg{actual_load_location: "FIHEL", load_location: "SESTO", status: :ONBOARD_CARRIER, unload_location: "DEHAM", voyage_id: "a037df6f-f9f7-4228-8039-ffba3bd8f95b"},
+%Leg{load_location: "DEHAM", status: :NOT_LOADED, unload_location: "NLRTM", voyage_id: "0838d349-c2f2-4a18-948b-dfa6afa2c638"},
+%Leg{load_location: "NLRTM", status: :NOT_LOADED, unload_location: "CNHGH", voyage_id: "354ce47c-62d7-4b5e-8940-3132dbf3534b"}]}
+
+LOAD at FIHEL new: %CargoShipping.CargoBookings.Itinerary{legs: [
+%Leg{load_location: "FIHEL", status: :NOT_LOADED, unload_location: "CNHGH", voyage_id: "354ce47c-62d7-4b5e-8940-3132dbf3534b"}]}
+
+merged at 0, updated with original_leg[0]
+
+LOAD at FIHEL merged: %CargoShipping.CargoBookings.Itinerary{legs: [
+%Leg{actual_load_location: "FIHEL", load_location: "SESTO", status: :ONBOARD_CARRIER, unload_location: "CNHGH", voyage_id: "354ce47c-62d7-4b5e-8940-3132dbf3534b"}]}
+
+
+patch_uncompleted_leg? is true
+last_completed_index = 0
+active_index is 1
+UNLOAD at FIHEL original: %CargoShipping.CargoBookings.Itinerary{legs: [
+%Leg{actual_unload_location: "FIHEL", load_location: "SESTO", status: :COMPLETED, unload_location: "DEHAM", voyage_id: "ad09c399-d698-46b3-810a-013a49477288"},
+%Leg{load_location: "DEHAM", status: :NOT_LOADED, unload_location: "NLRTM", voyage_id: "6517d249-becd-4e7c-9bd1-7511f12e9e08"},
+%Leg{load_location: "NLRTM", status: :NOT_LOADED, unload_location: "CNHGH", voyage_id: "5f5184d1-cf19-45a0-a294-00ab8d8d248c"}]}
+
+UNLOAD at FIHEL new: %CargoShipping.CargoBookings.Itinerary{legs: [
+%Leg{load_location: "FIHEL", status: :NOT_LOADED, unload_location: "CNHGH", voyage_id: "5f5184d1-cf19-45a0-a294-00ab8d8d248c"}]}
+
+merged at 1, no update needed
+
+UNLOAD at FIHEL merged: %CargoShipping.CargoBookings.Itinerary{legs: [
+%Leg{actual_unload_location: "FIHEL", load_location: "SESTO", status: :COMPLETED, unload_location: "DEHAM", voyage_id: "ad09c399-d698-46b3-810a-013a49477288"},
+%Leg{load_location: "FIHEL", status: :NOT_LOADED, unload_location: "CNHGH", voyage_id: "5f5184d1-cf19-45a0-a294-00ab8d8d248c"}]}

@@ -1,2 +1,2 @@
 ExUnit.start()
-Ecto.Adapters.SQL.Sandbox.mode(CargoShipping.Repo, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(CargoShipping.Infra.Repo, :manual)

@@ -1,19 +1,30 @@
 defmodule CargoShipping.ApplicationEvents.Consumer do
   @moduledoc """
-  Asynchronous event processors.
+  Asynchronous event consumer. Forwards all application
+  events to the `:handle_event` method defined in the Elixir module
+  specified as the `:name` start argument.
   """
   use GenServer
 
   require Logger
 
-  alias CargoShipping.{CargoInspectionService, HandlingEventService, Utils}
-  alias CargoShipping.CargoBookings.{Cargo, Delivery, HandlingEvent, Itinerary}
-
   ## GenServer public API
 
   @doc false
-  def start_link(arg) do
-    init_arg = Keyword.put_new(arg, :name, __MODULE__)
+  def child_spec(opts) do
+    name = Keyword.fetch!(opts, :name)
+
+    %{
+      id: name,
+      start: {__MODULE__, :start_link, [opts]},
+      type: :worker,
+      restart: :permanent,
+      shutdown: 500
+    }
+  end
+
+  @doc false
+  def start_link(init_arg) do
     name = Keyword.fetch!(init_arg, :name)
     GenServer.start_link(__MODULE__, init_arg, name: name)
   end
@@ -55,76 +66,19 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
     topics = Keyword.get(arg, :topics, ".*") |> List.wrap()
     result = EventBus.subscribe({subscriber, topics})
 
-    Logger.info("Consumer #{name} subscribed to #{inspect(topics)} -> #{inspect(result)}")
+    Logger.info("Module #{name} was subscribed to #{inspect(topics)} -> #{inspect(result)}")
 
     {:ok, config}
   end
 
   @impl true
-  def handle_cast({config, topic, id}, state) do
+  def handle_cast({config, topic, id}, %{name: name} = state) do
     event = EventBus.fetch_event({topic, id})
 
-    handle_event(topic, config, event)
+    Kernel.apply(name, :handle_event, [topic, config, event])
 
     subscriber = {__MODULE__, config}
     EventBus.mark_as_completed({subscriber, topic, id})
     {:noreply, state}
-  end
-
-  defp handle_event(:cargo_arrived, _config, event) do
-    # Payload is the cargo
-    Logger.info("[cargo_arrived] #{event.data.tracking_id} at #{Cargo.destination(event.data)}")
-  end
-
-  defp handle_event(:cargo_misdirected, _config, event) do
-    # Payload is the cargo
-    Logger.error("[cargo_misdirected] #{event.data.tracking_id}")
-  end
-
-  defp handle_event(:cargo_was_handled, _config, event) do
-    # Payload is the handling_event
-    Logger.info("[cargo_was_handled] #{to_string(event.data)}")
-    HandlingEvent.debug_handling_event(event.data)
-
-    # Respond to the event by updating the delivery status
-    CargoInspectionService.inspect_cargo(event.data.tracking_id)
-  end
-
-  defp handle_event(:cargo_handling_rejected, _config, event) do
-    # Payload is the error changeset
-    tracking_id = Ecto.Changeset.get_field(event.data, :tracking_id)
-    Logger.error("[cargo_handling_rejected] #{tracking_id} #{inspect(event.data.errors)}")
-  end
-
-  defp handle_event(:cargo_delivery_updated, _config, event) do
-    # Payload is the cargo
-    Logger.info(
-      "[cargo_delivery_updated] #{event.data.tracking_id} #{to_string(event.data.delivery)}"
-    )
-
-    Itinerary.debug_itinerary(event.data.itinerary)
-    Delivery.debug_delivery(event.data.delivery)
-  end
-
-  defp handle_event(:cargo_delivery_update_failed, _config, event) do
-    # Payload is the error changeset
-    tracking_id = Ecto.Changeset.get_field(event.data, :tracking_id)
-    Logger.error("[cargo_delivery_update_failed] #{tracking_id} #{inspect(event.data)}")
-  end
-
-  defp handle_event(:handling_report_received, _config, event) do
-    # Payload is handling report
-    Logger.info(
-      "[handling_report_received] #{event.data.tracking_id} #{event.data.event_type} at {event.data.location}"
-    )
-
-    # Turn around and create a handling event.
-    Utils.from_struct(event.data)
-    |> HandlingEventService.register_handling_event()
-  end
-
-  defp handle_event(:handling_report_rejected, _config, event) do
-    # Payload is the error changeset
-    Logger.error("[handling_report_rejected] #{inspect(event.data)}")
   end
 end

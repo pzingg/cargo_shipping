@@ -1,7 +1,7 @@
 import Config
 
 # Configure your database
-config :cargo_shipping, CargoShipping.Repo,
+config :cargo_shipping, CargoShipping.Infra.Repo,
   username: "postgres",
   password: "postgres",
   database: "cargo_shipping_dev",

@@ -35,34 +35,17 @@ defmodule CargoShipping.CargoBookings.Cargo do
   or not a cargo is misdirected, what the current status of the cargo is (on board carrier,
   in port etc), are captured in this aggregate.
   """
-  use Ecto.Schema
-
   import Ecto.Changeset
 
-  alias CargoShipping.{Locations, VoyageService}
-  alias CargoShipping.CargoBookings.{Delivery, HandlingEvent, Itinerary, RouteSpecification}
-
-  @derive {Phoenix.Param, key: :tracking_id}
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
-  @timestamps_opts [type: :utc_datetime]
-  schema "cargos" do
-    field :tracking_id, :string
-    field :origin, :string
-    embeds_one :route_specification, RouteSpecification, on_replace: :update
-    embeds_one :itinerary, Itinerary, on_replace: :update
-    embeds_one :delivery, Delivery, on_replace: :update
-
-    has_many(:handling_events, HandlingEvent)
-
-    timestamps()
-  end
+  alias CargoShipping.CargoBookings.{Delivery, Itinerary, RouteSpecification}
 
   defmodule EditDestination do
     @moduledoc """
     Use a schemaless changeset to build edit destination form.
     """
     use Ecto.Schema
+
+    alias CargoShipping.Locations
 
     @primary_key false
     embedded_schema do
@@ -93,52 +76,7 @@ defmodule CargoShipping.CargoBookings.Cargo do
     |> validate_required([:origin])
   end
 
-  ## Route specification delegates
-
-  def destination(cargo) do
-    cargo.route_specification.destination
-  end
-
-  def arrival_deadline(cargo) do
-    cargo.route_specification.arrival_deadline
-  end
-
-  ## Itinerary delegates
-
-  def completed_itinerary_legs(%{itinerary: nil}), do: []
-
-  def completed_itinerary_legs(%{itinerary: itinerary}) do
-    {completed, _uncompleted} = Itinerary.split_completed_legs(itinerary)
-    completed
-  end
-
-  ## Delivery delegates
-
-  def misdirected?(%{delivery: nil}), do: false
-  def misdirected?(%{delivery: delivery}), do: delivery.misdirected?
-
-  def routing_status(%{delivery: nil}), do: :NOT_ROUTED
-  def routing_status(%{delivery: delivery}), do: delivery.routing_status
-
-  def transport_status(%{delivery: nil}), do: :UNKNOWN
-  def transport_status(%{delivery: delivery}), do: delivery.transport_status
-
-  def last_event_type(%{delivery: nil}), do: nil
-  def last_event_type(%{delivery: delivery}), do: delivery.last_event_type
-
-  def last_known_location(%{delivery: nil}), do: nil
-  def last_known_location(%{delivery: delivery}), do: delivery.last_known_location
-
-  def next_expected_activity(%{delivery: nil}), do: nil
-  def next_expected_activity(%{delivery: delivery} = _cargo), do: delivery.next_expected_activity
-
-  def current_voyage_number(%{delivery: nil}), do: nil
-
-  def current_voyage_number(%{delivery: delivery}) do
-    VoyageService.get_voyage_number_for_id(delivery.current_voyage_id)
-  end
-
-  ## Public API
+  ## Public API for CargoShipping bounded context
 
   def set_origin_from_route_specification(changeset) do
     # Cargo origin never changes, even if the route specification changes.

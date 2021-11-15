@@ -15,17 +15,13 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
 
   All other events must be of `:RECEIVE`, `:CLAIM` or `:CUSTOMS`.
   """
-  use Ecto.Schema
-
   import Ecto.Changeset
 
   require Logger
 
-  alias CargoShipping.{CargoBookings, LocationService, VoyageService}
-  alias CargoShipping.CargoBookings.Cargo
-  alias __MODULE__
+  alias CargoShipping.{CargoBookings, LocationService, Utils, VoyageService}
+  alias CargoShippingSchemas.HandlingEvent
 
-  @event_type_values [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
   @cast_fields [
     :cargo_id,
     :tracking_id,
@@ -39,43 +35,37 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
   @cargo_id_required_fields [:cargo_id, :event_type, :location, :completed_at]
   @tracking_id_required_fields [:event_type, :location, :completed_at]
 
-  defimpl String.Chars, for: HandlingEvent do
+  defimpl String.Chars, for: CargoShippingSchemas.HandlingEvent do
+    use Boundary, classify_to: CargoShipping
+
     def to_string(handling_event) do
-      voyage_number =
-        case handling_event.voyage_id do
-          nil ->
-            ""
-
-          voyage_id ->
-            " on voyage " <> VoyageService.get_voyage_number_for_id(voyage_id)
-        end
-
-      "#{handling_event.tracking_id} #{handling_event.event_type} at #{handling_event.location}#{voyage_number}"
+      CargoShipping.CargoBookings.HandlingEvent.string_from(handling_event)
     end
   end
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
-  @timestamps_opts [type: :utc_datetime]
-  schema "handling_events" do
-    field :event_type, Ecto.Enum, values: @event_type_values
-    field :voyage_id, Ecto.UUID
-    field :location, :string
-    field :completed_at, :utc_datetime
-    field :voyage_number, :string, virtual: true
-    field :tracking_id, :string, virtual: true
+  def string_from(handling_event) do
+    voyage_number =
+      case handling_event.voyage_id do
+        nil ->
+          ""
 
-    belongs_to :cargo, Cargo
+        voyage_id ->
+          " on voyage " <> VoyageService.get_voyage_number_for_id(voyage_id)
+      end
 
-    timestamps(inserted_at: :registered_at, updated_at: false)
+    "#{handling_event.tracking_id} #{handling_event.event_type} at #{handling_event.location}#{voyage_number}"
   end
 
   @doc false
-  def changeset(attrs) do
+  def cargo_changeset(cargo, attrs) do
+    set_cargo_id(cargo, attrs) |> cargo_id_changeset()
+  end
+
+  def cargo_id_changeset(attrs) do
     %HandlingEvent{}
     |> cast(attrs, @cast_fields)
     |> validate_required(@cargo_id_required_fields)
-    |> validate_inclusion(:event_type, @event_type_values)
+    |> validate_inclusion(:event_type, HandlingEvent.event_type_values())
     |> validate_location()
     |> validate_voyage_number_or_id()
     |> validate_permissible_event_for_cargo()
@@ -85,7 +75,7 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
     %HandlingEvent{}
     |> cast(attrs, @cast_fields)
     |> validate_required(@tracking_id_required_fields)
-    |> validate_inclusion(:event_type, @event_type_values)
+    |> validate_inclusion(:event_type, HandlingEvent.event_type_values())
     |> validate_location()
     |> validate_voyage_number_or_id()
     |> validate_permissible_event_for_cargo()
@@ -96,9 +86,9 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
   it cannot find the cargo.
   """
   def handling_report_changeset(attrs) do
-    case CargoBookings.set_cargo_id_from_tracking_id(attrs) do
+    case set_cargo_id_from_tracking_id(attrs) do
       {:ok, event_attrs} ->
-        changeset(event_attrs)
+        cargo_id_changeset(event_attrs)
 
       {:error, message} ->
         tracking_id_changeset(attrs)
@@ -226,8 +216,39 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
     end
   end
 
+  ## Utility functions
+
+  def set_cargo_id(cargo, attrs) do
+    {cargo_id_key, tracking_id_key} =
+      if Utils.atom_keys?(attrs) do
+        {:cargo_id, :tracking_id}
+      else
+        {"cargo_id", "tracking_id"}
+      end
+
+    attrs
+    |> Map.put(cargo_id_key, cargo.id)
+    |> Map.put(tracking_id_key, cargo.tracking_id)
+  end
+
+  defp set_cargo_id_from_tracking_id(attrs) do
+    tracking_id = Utils.get(attrs, :tracking_id)
+
+    if is_nil(tracking_id) do
+      {:error, "can't be blank"}
+    else
+      case CargoBookings.get_cargo_by_tracking_id!(tracking_id) do
+        nil ->
+          {:error, "is_invalid"}
+
+        cargo ->
+          {:ok, set_cargo_id(cargo, attrs)}
+      end
+    end
+  end
+
   def debug_handling_event(handling_event) do
     Logger.debug("handling_event")
-    Logger.debug("   #{to_string(handling_event)}")
+    Logger.debug("   #{string_from(handling_event)}")
   end
 end

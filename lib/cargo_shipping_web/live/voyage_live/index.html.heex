@@ -34,9 +34,9 @@
       <tr id={"voyage-#{voyage.id}"}>
         <td><%= voyage.voyage_number %></td>
         <td><%= Enum.count(voyage.schedule_items) %></td>
-        <td><%= voyage_origin(voyage) %></td>
+        <td><%= voyage_origin_text(voyage) %></td>
         <td><%= voyage_origin_time(voyage) %></td>
-        <td><%= voyage_destination(voyage) %></td>
+        <td><%= voyage_destination_text(voyage) %></td>
         <td><%= voyage_destination_time(voyage) %></td>
         <td>
           <span><%= live_redirect "Show", to: Routes.voyage_show_path(@socket, :show, voyage) %></span>

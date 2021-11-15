@@ -2,7 +2,7 @@ defmodule CargoShippingWeb.CargoLive.Show do
   use CargoShippingWeb, :live_view
 
   alias CargoShipping.CargoBookings
-  alias CargoShipping.CargoBookings.Itinerary
+  alias CargoShipping.CargoBookings.Accessors
 
   @impl true
   def mount(_params, _session, socket) do
@@ -24,8 +24,8 @@ defmodule CargoShippingWeb.CargoLive.Show do
       else
         %{
           indexed_legs: Enum.with_index(cargo.itinerary.legs),
-          selected_index: Itinerary.last_completed_index(cargo.itinerary),
-          revert_destination: Itinerary.final_arrival_location(cargo.itinerary)
+          selected_index: Accessors.itinerary_last_completed_index(cargo.itinerary),
+          revert_destination: Accessors.itinerary_final_arrival_location(cargo.itinerary)
         }
       end
 

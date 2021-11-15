@@ -4,7 +4,7 @@ defmodule CargoShipping.RouteFindingTest do
   require Logger
 
   describe "finds shortest path from" do
-    alias CargoShipping.CargoBookings.Itinerary
+    alias CargoShipping.CargoBookings.Accessors
 
     @tag hibernate_data: :voyages
     test "CNHKG to CNSHA" do
@@ -14,7 +14,7 @@ defmodule CargoShipping.RouteFindingTest do
 
       refute is_nil(shortest)
       assert Enum.count(shortest.itinerary.legs) == 4
-      Itinerary.debug_itinerary(shortest.itinerary)
+      Accessors.debug_itinerary(shortest.itinerary, "shortest itinerary")
 
       first_leg = List.first(shortest.itinerary.legs)
       last_leg = List.last(shortest.itinerary.legs)
@@ -30,7 +30,7 @@ defmodule CargoShipping.RouteFindingTest do
 
       refute is_nil(shortest)
       assert Enum.count(shortest.itinerary.legs) == 3
-      Itinerary.debug_itinerary(shortest.itinerary)
+      Accessors.debug_itinerary(shortest.itinerary, "shortest itinerary")
 
       first_leg = List.first(shortest.itinerary.legs)
       last_leg = List.last(shortest.itinerary.legs)

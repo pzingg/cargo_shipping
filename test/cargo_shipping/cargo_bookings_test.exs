@@ -6,7 +6,8 @@ defmodule CargoShipping.CargoBookingsTest do
   # TODO: Fix PostgreSQL Sandbox checkin/checkout errors.
 
   describe "cargos" do
-    alias CargoShipping.CargoBookings.Cargo
+    alias CargoShipping.CargoBookingService
+    alias CargoShippingSchemas.Cargo
 
     import CargoShipping.CargoBookingsFixtures
     import CargoShipping.VoyagePlansFixtures
@@ -57,7 +58,7 @@ defmodule CargoShipping.CargoBookingsTest do
         }
       }
 
-      assert {:ok, %Cargo{} = cargo} = CargoBookings.create_cargo(valid_attrs)
+      assert {:ok, %Cargo{} = cargo} = CargoBookingService.create_cargo(valid_attrs)
       Process.sleep(100)
       cargo = CargoBookings.get_cargo!(cargo.id)
       assert cargo.origin == "DEHAM"
@@ -65,7 +66,7 @@ defmodule CargoShipping.CargoBookingsTest do
     end
 
     test "create_cargo/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = CargoBookings.create_cargo(@invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} = CargoBookingService.create_cargo(@invalid_attrs)
       Process.sleep(100)
     end
 
@@ -120,7 +121,8 @@ defmodule CargoShipping.CargoBookingsTest do
   end
 
   describe "handling_events" do
-    alias CargoShipping.CargoBookings.HandlingEvent
+    alias CargoShipping.HandlingEventService
+    alias CargoShippingSchemas.HandlingEvent, as: HandlingEvent_
 
     import CargoShipping.CargoBookingsFixtures
 
@@ -143,8 +145,8 @@ defmodule CargoShipping.CargoBookingsTest do
         "completed_at" => ~U[2021-10-14 20:32:00Z]
       }
 
-      assert {:ok, %HandlingEvent{} = handling_event} =
-               CargoBookings.create_handling_event(cargo_fixture(), valid_attrs)
+      assert {:ok, %HandlingEvent_{} = handling_event} =
+               HandlingEventService.create_handling_event(cargo_fixture(), valid_attrs)
 
       Process.sleep(100)
       assert handling_event.event_type == :RECEIVE
@@ -153,12 +155,12 @@ defmodule CargoShipping.CargoBookingsTest do
 
     test "create_handling_event/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} =
-               CargoBookings.create_handling_event(cargo_fixture(), @invalid_attrs)
+               HandlingEventService.create_handling_event(cargo_fixture(), @invalid_attrs)
     end
 
     test "delete_handling_event/1 deletes the handling_event" do
       handling_event = handling_event_fixture()
-      assert {:ok, %HandlingEvent{}} = CargoBookings.delete_handling_event(handling_event)
+      assert {:ok, %HandlingEvent_{}} = CargoBookings.delete_handling_event(handling_event)
 
       assert_raise Ecto.NoResultsError, fn ->
         CargoBookings.get_handling_event!(handling_event.id)

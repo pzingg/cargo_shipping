@@ -1,8 +1,8 @@
 defmodule CargoShippingWeb.CargoLive.New do
   use CargoShippingWeb, :live_view
 
-  alias CargoShipping.{CargoBookings, LocationService}
-  alias CargoShipping.CargoBookings.Cargo
+  alias CargoShipping.{CargoBookings, CargoBookingService, LocationService}
+  alias CargoShippingSchemas.Cargo
   alias CargoShippingWeb.SharedComponents.Datepicker
 
   @impl true
@@ -47,7 +47,7 @@ defmodule CargoShippingWeb.CargoLive.New do
   def handle_event("save", raw_params, socket) do
     params = Datepicker.handle_form_change("cargo-form", "cargo", raw_params)
 
-    case CargoBookings.create_cargo(params) do
+    case CargoBookingService.create_cargo(params) do
       {:ok, _cargo} ->
         {:noreply,
          socket

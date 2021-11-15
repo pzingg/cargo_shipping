@@ -7,6 +7,7 @@ defmodule CargoShipping.LocationService do
   use Agent
 
   alias CargoShipping.Locations.Location
+  alias CargoShippingSchemas.Location, as: Location_
 
   @locations [
     {"_", "Unknown"},
@@ -31,7 +32,7 @@ defmodule CargoShipping.LocationService do
 
   def all() do
     Agent.get(__MODULE__, & &1)
-    |> Enum.reject(fn %Location{port_code: port_code} ->
+    |> Enum.reject(fn %Location_{port_code: port_code} ->
       port_code == "_"
     end)
   end
@@ -40,23 +41,23 @@ defmodule CargoShipping.LocationService do
 
   def all_except(un_locode) when is_binary(un_locode) do
     Agent.get(__MODULE__, & &1)
-    |> Enum.reject(fn %Location{port_code: port_code} ->
+    |> Enum.reject(fn %Location_{port_code: port_code} ->
       port_code == "_" || port_code == un_locode
     end)
   end
 
   def all_locodes() do
     all()
-    |> Enum.map(fn %Location{port_code: port_code} -> port_code end)
+    |> Enum.map(fn %Location_{port_code: port_code} -> port_code end)
   end
 
   def get!(id) do
-    case Enum.find(all(), fn %Location{id: location_id} -> id == location_id end) do
-      %Location{} = location ->
+    case Enum.find(all(), fn %Location_{id: location_id} -> id == location_id end) do
+      %Location_{} = location ->
         location
 
       _ ->
-        query = from l in Location, where: l.id == ^id
+        query = from l in Location_, where: l.id == ^id
         raise Ecto.NoResultsError, queryable: query
     end
   end
@@ -64,11 +65,11 @@ defmodule CargoShipping.LocationService do
   def get_by_locode(nil), do: nil
 
   def get_by_locode(un_locode) when is_binary(un_locode) do
-    Enum.find(all(), fn %Location{port_code: port_code} -> port_code == un_locode end)
+    Enum.find(all(), fn %Location_{port_code: port_code} -> port_code == un_locode end)
   end
 
   def other_than(un_locode) do
-    %Location{port_code: port_code} = all_except(un_locode) |> Enum.random()
+    %Location_{port_code: port_code} = all_except(un_locode) |> Enum.random()
     port_code
   end
 

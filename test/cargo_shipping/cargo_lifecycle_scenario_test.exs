@@ -4,7 +4,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
   require Logger
 
   alias CargoShipping.{CargoBookings, CargoBookingService, HandlingEventService, VoyageService}
-  alias CargoShipping.CargoBookings.{Delivery, Itinerary, RouteSpecification}
+  alias CargoShipping.CargoBookings.{Accessors, Itinerary}
 
   @tag hibernate_data: :all
   test "cargo undergoes lifecycle changes" do
@@ -68,9 +68,9 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     # Wait for event bus
     Process.sleep(500)
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
-    RouteSpecification.debug_route_specification(cargo.route_specification)
-    Itinerary.debug_itinerary(cargo.itinerary)
-    Delivery.debug_delivery(cargo.delivery)
+    Accessors.debug_route_specification(cargo.route_specification, "route")
+    Accessors.debug_itinerary(cargo.itinerary, "itinerary")
+    Accessors.debug_delivery(cargo.delivery)
 
     assert cargo.delivery.transport_status == :NOT_RECEIVED
     assert cargo.delivery.routing_status == :ROUTED
@@ -218,7 +218,8 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     assert leg.unload_location == "USNYC"
     assert leg.actual_unload_location == "CNSHA"
 
-    {completed_legs, _uncompleted_legs} = Itinerary.split_completed_legs(cargo.itinerary)
+    {completed_legs, _uncompleted_legs} =
+      Accessors.itinerary_split_completed_legs(cargo.itinerary)
 
     assert Enum.count(completed_legs) == 1
     leg = List.first(completed_legs)
@@ -232,7 +233,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     Logger.warn("Line 224, prefered itinerary")
 
-    Itinerary.debug_itinerary(itinerary)
+    Accessors.debug_itinerary(itinerary, "itinerary")
 
     assert Enum.count(itinerary.legs) == 3
     leg = List.first(itinerary.legs)
@@ -252,9 +253,9 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     Logger.warn("Line 253, after re-routing")
 
-    RouteSpecification.debug_route_specification(cargo.route_specification)
-    Itinerary.debug_itinerary(cargo.itinerary)
-    Delivery.debug_delivery(cargo.delivery)
+    Accessors.debug_route_specification(cargo.route_specification, "route")
+    Accessors.debug_itinerary(cargo.itinerary, "itinerary")
+    Accessors.debug_delivery(cargo.delivery)
 
     # New itinerary should satisfy new route
     assert cargo.delivery.routing_status == :ROUTED

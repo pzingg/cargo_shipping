@@ -1,25 +1,36 @@
-defmodule CargoShipping.Application do
+defmodule CargoShippingApplication do
+  @moduledoc """
+  CargoShippingApplication is the top-level application boundary.
+  """
+
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
-  @moduledoc false
 
   use Application
+  use Boundary, deps: [CargoShipping, CargoShippingWeb], exports: []
 
   @impl true
   def start(_type, _args) do
     children = [
       # Start the Ecto repository
-      CargoShipping.Repo,
+      CargoShipping.Infra.Repo,
       # Start the Telemetry supervisor
       CargoShippingWeb.Telemetry,
       # Start the PubSub system
       {Phoenix.PubSub, name: CargoShipping.PubSub},
       # Start the Endpoint (http/https)
       CargoShippingWeb.Endpoint,
-      # Start a worker by calling: CargoShipping.Worker.start_link(arg)
-      CargoShipping.ApplicationEvents.Consumer,
+      # Start agents
       CargoShipping.LocationService,
-      CargoShipping.VoyageService
+      CargoShipping.VoyageService,
+      # Start a worker by calling: CargoShipping.Worker.start_link(arg)
+      {CargoShipping.ApplicationEvents.Consumer,
+       name: CargoShipping.ApplicationEvents.DebugConsumer},
+      {CargoShipping.ApplicationEvents.Consumer,
+       name: CargoShipping.ApplicationEvents.CargoHandledConsumer, topics: :cargo_was_handled},
+      {CargoShipping.ApplicationEvents.Consumer,
+       name: CargoShipping.ApplicationEvents.HandlingEventRegistrationAttemptConsumer,
+       topics: :handling_report_received}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

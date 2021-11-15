@@ -14,7 +14,7 @@ if config_env() == :prod do
       For example: ecto://USER:PASS@HOST/DATABASE
       """
 
-  config :cargo_shipping, CargoShipping.Repo,
+  config :cargo_shipping, CargoShipping.Infra.Repo,
     # ssl: true,
     # socket_options: [:inet6],
     url: database_url,

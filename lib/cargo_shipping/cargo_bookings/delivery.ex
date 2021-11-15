@@ -12,13 +12,10 @@ defmodule CargoShipping.CargoBookings.Delivery do
   require Logger
 
   alias CargoShipping.{Utils, VoyageService}
-  alias CargoShipping.CargoBookings.{HandlingActivity, Itinerary, Leg}
-  alias __MODULE__
+  alias CargoShipping.CargoBookings.{Accessors, HandlingActivity, Itinerary}
 
-  @transport_status_values [:NOT_RECEIVED, :IN_PORT, :ONBOARD_CARRIER, :CLAIMED, :UNKNOWN]
-  @routing_status_values [:NOT_ROUTED, :ROUTED, :MISROUTED]
-  @last_event_type_values [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
   @eta_unknown nil
+
   @cast_fields [
     :transport_status,
     :routing_status,
@@ -39,47 +36,37 @@ defmodule CargoShipping.CargoBookings.Delivery do
     :calculated_at
   ]
 
-  defimpl String.Chars, for: Delivery do
+  defimpl String.Chars, for: CargoShippingSchemas.Delivery do
+    use Boundary, classify_to: CargoShipping
+
     def to_string(delivery) do
-      misdirect =
-        if delivery.misdirected? do
-          " MISDIRECTED"
-        else
-          ""
-        end
-
-      location =
-        cond do
-          !is_nil(delivery.current_voyage_id) ->
-            voyage_number = VoyageService.get_voyage_number_for_id(delivery.current_voyage_id)
-
-            " from #{delivery.last_known_location} on voyage #{voyage_number}"
-
-          !is_nil(delivery.last_known_location) ->
-            " at #{delivery.last_known_location}"
-
-          true ->
-            ""
-        end
-
-      "#{delivery.routing_status} #{delivery.transport_status}#{misdirect}#{location}"
+      CargoShipping.CargoBookings.Delivery.string_from(delivery)
     end
   end
 
-  @primary_key false
-  embedded_schema do
-    field :transport_status, Ecto.Enum, values: @transport_status_values
-    field :routing_status, Ecto.Enum, values: @routing_status_values
-    field :current_voyage_id, Ecto.UUID
-    field :last_event_id, Ecto.UUID
-    field :last_known_location, :string
-    field :last_event_type, Ecto.Enum, values: @last_event_type_values
-    field :misdirected?, :boolean
-    field :unloaded_at_destination?, :boolean
-    field :eta, :utc_datetime
-    field :calculated_at, :utc_datetime
+  def string_from(delivery) do
+    misdirect =
+      if delivery.misdirected? do
+        " MISDIRECTED"
+      else
+        ""
+      end
 
-    embeds_one :next_expected_activity, HandlingActivity, on_replace: :delete
+    location =
+      cond do
+        !is_nil(delivery.current_voyage_id) ->
+          voyage_number = VoyageService.get_voyage_number_for_id(delivery.current_voyage_id)
+
+          " from #{delivery.last_known_location} on voyage #{voyage_number}"
+
+        !is_nil(delivery.last_known_location) ->
+          " at #{delivery.last_known_location}"
+
+        true ->
+          ""
+      end
+
+    "#{delivery.routing_status} #{delivery.transport_status}#{misdirect}#{location}"
   end
 
   def delivery_details(delivery) do
@@ -101,7 +88,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
   end
 
   def debug_delivery(delivery) do
-    Logger.debug("delivery #{to_string(delivery)}")
+    Logger.debug("delivery #{string_from(delivery)}")
 
     for line <- delivery_details(delivery) do
       Logger.debug("  #{line}")
@@ -126,8 +113,11 @@ defmodule CargoShipping.CargoBookings.Delivery do
     delivery
     |> cast(attrs, @cast_fields)
     |> validate_required(@required_fields)
-    |> validate_inclusion(:transport_status, @transport_status_values)
-    |> validate_inclusion(:routing_status, @routing_status_values)
+    |> validate_inclusion(
+      :transport_status,
+      CargoShippingSchemas.Delivery.transport_status_values()
+    )
+    |> validate_inclusion(:routing_status, CargoShippingSchemas.Delivery.routing_status_values())
     |> cast_embed(:next_expected_activity, with: &HandlingActivity.changeset/2)
   end
 
@@ -217,7 +207,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
   defp calculate_routing_status(nil, _route_specification), do: :NOT_ROUTED
 
   defp calculate_routing_status(itinerary, route_specification) do
-    if Itinerary.satisfies?(itinerary, route_specification) do
+    if Accessors.itinerary_satisfies?(itinerary, route_specification) do
       :ROUTED
     else
       :MISROUTED
@@ -268,7 +258,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
   end
 
   defp calculate_eta(_itinerary, false), do: @eta_unknown
-  defp calculate_eta(itinerary, _on_track), do: Itinerary.final_arrival_date(itinerary)
+  defp calculate_eta(itinerary, _on_track), do: Accessors.itinerary_final_arrival_date(itinerary)
 
   defp calculate_next_expected_activity(_route_specification, _itinerary, _last_event, false),
     do: nil
@@ -293,7 +283,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
 
       :UNLOAD ->
         case Enum.find_index(itinerary.legs, fn leg ->
-               Leg.actual_unload_location(leg) == last_event.location
+               Accessors.leg_actual_unload_location(leg) == last_event.location
              end) do
           nil ->
             nil

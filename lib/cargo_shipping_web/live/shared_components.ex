@@ -18,10 +18,10 @@ defmodule CargoShippingWeb.SharedComponents do
       </thead>
       <tbody>
         <tr>
-          <td><%= cargo_origin(@cargo) %></td>
-          <td><%= cargo_destination(@cargo) %></td>
+          <td><%= cargo_origin_text(@cargo) %></td>
+          <td><%= cargo_destination_text(@cargo) %></td>
           <td><%= event_time(@cargo.route_specification, :arrival_deadline) %></td>
-          <td><%= cargo_last_known_location(@cargo) %></td>
+          <td><%= cargo_last_known_location_text(@cargo) %></td>
         </tr>
       </tbody>
     </table>
