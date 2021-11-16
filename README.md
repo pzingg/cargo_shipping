@@ -50,10 +50,9 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
 
 1. The project uses Sasa Juric's [boundary](https://github.com/sasa1977/boundary)
   library to enforce interface and core layers. The main layers are:
-
-  a. `CargoShippingWeb`, which depends on:
-  b. `CargoShipping`, which depends on:
-  c. `CargoShippingSchemas`, which defines value object and entity schemas.
+   a. `CargoShippingWeb`, which depends on:
+   b. `CargoShipping`, which depends on:
+   c. `CargoShippingSchemas`, which defines value object and entity schemas.
 
 2. The project uses Phoenix contexts (`CargoBookings`, `Reports`, and `VoyagePlans`)
   to contain core operations within Bounded Contexts.
