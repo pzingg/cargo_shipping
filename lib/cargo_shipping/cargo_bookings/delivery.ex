@@ -95,7 +95,7 @@ defmodule CargoShipping.CargoBookings.Delivery do
     end
   end
 
-  def not_routed() do
+  def not_routed do
     %{
       transport_status: :NOT_RECEIVED,
       last_known_location: nil,
@@ -272,40 +272,43 @@ defmodule CargoShipping.CargoBookings.Delivery do
   end
 
   defp calculate_next_expected_activity(_route_specification, itinerary, last_event, _on_track) do
-    case last_event.event_type do
-      :RECEIVE ->
-        Itinerary.find_leg(:LOAD, itinerary, last_event.location)
-        |> activity_from_leg(:LOAD)
+    expected_activity_for(last_event, itinerary)
+  end
 
-      :LOAD ->
-        Itinerary.find_leg(:LOAD, itinerary, last_event.location)
-        |> activity_from_leg(:UNLOAD)
+  defp expected_activity_for(%{event_type: :RECEIVE, location: location}, itinerary) do
+    Itinerary.find_leg(:LOAD, itinerary, location)
+    |> activity_from_leg(:LOAD)
+  end
 
-      :UNLOAD ->
-        case Enum.find_index(itinerary.legs, fn leg ->
-               Accessors.leg_actual_unload_location(leg) == last_event.location
-             end) do
-          nil ->
-            nil
+  defp expected_activity_for(%{event_type: :LOAD, location: location}, itinerary) do
+    Itinerary.find_leg(:LOAD, itinerary, location)
+    |> activity_from_leg(:UNLOAD)
+  end
 
-          i ->
-            if Enum.count(itinerary.legs) > i + 1 do
-              Enum.at(itinerary.legs, i + 1)
-              |> activity_from_leg(:LOAD)
-            else
-              Enum.at(itinerary.legs, i)
-              |> activity_from_leg(:CLAIM)
-            end
-        end
-
-      :CUSTOMS ->
-        Itinerary.find_leg(:UNLOAD, itinerary, last_event.location)
-        |> activity_from_leg(:CLAIM)
-
-      _ ->
+  defp expected_activity_for(%{event_type: :UNLOAD, location: location}, itinerary) do
+    case Enum.find_index(itinerary.legs, fn leg ->
+           Accessors.leg_actual_unload_location(leg) == location
+         end) do
+      nil ->
         nil
+
+      i ->
+        if Enum.count(itinerary.legs) > i + 1 do
+          Enum.at(itinerary.legs, i + 1)
+          |> activity_from_leg(:LOAD)
+        else
+          Enum.at(itinerary.legs, i)
+          |> activity_from_leg(:CLAIM)
+        end
     end
   end
+
+  defp expected_activity_for(%{event_type: :CUSTOMS, location: location}, itinerary) do
+    Itinerary.find_leg(:UNLOAD, itinerary, location)
+    |> activity_from_leg(:CLAIM)
+  end
+
+  defp expected_activity_for(_last_event, _itinerary), do: nil
 
   def activity_from_leg(nil, _event_type), do: nil
 

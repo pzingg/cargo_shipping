@@ -6,10 +6,7 @@ defmodule CargoShippingSchemas.Cargo do
 
   alias CargoShippingSchemas.{Delivery, HandlingEvent, Itinerary, RouteSpecification}
 
-  # @derive macro blows up boundary checking
-  # Error: (references from CargoShippingSchemas to Phoenix.Param.Any are not allowed)
-  # @derive {Phoenix.Param, key: :tracking_id}
-
+  @derive {Phoenix.Param, key: :tracking_id}
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   @timestamps_opts [type: :utc_datetime]
@@ -23,22 +20,5 @@ defmodule CargoShippingSchemas.Cargo do
     has_many(:handling_events, HandlingEvent)
 
     timestamps()
-  end
-
-  # Same as @derive {Phoenix.Param, key: :tracking_id}
-  defimpl Phoenix.Param, for: __MODULE__ do
-    def to_param(tracking_id: key) when is_binary(key), do: key
-
-    def to_param(tracking_id: nil) do
-      raise ArgumentError,
-            "cannot convert #{inspect(__MODULE__)} to param, " <>
-              "key :tracking_id contains a nil value"
-    end
-
-    def to_param(tracking_id: _key) do
-      raise ArgumentError,
-            "cannot convert #{inspect(__MODULE__)} to param, " <>
-              "key :tracking_id contains a non-binary value"
-    end
   end
 end

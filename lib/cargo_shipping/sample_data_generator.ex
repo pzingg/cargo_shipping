@@ -12,7 +12,7 @@ defmodule CargoShipping.SampleDataGenerator do
 
   ## Sample data
 
-  def voyage_0101() do
+  def voyage_0101 do
     # Voyage 0101: SESTO - FIHEL - DEHAM - CNHKG - JPTYO - AUMEL
     VoyageBuilder.init("0101", "SESTO")
     |> VoyageBuilder.add_destination("FIHEL", ts(1), ts(2))
@@ -23,7 +23,7 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.build()
   end
 
-  def voyage_0202() do
+  def voyage_0202 do
     # Voyage 0202: AUMEL - USCHI - DEHAM - SESTO - FIHEL
     VoyageBuilder.init("0202", "AUMEL")
     |> VoyageBuilder.add_destination("USCHI", ts(1), ts(2))
@@ -33,7 +33,7 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.build()
   end
 
-  def voyage_0303() do
+  def voyage_0303 do
     # Voyage 0303: CNHKG - AUMEL - FIHEL - DEHAM - SESTO - USCHI - JPTYO
     VoyageBuilder.init("0303", "CNHKG")
     |> VoyageBuilder.add_destination("AUMEL", ts(1), ts(2))
@@ -85,7 +85,7 @@ defmodule CargoShipping.SampleDataGenerator do
   @doc """
   Returns a map of voyages with keys :voyage_0101, etc.
   """
-  def load_carrier_movement_data() do
+  def load_carrier_movement_data do
     Enum.reduce(
       [
         :voyage_0101,
@@ -281,7 +281,7 @@ defmodule CargoShipping.SampleDataGenerator do
     wait_for_events()
   end
 
-  def load_sample_data() do
+  def load_sample_data do
     Logger.info("SampleDataGenerator.load_sample_data")
 
     # Locations are read-only in memory
@@ -487,7 +487,7 @@ defmodule CargoShipping.SampleDataGenerator do
 
   ## Sample voyages
 
-  def voyage_v100() do
+  def voyage_v100 do
     VoyageBuilder.init("V100", "CNHKG")
     |> VoyageBuilder.add_destination(
       "JPTYO",
@@ -502,7 +502,7 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.build()
   end
 
-  def voyage_v200() do
+  def voyage_v200 do
     VoyageBuilder.init("V200", "JPTYO")
     |> VoyageBuilder.add_destination(
       "USNYC",
@@ -522,7 +522,7 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.build()
   end
 
-  def voyage_v300() do
+  def voyage_v300 do
     VoyageBuilder.init("V300", "JPTYO")
     |> VoyageBuilder.add_destination(
       "NLRTM",
@@ -547,7 +547,7 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.build()
   end
 
-  def voyage_v400() do
+  def voyage_v400 do
     VoyageBuilder.init("V400", "DEHAM")
     |> VoyageBuilder.add_destination(
       "SESTO",
@@ -567,7 +567,7 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.build()
   end
 
-  def voyage_cnhkg_usnyc() do
+  def voyage_cnhkg_usnyc do
     # Voyage number 0100S (by ship)
     # Hongkong - Hangzou - Tokyo - Melbourne - New York
     VoyageBuilder.init("0100S", "CNHKG")
@@ -596,7 +596,7 @@ defmodule CargoShipping.SampleDataGenerator do
 
   ## From SampleVoyages.java
 
-  def voyage_usnyc_usdal() do
+  def voyage_usnyc_usdal do
     # Voyage number 0200T (by train)
     # New York - Chicago - Dallas
     VoyageBuilder.init("0200T", "USNYC")
@@ -613,7 +613,7 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.build()
   end
 
-  def voyage_usdal_fihel() do
+  def voyage_usdal_fihel do
     # Voyage number 0300A (by airplane)
     # Dallas - Hamburg - Stockholm - Helsinki
     VoyageBuilder.init("0300A", "USDAL")
@@ -635,7 +635,7 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.build()
   end
 
-  def voyage_usdal_fihel_alt() do
+  def voyage_usdal_fihel_alt do
     # Voyage number 0301S (by ship)
     # Dallas - Hamburg - Stockholm - Helsinki, alternate route
     VoyageBuilder.init("0301S", "USDAL")
@@ -647,7 +647,7 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.build()
   end
 
-  def voyage_fihel_cnhkg() do
+  def voyage_fihel_cnhkg do
     # Voyage number 0400S (by ship)
     # Helsinki - Rotterdam - Shanghai - Hongkong
     VoyageBuilder.init("0400S", "FIHEL")
@@ -669,7 +669,7 @@ defmodule CargoShipping.SampleDataGenerator do
     |> VoyageBuilder.build()
   end
 
-  def generate_voyages() do
+  def generate_voyages do
     Enum.reduce(
       [
         :voyage_v100,
@@ -698,7 +698,7 @@ defmodule CargoShipping.SampleDataGenerator do
     :ok
   end
 
-  def generate() do
+  def generate do
     Logger.info("SampleDataGenerator.generate")
 
     # Locations are read-only in memory
@@ -709,7 +709,7 @@ defmodule CargoShipping.SampleDataGenerator do
 
   ## Utilities
 
-  defp wait_for_events(), do: Process.sleep(100)
+  defp wait_for_events, do: Process.sleep(100)
 
   defp ts(hours) do
     DateTime.add(@base_time, hours * 3600, :second)

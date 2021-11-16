@@ -1,4 +1,5 @@
 defmodule CargoShippingWeb.HandlingReportLive.New do
+  @moduledoc false
   use CargoShippingWeb, :live_view
 
   alias CargoShipping.{HandlingReportService, Reports}

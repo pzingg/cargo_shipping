@@ -17,6 +17,8 @@ defmodule CargoShippingWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
+  alias CargoShipping.DataCaseHelpers
+
   using do
     quote do
       # Import conveniences for testing with connections
@@ -32,26 +34,8 @@ defmodule CargoShippingWeb.ConnCase do
   end
 
   setup tags do
-    pid =
-      Ecto.Adapters.SQL.Sandbox.start_owner!(CargoShipping.Infra.Repo, shared: not tags[:async])
-
-    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
-
-    if tags[:sample_data] do
-      :ok = CargoShipping.SampleDataGenerator.load_sample_data()
-    end
-
-    case Map.get(tags, :hibernate_data) do
-      nil ->
-        :ok
-
-      :voyages ->
-        _ = CargoShipping.SampleDataGenerator.generate_voyages()
-        :ok
-
-      _ ->
-        :ok = CargoShipping.SampleDataGenerator.generate()
-    end
+    _ = DataCaseHelpers.start_sandbox_owner(tags)
+    _ = DataCaseHelpers.load_sample_data(tags)
 
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end

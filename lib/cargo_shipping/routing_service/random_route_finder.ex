@@ -5,8 +5,8 @@ defmodule CargoShipping.RoutingService.RandomRouteFinder do
   """
   require Logger
 
-  alias CargoShipping.{LocationService, Utils, VoyageService}
   alias CargoShipping.CargoBookings.Itinerary
+  alias CargoShipping.{LocationService, Utils, VoyageService}
 
   defmodule TransitEdge do
     @moduledoc """

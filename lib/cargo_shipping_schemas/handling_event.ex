@@ -37,5 +37,5 @@ defmodule CargoShippingSchemas.HandlingEvent do
     timestamps(inserted_at: :registered_at, updated_at: false)
   end
 
-  def event_type_values(), do: @event_type_values
+  def event_type_values, do: @event_type_values
 end

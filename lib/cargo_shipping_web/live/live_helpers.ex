@@ -1,9 +1,10 @@
 defmodule CargoShippingWeb.LiveHelpers do
+  @moduledoc false
   import Phoenix.LiveView.Helpers
 
   require Logger
 
-  alias CargoShipping.{CargoBookings, VoyagePlans, VoyageService, LocationService}
+  alias CargoShipping.{CargoBookings, LocationService, VoyagePlans, VoyageService}
   alias CargoShipping.CargoBookings.Accessors, as: CargoAccessors
   alias CargoShippingSchemas.Bulletin
   alias CargoShippingWeb.Router.Helpers, as: Routes
@@ -87,7 +88,7 @@ defmodule CargoShippingWeb.LiveHelpers do
     LocationService.get_by_locode(location).name
   end
 
-  def event_type_options() do
+  def event_type_options do
     [
       {"Cargo received", "RECEIVE"},
       {"Cargo loaded", "LOAD"},
@@ -97,7 +98,7 @@ defmodule CargoShippingWeb.LiveHelpers do
     ]
   end
 
-  def all_location_options() do
+  def all_location_options do
     LocationService.all()
     |> Enum.map(fn %{port_code: port_code, name: name} ->
       # First element is the option label
@@ -107,7 +108,7 @@ defmodule CargoShippingWeb.LiveHelpers do
     |> Enum.sort()
   end
 
-  def all_voyage_options() do
+  def all_voyage_options do
     VoyagePlans.list_voyages()
     |> Enum.map(fn voyage ->
       label =
@@ -118,7 +119,7 @@ defmodule CargoShippingWeb.LiveHelpers do
     |> Enum.sort()
   end
 
-  def all_cargo_options() do
+  def all_cargo_options do
     CargoBookings.list_cargos()
     |> Enum.map(fn cargo ->
       label =

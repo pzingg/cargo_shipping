@@ -1,4 +1,5 @@
 defmodule CargoShippingWeb.VoyageLive.Show do
+  @moduledoc false
   use CargoShippingWeb, :live_view
 
   alias CargoShipping.VoyagePlans

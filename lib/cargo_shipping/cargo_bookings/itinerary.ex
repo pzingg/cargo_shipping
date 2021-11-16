@@ -8,7 +8,7 @@ defmodule CargoShipping.CargoBookings.Itinerary do
 
   require Logger
 
-  alias CargoShipping.{VoyageService, Utils}
+  alias CargoShipping.{Utils, VoyageService}
   alias CargoShipping.CargoBookings.{Accessors, Leg}
   alias CargoShippingSchemas.{Itinerary, RouteSpecification}
 
@@ -212,133 +212,148 @@ defmodule CargoShipping.CargoBookings.Itinerary do
   @doc """
   Test if the given handling event is expected when executing this itinerary.
   """
-  def matches_handling_event(itinerary, handling_event, opts \\ []) do
-    cond do
-      is_nil(itinerary) ->
-        {:error, "no itinerary", nil}
+  def matches_handling_event(itinerary, handling_event, opts \\ [])
 
-      Enum.empty?(itinerary.legs) ->
-        {:error, "empty itinerary", nil}
+  def matches_handling_event(nil, _handling_event, _opts) do
+    {:error, "no itinerary", nil}
+  end
 
-      true ->
-        {scope, voyage_id, leg_location, next_status} =
-          case handling_event.event_type do
-            :RECEIVE ->
-              {:first, nil, :LOAD, :NOT_LOADED}
+  def matches_handling_event(%{legs: []}, _handling_event, _opts) do
+    {:error, "empty itinerary", nil}
+  end
 
-            :LOAD ->
-              {:first_uncompleted, handling_event.voyage_id, :LOAD, :ONBOARD_CARRIER}
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  def matches_handling_event(itinerary, handling_event, opts) do
+    {scope, voyage_id, leg_location, next_status} = get_scope_and_params(handling_event)
 
-            :UNLOAD ->
-              {:first_uncompleted, handling_event.voyage_id, :UNLOAD, :COMPLETED}
+    ignore_completion = Keyword.get(opts, :ignore_completion, false)
 
-            :CUSTOMS ->
-              {:last, nil, :UNLOAD, :IN_CUSTOMS}
+    real_scope =
+      if scope == :first_uncompleted && ignore_completion do
+        :any
+      else
+        scope
+      end
 
-            :CLAIM ->
-              {:last, nil, :UNLOAD, :CLAIMED}
-          end
+    {before, leg, rest, voyage_matched?, location_matched?} =
+      if real_scope == :any do
+        params = %{
+          legs: itinerary.legs,
+          voyage_id: voyage_id,
+          leg_location: leg_location,
+          handling_event_location: handling_event.location
+        }
 
-        ignore_completion = Keyword.get(opts, :ignore_completion, false)
+        count = Enum.count(itinerary.legs)
 
-        real_scope =
-          if scope == :first_uncompleted && ignore_completion do
-            :any
-          else
-            scope
-          end
+        {voyage_match, location_match} =
+          Enum.reduce_while(0..(count - 1), {-1, -1}, fn i, acc ->
+            test_leg_while(i, acc, params)
+          end)
 
-        {before, leg, rest, voyage_matched?, location_matched?} =
-          if real_scope == :any do
-            count = Enum.count(itinerary.legs)
-
-            {voyage_match, location_match} =
-              Enum.reduce_while(0..(count - 1), {-1, -1}, fn i, {vm_i, lc_i} ->
-                leg = Enum.at(itinerary.legs, i)
-
-                case test_event(leg_location, leg, voyage_id, handling_event.location) do
-                  {true, true} ->
-                    {:halt, {i, i}}
-
-                  {true, false} ->
-                    {:cont, {i, lc_i}}
-
-                  _ ->
-                    {:cont, {vm_i, lc_i}}
-                end
-              end)
-
-            if location_match >= 0 do
-              {b, l, r} = split_at(itinerary, location_match)
-              {b, l, r, true, true}
-            else
-              {b, l, r} = split_at(itinerary, voyage_match)
-              {b, l, r, voyage_match >= 0, false}
-            end
-          else
-            {b, l, r} = split_for_scope(itinerary, scope)
-
-            {voyage_match, location_match} =
-              test_event(leg_location, l, voyage_id, handling_event.location)
-
-            {b, l, r, voyage_match, location_match}
-          end
-
-        voyage_number =
-          case VoyageService.get_voyage_number_for_id(voyage_id) do
-            nil -> ""
-            number -> " on voyage #{number}"
-          end
-
-        error_message =
-          "no match for #{handling_event.event_type} at #{handling_event.location}#{voyage_number} (scope: #{scope})"
-
-        itinerary_to_return =
-          if voyage_matched? && Keyword.get(opts, :update_itinerary, false) do
-            updated_leg = update_leg(leg, leg_location, next_status, handling_event)
-
-            updated_itinerary = build_update(before, updated_leg, rest)
-            debug_itinerary(updated_itinerary, "updated_itinerary")
-            updated_itinerary
-          else
-            itinerary
-          end
-
-        if location_matched? do
-          {:ok, itinerary_to_return}
+        if location_match >= 0 do
+          {b, l, r} = split_at(itinerary, location_match)
+          {b, l, r, true, true}
         else
-          {:error, error_message, itinerary_to_return}
+          {b, l, r} = split_at(itinerary, voyage_match)
+          {b, l, r, voyage_match >= 0, false}
         end
+      else
+        {b, l, r} = split_for_scope(itinerary, scope)
+
+        {voyage_match, location_match} =
+          test_event(leg_location, l, voyage_id, handling_event.location)
+
+        {b, l, r, voyage_match, location_match}
+      end
+
+    voyage_number =
+      case VoyageService.get_voyage_number_for_id(voyage_id) do
+        nil -> ""
+        number -> " on voyage #{number}"
+      end
+
+    error_message =
+      "no match for #{handling_event.event_type} at #{handling_event.location}#{voyage_number} (scope: #{scope})"
+
+    itinerary_to_return =
+      if voyage_matched? && Keyword.get(opts, :update_itinerary, false) do
+        updated_leg = update_leg(leg, leg_location, next_status, handling_event)
+
+        updated_itinerary = build_update(before, updated_leg, rest)
+        debug_itinerary(updated_itinerary, "updated_itinerary")
+        updated_itinerary
+      else
+        itinerary
+      end
+
+    if location_matched? do
+      {:ok, itinerary_to_return}
+    else
+      {:error, error_message, itinerary_to_return}
     end
   end
 
-  defp test_event(leg_location, leg, voyage_id, handling_event_location) do
-    case leg_location do
-      :LOAD ->
-        cond do
-          is_nil(leg) || (!is_nil(voyage_id) && voyage_id != leg.voyage_id) ->
-            {false, false}
+  defp get_scope_and_params(%{event_type: :RECEIVE}) do
+    {:first, nil, :LOAD, :NOT_LOADED}
+  end
 
-          handling_event_location != leg.load_location &&
-              handling_event_location != leg.actual_load_location ->
-            {true, false}
+  defp get_scope_and_params(%{event_type: :LOAD, voyage_id: voyage_id}) do
+    {:first_uncompleted, voyage_id, :LOAD, :ONBOARD_CARRIER}
+  end
 
-          true ->
-            {true, true}
-        end
+  defp get_scope_and_params(%{event_type: :UNLOAD, voyage_id: voyage_id}) do
+    {:first_uncompleted, voyage_id, :UNLOAD, :COMPLETED}
+  end
 
-      :UNLOAD ->
-        cond do
-          is_nil(leg) || (!is_nil(voyage_id) && voyage_id != leg.voyage_id) ->
-            {false, false}
+  defp get_scope_and_params(%{event_type: :CUSTOMS}) do
+    {:last, nil, :UNLOAD, :IN_CUSTOMS}
+  end
 
-          handling_event_location != leg.unload_location &&
-              handling_event_location != leg.actual_unload_location ->
-            {true, false}
+  defp get_scope_and_params(%{event_type: :CLAIM}) do
+    {:last, nil, :UNLOAD, :CLAIMED}
+  end
 
-          true ->
-            {true, true}
-        end
+  defp test_leg_while(i, {vm_i, lc_i}, params) do
+    leg = Enum.at(params.legs, i)
+
+    case test_event(params.leg_location, leg, params.voyage_id, params.handling_event_location) do
+      {true, true} ->
+        {:halt, {i, i}}
+
+      {true, false} ->
+        {:cont, {i, lc_i}}
+
+      _ ->
+        {:cont, {vm_i, lc_i}}
+    end
+  end
+
+  defp test_event(:LOAD, leg, voyage_id, handling_event_location) do
+    cond do
+      is_nil(leg) || (!is_nil(voyage_id) && voyage_id != leg.voyage_id) ->
+        {false, false}
+
+      handling_event_location != leg.load_location &&
+          handling_event_location != leg.actual_load_location ->
+        {true, false}
+
+      true ->
+        {true, true}
+    end
+  end
+
+  defp test_event(:UNLOAD, leg, voyage_id, handling_event_location) do
+    cond do
+      is_nil(leg) || (!is_nil(voyage_id) && voyage_id != leg.voyage_id) ->
+        {false, false}
+
+      handling_event_location != leg.unload_location &&
+          handling_event_location != leg.actual_unload_location ->
+        {true, false}
+
+      true ->
+        {true, true}
     end
   end
 

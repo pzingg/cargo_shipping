@@ -19,28 +19,8 @@ defmodule CargoShipping.CargoBookings.RouteSpecification do
     end
   end
 
-  defimpl Phoenix.Param, for: CargoShippingSchemas.RouteSpecification do
-    use Boundary, classify_to: CargoShipping
-
-    def to_param(route_specification) do
-      CargoShipping.CargoBookings.RouteSpecification.phoenix_param_from(route_specification)
-    end
-  end
-
   def string_from(route_specification) do
     "from #{route_specification.origin} to #{route_specification.destination}"
-  end
-
-  def phoenix_param_from(route_specifcation) do
-    [
-      route_specifcation.origin,
-      route_specifcation.destination,
-      DateTime.to_unix(route_specifcation.earliest_departure, :millisecond)
-      |> Integer.to_string(),
-      DateTime.to_unix(route_specifcation.arrival_deadline, :millisecond)
-      |> Integer.to_string()
-    ]
-    |> Enum.join("|")
   end
 
   @doc false

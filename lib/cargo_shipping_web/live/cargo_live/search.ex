@@ -1,4 +1,5 @@
 defmodule CargoShippingWeb.CargoLive.Search do
+  @moduledoc false
   use CargoShippingWeb, :live_view
 
   alias CargoShipping.CargoBookings

@@ -1,6 +1,6 @@
 defmodule CargoShippingWeb.SharedComponents.DatepickerHelpers do
   @moduledoc """
-  View helpers for Datepicker
+  View helpers for the Datepicker component.
   """
 
   alias CargoShippingWeb.SharedComponents.Datepicker

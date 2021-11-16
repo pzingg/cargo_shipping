@@ -5,8 +5,9 @@ defmodule CargoShipping.HandlingReportService do
   """
   require Logger
 
-  alias CargoShipping.Reports.HandlingReport
+  alias CargoShipping.ApplicationEvents.Producer
   alias CargoShipping.Infra.Repo
+  alias CargoShipping.Reports.HandlingReport
 
   @doc """
   Creates a handling_report, generating an application event.
@@ -35,7 +36,7 @@ defmodule CargoShipping.HandlingReportService do
   end
 
   defp publish_event(topic, payload) do
-    CargoShipping.ApplicationEvents.Producer.publish_event(
+    Producer.publish_event(
       topic,
       "HandlingReportService",
       payload

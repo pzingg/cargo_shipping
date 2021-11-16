@@ -28,6 +28,6 @@ defmodule CargoShippingSchemas.Delivery do
     embeds_one :next_expected_activity, HandlingActivity, on_replace: :delete
   end
 
-  def transport_status_values(), do: @transport_status_values
-  def routing_status_values(), do: @routing_status_values
+  def transport_status_values, do: @transport_status_values
+  def routing_status_values, do: @routing_status_values
 end

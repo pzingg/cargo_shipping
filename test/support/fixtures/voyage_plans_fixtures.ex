@@ -6,7 +6,7 @@ defmodule CargoShipping.VoyagePlansFixtures do
 
   @voyage_number "V0042"
 
-  def voyage_fixture_number(), do: @voyage_number
+  def voyage_fixture_number, do: @voyage_number
 
   @doc """
   Generate a voyage.

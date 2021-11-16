@@ -23,8 +23,8 @@ defmodule CargoShipping.CargoBookings do
 
   require Logger
 
-  alias CargoShipping.Utils
   alias CargoShipping.Infra.Repo
+  alias CargoShipping.Utils
   alias CargoShippingSchemas.Cargo, as: Cargo_
   alias CargoShippingSchemas.HandlingEvent, as: HandlingEvent_
 
@@ -254,17 +254,17 @@ defmodule CargoShipping.CargoBookings do
 
   defp merge_active_leg(new_leg, active_leg) do
     load_keys =
-      if !is_nil(active_leg.actual_load_location) do
-        [:actual_load_location, :load_location]
-      else
+      if is_nil(active_leg.actual_load_location) do
         []
+      else
+        [:actual_load_location, :load_location]
       end
 
     unload_keys =
-      if !is_nil(active_leg.actual_unload_location) do
-        [:actual_unload_location, :unload_location]
-      else
+      if is_nil(active_leg.actual_unload_location) do
         []
+      else
+        [:actual_unload_location, :unload_location]
       end
 
     ([:status, :load_time, :unload_time] ++ load_keys ++ unload_keys)

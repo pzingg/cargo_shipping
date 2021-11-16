@@ -20,5 +20,5 @@ defmodule CargoShippingSchemas.Leg do
     field :unload_time, :utc_datetime
   end
 
-  def status_values(), do: @status_values
+  def status_values, do: @status_values
 end

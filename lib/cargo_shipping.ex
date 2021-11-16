@@ -20,6 +20,7 @@ defmodule CargoShipping do
       # Helpers
       CargoBookings.Accessors,
       # Seeding and testing
+      DataCaseHelpers,
       SampleDataGenerator,
       # Service modules
       CargoBookingService,

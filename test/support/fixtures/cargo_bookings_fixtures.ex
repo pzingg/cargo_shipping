@@ -8,7 +8,7 @@ defmodule CargoShipping.CargoBookingsFixtures do
 
   @tracking_id "TST042"
 
-  def route_specification_fixture() do
+  def route_specification_fixture do
     %{
       origin: "DEHAM",
       destination: "AUMEL",
@@ -17,7 +17,7 @@ defmodule CargoShipping.CargoBookingsFixtures do
     }
   end
 
-  def itinerary_fixture() do
+  def itinerary_fixture do
     voyage = CargoShipping.VoyagePlansFixtures.voyage_fixture()
 
     %{
@@ -42,7 +42,7 @@ defmodule CargoShipping.CargoBookingsFixtures do
     }
   end
 
-  def cargo_fixture_tracking_id(), do: @tracking_id
+  def cargo_fixture_tracking_id, do: @tracking_id
 
   @doc """
   Generate a cargo.

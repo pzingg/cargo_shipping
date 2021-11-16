@@ -1,6 +1,7 @@
 defmodule CargoShipping.ApplicationEvents.Forwarder do
   @moduledoc """
-  Forwards
+  A module that forwards EventBus messages to a pid (usually a LiveView
+  process)
   """
 
   @doc false

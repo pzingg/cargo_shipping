@@ -6,6 +6,7 @@ defmodule CargoShipping.CargoInspectionService do
   """
   require Logger
 
+  alias CargoShipping.ApplicationEvents.Producer
   alias CargoShipping.CargoBookings
 
   def inspect_cargo(tracking_id) do
@@ -32,7 +33,7 @@ defmodule CargoShipping.CargoInspectionService do
   end
 
   defp publish_event(topic, payload) do
-    CargoShipping.ApplicationEvents.Producer.publish_event(
+    Producer.publish_event(
       topic,
       "CargoInspectionService",
       payload

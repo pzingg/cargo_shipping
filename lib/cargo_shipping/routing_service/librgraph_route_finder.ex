@@ -6,8 +6,9 @@ defmodule CargoShipping.RoutingService.LibgraphRouteFinder do
 
   require Logger
 
-  alias CargoShipping.VoyagePlans
   alias CargoShipping.CargoBookings.Itinerary
+  alias CargoShipping.VoyagePlans
+  alias Graph.Serializers.DOT
 
   defmodule Vertex do
     @moduledoc """
@@ -64,7 +65,7 @@ defmodule CargoShipping.RoutingService.LibgraphRouteFinder do
     graph = build_world_graph(v_origin, v_destination, opts)
 
     if Keyword.get(opts, :write_dot, false) do
-      {:ok, dot} = Graph.Serializers.DOT.serialize(graph)
+      {:ok, dot} = DOT.serialize(graph)
       file_name = "#{origin}-#{destination}.dot"
       File.write(file_name, dot)
       Logger.debug("route graph written to #{file_name}")
@@ -97,6 +98,13 @@ defmodule CargoShipping.RoutingService.LibgraphRouteFinder do
     end
   end
 
+  def find_shortest_path(graph, v_origin, v_destination) do
+    Graph.a_star(graph, v_origin, v_destination, &vertex_cost/1)
+  end
+
+  def find_all_paths(graph, v_origin, v_destination),
+    do: Graph.get_paths(graph, v_origin, v_destination)
+
   def build_world_graph(v_origin, v_destination, opts) do
     minimum_layover_in_seconds = Keyword.get(opts, :mininum_layover_hours, 4) * 3_600
     voyages = VoyagePlans.list_voyages()
@@ -118,59 +126,21 @@ defmodule CargoShipping.RoutingService.LibgraphRouteFinder do
 
     external_edges =
       Enum.reduce(arrival_vertices, [], fn v_arrive, acc ->
-        at_origin? = v_arrive.type == :ORIGIN
-        arrival_location = v_arrive.location
-        earliest_departure = DateTime.add(v_arrive.time, minimum_layover_in_seconds, :second)
-        arrival_voyage_number = v_arrive.voyage_number
-
-        departure_index =
-          case v_arrive.index do
-            nil -> nil
-            index -> index + 1
-          end
+        arrival_params = %{
+          v_arrive: v_arrive,
+          at_origin?: v_arrive.type == :ORIGIN,
+          arrival_location: v_arrive.location,
+          earliest_departure: DateTime.add(v_arrive.time, minimum_layover_in_seconds, :second),
+          arrival_voyage_number: v_arrive.voyage_number,
+          departure_index:
+            case v_arrive.index do
+              nil -> nil
+              index -> index + 1
+            end
+        }
 
         Enum.reduce(departure_vertices, acc, fn v_depart, edges ->
-          departure_time_compare = DateTime.compare(v_depart.time, earliest_departure)
-
-          {label, weight, color, style} =
-            cond do
-              v_depart.location != arrival_location ->
-                {nil, nil, nil, nil}
-
-              at_origin? ->
-                {"RECEIVE", 1, "black", "bold"}
-
-              v_depart.type == :DESTINATION ->
-                {"CLAIM", 1, "black", "bold"}
-
-              !is_nil(v_depart.index) && !is_nil(departure_index) &&
-                v_depart.voyage_number == arrival_voyage_number &&
-                  v_depart.index == departure_index ->
-                {"IN_PORT", 1, "black", "bold"}
-
-              departure_time_compare != :lt ->
-                {"TRANSFER", 100, "red", "dashed"}
-
-              true ->
-                # Logger.warn(
-                #   "rejecting transfer at #{arrival_location} from #{arrival_voyage_number} to #{v_depart.voyage_number}"
-                # )
-                # Logger.warn("arrival time   #{v_arrive.time}")
-                # Logger.warn("departure_time #{v_depart.time}")
-                # Logger.warn("earliest       #{earliest_departure}")
-                # Logger.warn("")
-
-                {nil, nil, nil, nil}
-            end
-
-          if is_nil(label) do
-            edges
-          else
-            [
-              {v_arrive, v_depart, [label: label, weight: weight, color: color, style: style]}
-              | edges
-            ]
-          end
+          accumulate_edge(v_depart, edges, arrival_params)
         end)
       end)
 
@@ -184,14 +154,52 @@ defmodule CargoShipping.RoutingService.LibgraphRouteFinder do
     |> Graph.add_edges(all_edges)
   end
 
-  def find_shortest_path(graph, v_origin, v_destination) do
-    Graph.a_star(graph, v_origin, v_destination, &vertex_cost/1)
-  end
-
-  def find_all_paths(graph, v_origin, v_destination),
-    do: Graph.get_paths(graph, v_origin, v_destination)
-
   ## Private functions
+
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  defp accumulate_edge(v_depart, edges, params) do
+    departure_time_compare = DateTime.compare(v_depart.time, params.earliest_departure)
+
+    {label, weight, color, style} =
+      cond do
+        v_depart.location != params.arrival_location ->
+          {nil, nil, nil, nil}
+
+        params.at_origin? ->
+          {"RECEIVE", 1, "black", "bold"}
+
+        v_depart.type == :DESTINATION ->
+          {"CLAIM", 1, "black", "bold"}
+
+        !is_nil(v_depart.index) && !is_nil(params.departure_index) &&
+          v_depart.voyage_number == params.arrival_voyage_number &&
+            v_depart.index == params.departure_index ->
+          {"IN_PORT", 1, "black", "bold"}
+
+        departure_time_compare != :lt ->
+          {"TRANSFER", 100, "red", "dashed"}
+
+        true ->
+          # Logger.warn(
+          #   "rejecting transfer at #{arrival_location} from #{arrival_voyage_number} to #{v_depart.voyage_number}"
+          # )
+          # Logger.warn("arrival time   #{v_arrive.time}")
+          # Logger.warn("departure_time #{v_depart.time}")
+          # Logger.warn("earliest       #{earliest_departure}")
+          # Logger.warn("")
+
+          {nil, nil, nil, nil}
+      end
+
+    if is_nil(label) do
+      edges
+    else
+      [
+        {params.v_arrive, v_depart, [label: label, weight: weight, color: color, style: style]}
+        | edges
+      ]
+    end
+  end
 
   defp internal_voyage_edges(voyage, acc_0) do
     last_index = Enum.count(voyage.schedule_items) - 1

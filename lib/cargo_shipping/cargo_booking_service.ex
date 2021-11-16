@@ -2,6 +2,7 @@ defmodule CargoShipping.CargoBookingService do
   @moduledoc false
   require Logger
 
+  alias CargoShipping.ApplicationEvents.Producer
   alias CargoShipping.{CargoBookings, RoutingService, Utils}
   alias CargoShipping.Infra.Repo
   alias CargoShipping.CargoBookings.{Accessors, Cargo, Delivery, Itinerary}
@@ -169,7 +170,7 @@ defmodule CargoShipping.CargoBookingService do
   end
 
   defp publish_event(topic, payload) do
-    CargoShipping.ApplicationEvents.Producer.publish_event(
+    Producer.publish_event(
       topic,
       "CargoBookingService",
       payload

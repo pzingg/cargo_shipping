@@ -6,6 +6,7 @@ defmodule CargoShipping.HandlingEventService do
   for creating a new handling event for the cargo in the report.
   """
 
+  alias CargoShipping.ApplicationEvents.Producer
   alias CargoShipping.CargoBookings.HandlingEvent
   alias CargoShipping.Infra.Repo
 
@@ -53,6 +54,6 @@ defmodule CargoShipping.HandlingEventService do
   end
 
   defp publish_event(topic, payload) do
-    CargoShipping.ApplicationEvents.Producer.publish_event(topic, "HandlingEventService", payload)
+    Producer.publish_event(topic, "HandlingEventService", payload)
   end
 end

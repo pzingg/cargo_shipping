@@ -8,6 +8,8 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
 
   require Logger
 
+  alias Ecto.Adapters.SQL.Sandbox
+
   ## GenServer public API
 
   @doc false
@@ -61,7 +63,7 @@ defmodule CargoShipping.ApplicationEvents.Consumer do
     # See: https://medium.com/genesisblock/elixir-concurrent-testing-architecture-13c5e37374dc
     if parent_pid = Keyword.get(arg, :test_pid, nil) do
       # Repo may not be started, so ignore result.
-      _ = Ecto.Adapters.SQL.Sandbox.allow(CoreInterfaceDemo.Repo, parent_pid, self())
+      _ = Sandbox.allow(CoreInterfaceDemo.Repo, parent_pid, self())
     end
 
     # Create the EventBus subscriber config with the name of the server.

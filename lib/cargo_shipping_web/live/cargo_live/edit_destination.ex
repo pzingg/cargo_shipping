@@ -1,9 +1,10 @@
 defmodule CargoShippingWeb.CargoLive.EditDestination do
+  @moduledoc false
   use CargoShippingWeb, :live_view
 
-  alias Ecto.Changeset
   alias CargoShipping.CargoBookings
   alias CargoShippingWeb.SharedComponents.Datepicker
+  alias Ecto.Changeset
 
   @impl true
   def mount(_params, _session, socket) do

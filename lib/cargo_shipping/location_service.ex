@@ -30,7 +30,7 @@ defmodule CargoShipping.LocationService do
     Agent.start_link(&load_locations/0, name: __MODULE__)
   end
 
-  def all() do
+  def all do
     Agent.get(__MODULE__, & &1)
     |> Enum.reject(fn %Location_{port_code: port_code} ->
       port_code == "_"
@@ -46,7 +46,7 @@ defmodule CargoShipping.LocationService do
     end)
   end
 
-  def all_locodes() do
+  def all_locodes do
     all()
     |> Enum.map(fn %Location_{port_code: port_code} -> port_code end)
   end
@@ -79,7 +79,7 @@ defmodule CargoShipping.LocationService do
     !is_nil(get_by_locode(un_locode))
   end
 
-  defp load_locations() do
+  defp load_locations do
     Enum.map(@locations, fn {port_code, name} -> Location.new(port_code, name) end)
     |> Enum.sort_by(&Map.get(&1, :name))
   end

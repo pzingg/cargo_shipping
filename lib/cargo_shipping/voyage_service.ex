@@ -10,11 +10,11 @@ defmodule CargoShipping.VoyageService do
     Agent.start_link(&load_voyages/0, name: __MODULE__)
   end
 
-  def update_cache() do
+  def update_cache do
     Agent.update(__MODULE__, fn _state -> load_voyages() end)
   end
 
-  def all_voyage_numbers() do
+  def all_voyage_numbers do
     Agent.get(__MODULE__, & &1)
     |> Enum.map(fn %{voyage_number: voyage_number} -> voyage_number end)
   end
@@ -60,24 +60,20 @@ defmodule CargoShipping.VoyageService do
   end
 
   def find_movement_by_location(id, location, key) do
-    Agent.get(__MODULE__, & &1)
-    |> Enum.find(fn %{id: voyage_id} -> voyage_id == id end)
-    |> case do
-      nil ->
-        nil
+    get_voyage_for_id(id) |> find_movement_in_voyage(location, key)
+  end
 
-      %{schedule_items: items} = voyage ->
-        case Enum.find(items, fn item -> Map.get(item, key, "_") == location end) do
-          nil -> nil
-          movement -> %{voyage: voyage, movement: movement}
-        end
+  defp find_movement_in_voyage(nil, _location, _key), do: nil
+
+  defp find_movement_in_voyage(%{schedule_items: items} = voyage, location, key) do
+    case Enum.find(items, fn item -> Map.get(item, key, "_") == location end) do
+      nil -> nil
+      movement -> %{voyage: voyage, movement: movement}
     end
   end
 
   def find_items_for_route_specification(id, route_specification) do
-    Agent.get(__MODULE__, & &1)
-    |> Enum.find(fn %{id: voyage_id} -> voyage_id == id end)
-    |> case do
+    case get_voyage_for_id(id) do
       nil ->
         {:error, :voyage_id, "is invalid"}
 
@@ -111,7 +107,7 @@ defmodule CargoShipping.VoyageService do
     end
   end
 
-  defp load_voyages() do
+  defp load_voyages do
     VoyagePlans.list_voyages()
   end
 end

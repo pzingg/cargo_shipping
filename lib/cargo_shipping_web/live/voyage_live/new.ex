@@ -1,4 +1,5 @@
 defmodule CargoShippingWeb.VoyageLive.New do
+  @moduledoc false
   use CargoShippingWeb, :live_view
 
   require Logger

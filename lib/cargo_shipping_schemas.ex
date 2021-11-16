@@ -8,5 +8,5 @@ defmodule CargoShippingSchemas do
   To this end, we’ve placed schemas into this top-level boundary,
   which is not allowed to depend on any other boundary.
   """
-  use Boundary, deps: [Ecto, Phoenix.Param], exports: :all
+  use Boundary, deps: [Ecto, Phoenix.Param], exports: :all, type: :strict
 end

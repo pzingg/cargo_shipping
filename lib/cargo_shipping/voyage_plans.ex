@@ -6,10 +6,10 @@ defmodule CargoShipping.VoyagePlans do
   import Ecto.Query, warn: false
 
   alias CargoShipping.Infra.Repo
+  alias CargoShipping.VoyagePlans.{CarrierMovement, Voyage}
   alias CargoShipping.VoyageService
-  alias CargoShipping.VoyagePlans.{Voyage, CarrierMovement}
-  alias CargoShippingSchemas.Voyage, as: Voyage_
   alias CargoShippingSchemas.CarrierMovement, as: CarrierMovement_
+  alias CargoShippingSchemas.Voyage, as: Voyage_
 
   ## Voyage module
 

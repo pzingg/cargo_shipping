@@ -1,4 +1,5 @@
 defmodule CargoShippingWeb.ModalComponent do
+  @moduledoc false
   use CargoShippingWeb, :live_component
 
   @impl true

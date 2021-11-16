@@ -298,11 +298,8 @@ defmodule CargoShippingWeb.SharedComponents.Datepicker do
     else
       iso_str = get_in(params, form_path)
 
-      if !is_binary(iso_str) do
-        Logger.error("No date value at #{inspect(form_path)}")
-        params
-      else
-        with {:ok, current_date, _offset} = DateTime.from_iso8601(iso_str),
+      if is_binary(iso_str) do
+        with {:ok, current_date, _offset} <- DateTime.from_iso8601(iso_str),
              {:ok, h, m} <- parse_time(dp_params),
              {:ok, t} <- Time.new(h, m, 0),
              {:ok, new_date} <- DateTime.to_date(current_date) |> DateTime.new(t) do
@@ -315,6 +312,9 @@ defmodule CargoShippingWeb.SharedComponents.Datepicker do
 
             params
         end
+      else
+        Logger.error("No date value at #{inspect(form_path)}")
+        params
       end
     end
   end

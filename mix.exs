@@ -61,7 +61,8 @@ defmodule CargoShipping.MixProject do
       {:uuid, "~> 1.1"},
       {:event_bus, "~> 1.6"},
       {:libgraph, "~> 0.13"},
-      {:boundary, "~> 0.8", runtime: false}
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
+      {:boundary, github: "sasa1977/boundary", ref: "298b505a8fc8aa6a4ad8d8915b47d968a9143cec", runtime: false}
     ]
   end
 

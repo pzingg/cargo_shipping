@@ -17,6 +17,8 @@ defmodule CargoShippingWeb.ChannelCase do
 
   use ExUnit.CaseTemplate
 
+  alias CargoShipping.DataCaseHelpers
+
   using do
     quote do
       # Import conveniences for testing with channels
@@ -29,10 +31,8 @@ defmodule CargoShippingWeb.ChannelCase do
   end
 
   setup tags do
-    pid =
-      Ecto.Adapters.SQL.Sandbox.start_owner!(CargoShipping.Infra.Repo, shared: not tags[:async])
+    _ = DataCaseHelpers.start_sandbox_owner(tags)
 
-    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
     :ok
   end
 end
