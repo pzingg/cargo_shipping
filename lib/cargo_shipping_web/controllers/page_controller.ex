@@ -1,7 +1,7 @@
 defmodule CargoShippingWeb.PageController do
   use CargoShippingWeb, :controller
 
-  import CargoShippingWeb.UserAuth, only: [log_out_user: 1]
+  alias CargoShippingWeb.UserAuth
 
   def index(conn, _params) do
     render(conn, "index.html")
@@ -10,7 +10,7 @@ defmodule CargoShippingWeb.PageController do
   def logout(conn, _params) do
     conn
     |> put_flash(:info, "You have been logged out.")
-    |> log_out_user()
+    |> UserAuth.log_out_user()
     |> halt()
   end
 
