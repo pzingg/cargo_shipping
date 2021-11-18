@@ -5,8 +5,9 @@ defmodule CargoShipping.RoutingService.RandomRouteFinder do
   """
   require Logger
 
-  alias CargoShipping.CargoBookings.Itinerary
+  alias CargoShipping.CargoBookings.{Accessors, Itinerary}
   alias CargoShipping.{LocationService, Utils, VoyageService}
+  alias CargoShippingSchemas.RouteCandidate
 
   defmodule TransitEdge do
     @moduledoc """
@@ -29,7 +30,12 @@ defmodule CargoShipping.RoutingService.RandomRouteFinder do
   """
   def fetch_routes_for_specification(route_specification, opts) do
     find_transit_paths(route_specification.origin, route_specification.destination, opts)
-    |> Enum.map(fn path -> %{itinerary: itinerary_from_transit_path(path), cost: 0} end)
+    |> Enum.map(fn path ->
+      %RouteCandidate{itinerary: itinerary_from_transit_path(path), cost: 0}
+    end)
+    |> Enum.filter(fn candidate ->
+      Accessors.itinerary_satisfies?(candidate.itinerary, route_specification)
+    end)
   end
 
   defp find_transit_paths(origin, destination, _opts) do

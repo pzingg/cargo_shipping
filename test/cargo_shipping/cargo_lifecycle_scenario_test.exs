@@ -47,23 +47,19 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     # The cargo is then assigned to the selected route, described by an itinerary.
 
-    {remaining_route_spec, itineraries, patch_uncompleted_leg?} =
-      CargoBookingService.possible_routes_for_cargo(cargo)
+    {remaining_route_spec, itineraries} =
+      CargoBookingService.request_possible_routes_for_cargo(cargo)
 
     assert remaining_route_spec
     assert remaining_route_spec == cargo.route_specification
 
     assert itineraries
     itinerary = select_prefered_itinerary(itineraries)
+    refute itinerary.patch_uncompleted_leg?
 
-    {:ok, _cargo} =
-      CargoBookings.update_cargo_for_new_itinerary(
-        cargo,
-        itinerary,
-        patch_uncompleted_leg?
-      )
+    {:ok, _cargo} = CargoBookingService.assign_cargo_to_route(cargo, itinerary)
 
-    Logger.warn("Line 66, after routing")
+    Logger.warn("Line 62, after routing")
 
     # Wait for event bus
     Process.sleep(500)
@@ -151,7 +147,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :LOAD
     }
 
-    Logger.warn("Line 154: bad handling params will fail!")
+    Logger.warn("Line 150: bad handling params will fail!")
 
     {:error, changeset} = HandlingEventService.register_handling_event(handling_params)
     assert changeset.errors[:voyage_number] == {"is invalid", []}
@@ -193,9 +189,9 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       arrival_deadline: arrival_deadline
     }
 
-    Logger.warn("Line 196, rerouting")
+    Logger.warn("Line 192, rerouting")
 
-    {:ok, _cargo} = CargoBookings.update_cargo_for_new_route(cargo, from_shanghai)
+    {:ok, _cargo} = CargoBookingService.change_destination(cargo, from_shanghai)
 
     # Wait for EventBus
     Process.sleep(500)
@@ -207,8 +203,8 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     # Repeat procedure of selecting one out of a number of possible
     # routes satisfying the route spec.
 
-    {remaining_route_spec, itineraries, patch_uncompleted_leg?} =
-      CargoBookingService.possible_routes_for_cargo(cargo)
+    {remaining_route_spec, itineraries} =
+      CargoBookingService.request_possible_routes_for_cargo(cargo)
 
     assert remaining_route_spec
     assert remaining_route_spec.origin == "CNSHA"
@@ -221,11 +217,9 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     assert leg.actual_unload_location == "CNSHA"
 
     assert itineraries
-    refute patch_uncompleted_leg?
-
     itinerary = select_prefered_itinerary(itineraries)
 
-    Logger.warn("Line 228, prefered itinerary")
+    Logger.warn("Line 222, prefered itinerary")
 
     Accessors.debug_itinerary(itinerary, "itinerary")
 
@@ -234,18 +228,15 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     assert leg.load_location == "CNSHA"
     assert leg.unload_location == "CNHKG"
 
-    {:ok, _cargo} =
-      CargoBookings.update_cargo_for_new_itinerary(
-        cargo,
-        itinerary,
-        patch_uncompleted_leg?
-      )
+    refute itinerary.patch_uncompleted_leg?
+
+    {:ok, _cargo} = CargoBookingService.assign_cargo_to_route(cargo, itinerary)
 
     # Wait for EventBus
     Process.sleep(500)
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
 
-    Logger.warn("Line 248, after re-routing")
+    Logger.warn("Line 239, after re-routing")
 
     Accessors.debug_route_specification(cargo.route_specification, "route")
     Accessors.debug_itinerary(cargo.itinerary, "itinerary")

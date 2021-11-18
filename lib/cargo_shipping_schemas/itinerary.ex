@@ -10,6 +10,7 @@ defmodule CargoShippingSchemas.Itinerary do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   embedded_schema do
+    field :patch_uncompleted_leg?, :boolean, virtual: true
     embeds_many :legs, Leg, on_replace: :delete
   end
 end

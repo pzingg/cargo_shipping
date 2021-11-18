@@ -13,6 +13,7 @@ defmodule CargoShippingSchemas.RouteSpecification do
     field :destination, :string
     field :earliest_departure, :utc_datetime
     field :arrival_deadline, :utc_datetime
+    field :patch_uncompleted_leg?, :boolean, virtual: true
   end
 
   defimpl Phoenix.Param, for: CargoShippingSchemas.RouteSpecification do

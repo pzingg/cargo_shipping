@@ -14,8 +14,8 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
   def handle_params(%{"tracking_id" => tracking_id}, this_uri, socket) do
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
 
-    {remaining_route_spec, itineraries, patch_uncompleted_leg?} =
-      CargoBookingService.possible_routes_for_cargo(cargo)
+    {remaining_route_spec, itineraries} =
+      CargoBookingService.request_possible_routes_for_cargo(cargo)
 
     route_candidates =
       Enum.with_index(itineraries)
@@ -41,7 +41,6 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
        remaining_route_spec: remaining_route_spec,
        completed_legs: Enum.with_index(completed_legs),
        route_candidates: route_candidates,
-       patch_uncompleted_leg?: patch_uncompleted_leg?,
        back_link_label: title,
        back_link_path: this_uri,
        return_to: Routes.cargo_show_path(socket, :show, cargo)
@@ -56,10 +55,9 @@ defmodule CargoShippingWeb.CargoLive.EditRoute do
     with {index, ""} <- Integer.parse(index_str),
          {:ok, selected_itinerary} <- find_itinerary(socket.assigns.route_candidates, index),
          {:ok, _cargo} <-
-           CargoBookings.update_cargo_for_new_itinerary(
+           CargoBookingService.assign_cargo_to_route(
              socket.assigns.cargo,
-             selected_itinerary,
-             socket.assigns.patch_uncompleted_leg?
+             selected_itinerary
            ) do
       {:noreply,
        socket

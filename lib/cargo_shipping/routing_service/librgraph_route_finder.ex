@@ -8,6 +8,7 @@ defmodule CargoShipping.RoutingService.LibgraphRouteFinder do
 
   alias CargoShipping.CargoBookings.Itinerary
   alias CargoShipping.VoyagePlans
+  alias CargoShippingSchemas.RouteCandidate
   alias Graph.Serializers.DOT
 
   defmodule Vertex do
@@ -80,7 +81,7 @@ defmodule CargoShipping.RoutingService.LibgraphRouteFinder do
 
           path ->
             Logger.debug("found shortest path in graph from #{origin} to #{destination}")
-            [%{itinerary: itinerary_from_path(path), cost: 100}]
+            [%RouteCandidate{itinerary: itinerary_from_path(path), cost: 100}]
         end
 
       :all ->
@@ -93,7 +94,7 @@ defmodule CargoShipping.RoutingService.LibgraphRouteFinder do
         Enum.map(paths, fn path -> {path, cost_for_path(graph, path)} end)
         |> Enum.sort(fn {_path_1, cost_1}, {_path_2, cost_2} -> cost_1 <= cost_2 end)
         |> Enum.map(fn {path, cost} ->
-          %{itinerary: itinerary_from_path(path), cost: cost}
+          %RouteCandidate{itinerary: itinerary_from_path(path), cost: cost}
         end)
     end
   end

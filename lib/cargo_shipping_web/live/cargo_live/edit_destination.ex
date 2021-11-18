@@ -3,6 +3,7 @@ defmodule CargoShippingWeb.CargoLive.EditDestination do
   use CargoShippingWeb, :live_view
 
   alias CargoShipping.CargoBookings
+  alias CargoShipping.CargoBookingService
   alias CargoShippingWeb.SharedComponents.Datepicker
   alias Ecto.Changeset
 
@@ -56,11 +57,13 @@ defmodule CargoShippingWeb.CargoLive.EditDestination do
          :edit,
          %{"arrival_deadline" => arrival_deadline, "destination" => destination} = params
        ) do
-    case CargoBookings.update_cargo_for_new_destination(
-           socket.assigns.cargo,
-           destination,
-           arrival_deadline
-         ) do
+    route_specification = %{
+      socket.assigns.cargo.route_specification
+      | destination: destination,
+        arrival_deadline: arrival_deadline
+    }
+
+    case CargoBookingService.change_destination(socket.assigns.cargo, route_specification) do
       {:ok, _cargo} ->
         {:noreply,
          socket

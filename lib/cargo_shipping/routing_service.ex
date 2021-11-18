@@ -3,13 +3,6 @@ defmodule CargoShipping.RoutingService do
   A module that builds routes (itineraries).
   """
   alias CargoShipping.RoutingService.{LibgraphRouteFinder, RandomRouteFinder}
-  alias CargoShippingSchemas.Itinerary
-
-  @typedoc """
-  A found route (itinerary), together with its cost metric. The lowest
-  cost route is assumed to be the best candidate.
-  """
-  @type ranked_route() :: %{required(:itinerary) => Itinerary.t(), required(:cost) => integer()}
 
   @doc """
   Uses one of two algorithms to find itineraries that match the given

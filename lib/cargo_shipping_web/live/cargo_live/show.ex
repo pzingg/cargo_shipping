@@ -3,6 +3,7 @@ defmodule CargoShippingWeb.CargoLive.Show do
   use CargoShippingWeb, :live_view
 
   alias CargoShipping.CargoBookings
+  alias CargoShipping.CargoBookingService
   alias CargoShipping.CargoBookings.Accessors
 
   @impl true
@@ -46,12 +47,9 @@ defmodule CargoShippingWeb.CargoLive.Show do
 
   @impl true
   def handle_event("revert_destination", _data, socket) do
-    cargo = socket.assigns.cargo
-
-    case CargoBookings.update_cargo_for_new_destination(
-           cargo,
-           socket.assigns.revert_destination,
-           cargo.route_specification.arrival_deadline
+    case CargoBookingService.change_destination(
+           socket.assigns.cargo,
+           socket.assigns.revert_destination
          ) do
       {:ok, _cargo} ->
         {:noreply,
