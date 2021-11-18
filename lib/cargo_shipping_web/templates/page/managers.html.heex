@@ -1,6 +1,7 @@
 <h1>Managers Page</h1>
 
-<p>This section is for operations managers.</p>
+<p>This section is for operations managers.<br>
+You are logged in as <%= @current_user.email %>.</p>
 
 <section class="row">
   <article class="column">
@@ -25,7 +26,7 @@
         <%= link "Create new voyage", to: Routes.voyage_new_path(@conn, :new) %>
       </li>
       <li>
-        <%= link "Log out", to: "/" %>
+        <%= link "Log out", to: Routes.logout_path(@conn, :logout) %>
       </li>
     </ul>
   </article>

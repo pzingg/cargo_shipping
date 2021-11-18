@@ -3,7 +3,7 @@
     <h2>Navigation</h2>
     <ul>
       <li>
-        <%= link "Clerks home page", to: "/clerks" %>
+        <%= live_redirect "Clerks home page", to: Routes.clerks_path(@socket, :clerks) %>
       </li>
     </ul>
   </article>

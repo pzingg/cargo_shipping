@@ -8,10 +8,10 @@
     <h2>Log in</h2>
     <ul>
       <li>
-        <%= link "Log in as a clerk", to: "/clerks" %>
+        <%= link "Log in as a clerk", to: Routes.clerks_path(@conn, :clerks) %>
       </li>
       <li>
-        <%= link "Log in as a manager", to: "/managers" %>
+        <%= link "Log in as a manager", to: Routes.managers_path(@conn, :managers) %>
       </li>
     </ul>
   </article>

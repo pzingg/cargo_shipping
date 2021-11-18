@@ -13,7 +13,7 @@ defmodule CargoShippingWeb.HandlingEventLive.Index do
       ])
     end
 
-    {:ok, socket |> default_assigns()}
+    {:ok, socket}
   end
 
   @impl true
@@ -50,6 +50,6 @@ defmodule CargoShippingWeb.HandlingEventLive.Index do
     {:noreply, clear_bulletin(socket, bulletin_id)}
   end
 
-  defp page_title(nil, :index), do: "Recent handling events"
+  defp page_title(_tracking_id, :all), do: "Recent handling events"
   defp page_title(tracking_id, :index), do: "Handling events for #{tracking_id}"
 end

@@ -7,7 +7,7 @@ defmodule CargoShippingWeb.CargoLive.Show do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, socket |> default_assigns()}
+    {:ok, socket}
   end
 
   @impl true

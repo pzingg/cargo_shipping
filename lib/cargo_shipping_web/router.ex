@@ -1,6 +1,8 @@
 defmodule CargoShippingWeb.Router do
   use CargoShippingWeb, :router
 
+  import CargoShippingWeb.UserAuth
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -8,7 +10,7 @@ defmodule CargoShippingWeb.Router do
     plug :put_root_layout, {CargoShippingWeb.LayoutView, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-    # plug :fetch_current_user
+    plug :fetch_current_user
   end
 
   pipeline :api do
@@ -17,28 +19,32 @@ defmodule CargoShippingWeb.Router do
 
   ## The following scopes are organized by application user
 
-  scope "/clerks", CargoShippingWeb do
-    pipe_through :browser
+  live_session :clerk, on_mount: {CargoShippingWeb.InitAssigns, :clerk} do
+    scope "/clerks", CargoShippingWeb do
+      pipe_through [:browser, :require_authenticated_user]
 
-    get "/", PageController, :clerks
-    live "/tracking", CargoLive.Search, :index
+      get "/", PageController, :clerks, as: :clerks
+      live "/tracking", CargoLive.Search, :index
+    end
   end
 
-  scope "/managers", CargoShippingWeb do
-    pipe_through :browser
+  live_session :manager, on_mount: {CargoShippingWeb.InitAssigns, :manager} do
+    scope "/managers", CargoShippingWeb do
+      pipe_through [:browser, :require_authenticated_user]
 
-    get "/", PageController, :managers
-    live "/cargos", CargoLive.Index, :index
-    live "/cargos/new", CargoLive.New, :new
-    live "/cargos/id/:tracking_id", CargoLive.Show, :show
-    live "/cargos/id/:tracking_id/destination/edit", CargoLive.EditDestination, :edit
-    live "/cargos/id/:tracking_id/route/edit", CargoLive.EditRoute, :edit
-    live "/events", HandlingEventLive.Index, :all
-    live "/events/id/:tracking_id", HandlingEventLive.Index, :index
-    live "/reports/new", HandlingReportLive.New, :new
-    live "/voyages", VoyageLive.Index, :index
-    live "/voyages/new", VoyageLive.New, :new
-    live "/voyages/number/:voyage_number", VoyageLive.Show, :show
+      get "/", PageController, :managers, as: :managers
+      live "/cargos", CargoLive.Index, :index
+      live "/cargos/new", CargoLive.New, :new
+      live "/cargos/id/:tracking_id", CargoLive.Show, :show
+      live "/cargos/id/:tracking_id/destination/edit", CargoLive.EditDestination, :edit
+      live "/cargos/id/:tracking_id/route/edit", CargoLive.EditRoute, :edit
+      live "/events", HandlingEventLive.Index, :all
+      live "/events/id/:tracking_id", HandlingEventLive.Index, :index
+      live "/reports/new", HandlingReportLive.New, :new
+      live "/voyages", VoyageLive.Index, :index
+      live "/voyages/new", VoyageLive.New, :new
+      live "/voyages/number/:voyage_number", VoyageLive.Show, :show
+    end
   end
 
   ## This scope handles JSON requests and responses
@@ -49,12 +55,14 @@ defmodule CargoShippingWeb.Router do
     resources "/handling_reports", HandlingReportController, only: [:index, :create, :show]
   end
 
-  ## This scope handles landing page, logins, etc.
+  ## This scope handles landing page, logouts, etc.
 
   scope "/", CargoShippingWeb do
+    # We could have also :redirect_if_user_is_authenticated for "/"
     pipe_through :browser
 
-    get "/", PageController, :index
+    get "/logout", PageController, :logout, as: :logout
+    get "/", PageController, :index, as: :landing
   end
 
   # Enables LiveDashboard only for development

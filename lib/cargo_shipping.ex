@@ -13,6 +13,7 @@ defmodule CargoShipping do
     deps: [Ecto, Ecto.Changeset, CargoShippingConfig, CargoShippingSchemas],
     exports: [
       # Bounded context modules
+      Accounts,
       CargoBookings,
       Locations,
       Reports,

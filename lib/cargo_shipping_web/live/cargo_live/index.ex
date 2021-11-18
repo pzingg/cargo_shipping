@@ -10,7 +10,7 @@ defmodule CargoShippingWeb.CargoLive.Index do
       subscribe_to_application_events(__MODULE__, self(), "cargo_*")
     end
 
-    {:ok, socket |> default_assigns()}
+    {:ok, socket}
   end
 
   @impl true

@@ -6,10 +6,10 @@
         <%= live_redirect @back_link_label, to: @back_link_path %>
       </li>
       <li>
-        <%= live_redirect "Managers page", to: "/managers" %>
+        <%= live_redirect "Managers page", to: Routes.managers_path(@socket, :managers) %>
       </li>
       <li>
-        <%= live_redirect "Log out", to: "/" %>
+        <%= live_redirect "Log out", Routes.logout_path(@socket, :logout) %>
       </li>
     </ul>
   </article>

@@ -1,6 +1,7 @@
 <h1>Clerks Page</h1>
 
-<p>This section is for shipping clerks.</p>
+<p>This section is for shipping clerks.<br>
+You are logged in as <%= @current_user.email %>.</p>
 
 <section class="row">
   <article class="column">
@@ -10,7 +11,7 @@
         <%= link "Track cargos", to: Routes.cargo_search_path(@conn, :index) %>
       </li>
       <li>
-        <%= link "Log out", to: "/" %>
+        <%= link "Log out", to: Routes.logout_path(@conn, :logout) %>
       </li>
     </ul>
   </article>

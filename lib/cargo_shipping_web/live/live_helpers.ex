@@ -29,13 +29,6 @@ defmodule CargoShippingWeb.LiveHelpers do
     live_component(CargoShippingWeb.ModalComponent, modal_opts)
   end
 
-  @doc """
-  Set up assigns at mount time for every live view.
-  """
-  def default_assigns(socket) do
-    Phoenix.LiveView.assign(socket, :bulletins, nil)
-  end
-
   def add_event_bulletin(%{assigns: assigns} = socket, topic, _event \\ nil) do
     bulletin = %Bulletin{id: UUID.uuid4(), level: :info, message: "A #{topic} event happened."}
 

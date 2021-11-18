@@ -11,10 +11,10 @@
         <%= live_redirect "Submit a handling report", to: Routes.handling_report_new_path(@socket, :new) %>
       </li>
       <li>
-        <%= link "Managers page", to: "/managers" %>
+        <%= live_redirect "Managers page", to: Routes.managers_path(@socket, :managers) %>
       </li>
       <li>
-        <%= link "Log out", to: "/" %>
+        <%= link "Log out", to: Routes.logout_path(@socket, :logout) %>
       </li>
     </ul>
   </article>
