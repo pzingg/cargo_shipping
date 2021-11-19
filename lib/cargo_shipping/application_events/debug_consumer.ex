@@ -60,10 +60,42 @@ defmodule CargoShipping.ApplicationEvents.DebugConsumer do
     Logger.error("[cargo_delivery_update_failed] #{tracking_id} #{inspect(event.data)}")
   end
 
-  def handle_event(:handling_report_received, _config, event) do
+  def handle_event(:cargo_destination_updated, _config, event) do
+    # Payload is the cargo
+    Logger.info(
+      "[cargo_destination_updated] #{event.data.tracking_id} #{to_string(event.data.route_specification)}"
+    )
+
+    Accessors.debug_route_specification(event.data.route_specification, "route_specification")
+    Accessors.debug_delivery(event.data.delivery)
+  end
+
+  def handle_event(:cargo_destination_update_failed, _config, event) do
+    # Payload is the error changeset
+    tracking_id = Ecto.Changeset.get_field(event.data, :tracking_id)
+    Logger.error("[cargo_destination_update_failed] #{tracking_id} #{inspect(event.data)}")
+  end
+
+  def handle_event(:cargo_itinerary_updated, _config, event) do
+    # Payload is the cargo
+    Logger.info(
+      "[cargo_itinerary_updated] #{event.data.tracking_id} #{to_string(event.data.itinerary)}"
+    )
+
+    Accessors.debug_itinerary(event.data.itinerary, "itinerary")
+    Accessors.debug_delivery(event.data.delivery)
+  end
+
+  def handle_event(:cargo_itinerary_update_failed, _config, event) do
+    # Payload is the error changeset
+    tracking_id = Ecto.Changeset.get_field(event.data, :tracking_id)
+    Logger.error("[cargo_itinerary_update_failed] #{tracking_id} #{inspect(event.data)}")
+  end
+
+  def handle_event(:handling_report_accepted, _config, event) do
     # Payload is handling report
     Logger.info(
-      "[handling_report_received] #{event.data.tracking_id} #{event.data.event_type} at {event.data.location}"
+      "[handling_report_accepted] #{event.data.tracking_id} #{event.data.event_type} at {event.data.location}"
     )
   end
 

@@ -4,8 +4,6 @@ defmodule CargoShippingWeb.InitAssigns do
   """
   import Phoenix.LiveView
 
-  require Logger
-
   alias CargoShipping.Accounts
   alias CargoShippingWeb.UserAuth
 
@@ -13,17 +11,11 @@ defmodule CargoShippingWeb.InitAssigns do
   Set up assigns at mount time for every live view.
   """
   def on_mount(mount_arg, params, session, socket) do
-    Logger.error("on_mount mount_arg: #{mount_arg}")
-    Logger.error("  session: #{inspect(session)}")
-    Logger.error("  assigns: #{inspect(socket.assigns)}")
-
     socket =
       socket
       |> assign(:bulletins, nil)
       |> assign_time_zone(params)
       |> assign_current_user(session)
-
-    Logger.error("  result: #{inspect(socket.assigns)}")
 
     current_user = socket.assigns.current_user
 

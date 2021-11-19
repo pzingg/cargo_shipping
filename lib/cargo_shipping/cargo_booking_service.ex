@@ -214,7 +214,7 @@ defmodule CargoShipping.CargoBookingService do
 
   def change_destination(%Cargo_{} = cargo, route_specification) do
     params = specify_new_route(cargo, Utils.from_struct(route_specification))
-    CargoBookings.update_cargo(cargo, params)
+    update_cargo_and_publish_event(cargo, params, "destination")
   end
 
   @doc """
@@ -234,7 +234,7 @@ defmodule CargoShipping.CargoBookingService do
     Accessors.debug_route_specification(new_route_specification, "from merged_itinerary")
 
     params = specify_new_route(cargo, new_route_specification, merged_itinerary)
-    CargoBookings.update_cargo(cargo, params)
+    update_cargo_and_publish_event(cargo, params, "itinerary")
   end
 
   @doc """
@@ -300,6 +300,22 @@ defmodule CargoShipping.CargoBookingService do
 
       {:error, changeset} ->
         publish_event(:cargo_booking_failed, changeset)
+    end
+
+    result
+  end
+
+  defp update_cargo_and_publish_event(cargo, params, which) do
+    result = CargoBookings.update_cargo(cargo, params)
+
+    case result do
+      {:ok, cargo} ->
+        topic = String.to_atom("cargo_#{which}_updated")
+        publish_event(topic, cargo)
+
+      {:error, changeset} ->
+        topic = String.to_atom("cargo_#{which}_update_failed")
+        publish_event(topic, changeset)
     end
 
     result

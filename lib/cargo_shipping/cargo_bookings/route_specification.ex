@@ -20,7 +20,7 @@ defmodule CargoShipping.CargoBookings.RouteSpecification do
   end
 
   def string_from(route_specification) do
-    "from #{route_specification.origin} to #{route_specification.destination}"
+    "RouteSpecification from #{route_specification.origin} to #{route_specification.destination}"
   end
 
   @doc false

@@ -24,7 +24,6 @@ defmodule CargoShipping.CargoBookings do
   require Logger
 
   alias CargoShipping.Infra.Repo
-  alias CargoShipping.Utils
   alias CargoShippingSchemas.Cargo, as: Cargo_
   alias CargoShippingSchemas.HandlingEvent, as: HandlingEvent_
 

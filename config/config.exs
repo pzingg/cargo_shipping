@@ -64,7 +64,11 @@ config :event_bus,
     :cargo_handling_rejected,
     :cargo_delivery_updated,
     :cargo_delivery_update_failed,
-    :handling_report_received,
+    :cargo_destination_updated,
+    :cargo_destination_update_failed,
+    :cargo_itinerary_updated,
+    :cargo_itinerary_update_failed,
+    :handling_report_accepted,
     :handling_report_rejected
   ]
 

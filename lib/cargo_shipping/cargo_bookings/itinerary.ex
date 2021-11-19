@@ -12,6 +12,20 @@ defmodule CargoShipping.CargoBookings.Itinerary do
   alias CargoShipping.CargoBookings.{Accessors, Leg}
   alias CargoShippingSchemas.{Itinerary, RouteSpecification}
 
+  defimpl String.Chars, for: CargoShippingSchemas.Itinerary do
+    use Boundary, classify_to: CargoShipping
+
+    def to_string(itinerary) do
+      CargoShipping.CargoBookings.Itinerary.string_from(itinerary)
+    end
+  end
+
+  def string_from(itinerary) do
+    origin = Accessors.itinerary_initial_departure_location(itinerary)
+    destination = Accessors.itinerary_final_arrival_location(itinerary)
+    "Itinerary from #{origin} to #{destination}"
+  end
+
   def new(legs) do
     %Itinerary{}
     |> changeset(%{legs: coalesce_legs(legs)})

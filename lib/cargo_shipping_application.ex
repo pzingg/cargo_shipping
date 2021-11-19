@@ -30,7 +30,7 @@ defmodule CargoShippingApplication do
        name: CargoShipping.ApplicationEvents.CargoHandledConsumer, topics: :cargo_was_handled},
       {CargoShipping.ApplicationEvents.Consumer,
        name: CargoShipping.ApplicationEvents.HandlingEventRegistrationAttemptConsumer,
-       topics: :handling_report_received}
+       topics: :handling_report_accepted}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

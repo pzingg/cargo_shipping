@@ -28,7 +28,7 @@ defmodule CargoShipping.HandlingReportService do
   end
 
   defp register_handling_report_attempt({:ok, handling_report}, _params) do
-    publish_event(:handling_report_received, handling_report)
+    publish_event(:handling_report_accepted, handling_report)
   end
 
   defp register_handling_report_attempt({:error, changeset}, params) do
