@@ -297,6 +297,10 @@ defmodule CargoShipping.CargoBookingService do
     case result do
       {:ok, cargo} ->
         publish_event(:cargo_booked, cargo)
+        publish_event(:cargo_destination_updated, cargo)
+        if Accessors.cargo_routed?(cargo) do
+          publish_event(:cargo_itinerary_updated, cargo)
+        end
 
       {:error, changeset} ->
         publish_event(:cargo_booking_failed, changeset)
