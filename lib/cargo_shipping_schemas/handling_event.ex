@@ -17,7 +17,7 @@ defmodule CargoShippingSchemas.HandlingEvent do
   """
   use Ecto.Schema
 
-  alias CargoShippingSchemas.Cargo
+  alias CargoShippingSchemas.{Cargo, HandlingReport}
 
   @event_type_values [:RECEIVE, :LOAD, :UNLOAD, :CUSTOMS, :CLAIM]
 
@@ -26,6 +26,8 @@ defmodule CargoShippingSchemas.HandlingEvent do
   @timestamps_opts [type: :utc_datetime]
   schema "handling_events" do
     field :event_type, Ecto.Enum, values: @event_type_values
+    field :version, :integer
+    field :handling_report_id, Ecto.UUID
     field :voyage_id, Ecto.UUID
     field :location, :string
     field :completed_at, :utc_datetime

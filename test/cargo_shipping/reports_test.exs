@@ -10,11 +10,12 @@ defmodule CargoShipping.ReportsTest do
     import CargoShipping.ReportsFixtures
 
     @invalid_attrs %{
-      completed_at: nil,
+      tracking_id: nil,
+      version: nil,
       event_type: nil,
       location: nil,
-      tracking_id: nil,
-      voyage_number: nil
+      voyage_number: nil,
+      completed_at: nil
     }
 
     test "list_handling_reports/0 returns all handling_reports" do
@@ -32,11 +33,12 @@ defmodule CargoShipping.ReportsTest do
       voyage_number = CargoShipping.VoyagePlansFixtures.voyage_fixture_number()
 
       valid_attrs = %{
-        completed_at: ~U[2021-10-20 03:47:00Z],
-        event_type: "LOAD",
-        location: cargo.origin,
         tracking_id: cargo.tracking_id,
-        voyage_number: voyage_number
+        version: cargo.version,
+        event_type: "LOAD",
+        location: cargo.route_specification.origin,
+        voyage_number: voyage_number,
+        completed_at: ~U[2021-10-20 03:47:00Z]
       }
 
       assert {:ok, %HandlingReport_{} = handling_report} =
@@ -46,7 +48,7 @@ defmodule CargoShipping.ReportsTest do
 
       assert handling_report.completed_at == ~U[2021-10-20 03:47:00Z]
       assert handling_report.event_type == :LOAD
-      assert handling_report.location == cargo.origin
+      assert handling_report.location == cargo.route_specification.origin
       assert handling_report.tracking_id == cargo.tracking_id
       assert handling_report.voyage_number == voyage_number
     end

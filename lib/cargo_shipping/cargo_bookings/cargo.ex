@@ -63,7 +63,7 @@ defmodule CargoShipping.CargoBookings.Cargo do
   @doc false
   def changeset(cargo, attrs) do
     cargo
-    |> cast(attrs, [:tracking_id, :origin])
+    |> cast(attrs, [:tracking_id])
     |> validate_required([:tracking_id])
     |> validate_format(:tracking_id, ~r/^[A-Z]{3,}[0-9]{0,6}$/,
       message: "should be at least 3 uppercase letters, optionally followed by up to 6 digits"
@@ -72,28 +72,26 @@ defmodule CargoShipping.CargoBookings.Cargo do
     |> cast_embed(:route_specification, with: &RouteSpecification.changeset/2)
     |> cast_embed(:itinerary, with: &Itinerary.changeset/2)
     |> cast_embed(:delivery, with: &Delivery.changeset/2)
-    |> set_origin_from_route_specification()
-    |> validate_required([:origin])
   end
 
-  ## Public API for CargoShipping bounded context
+  def version_changeset(cargo, attrs) do
+    current_version = cargo.version
 
-  def set_origin_from_route_specification(changeset) do
-    # Cargo origin never changes, even if the route specification changes.
-    # However, at creation, cargo origin can be derived from the initial route specification.
-    if is_nil(get_field(changeset, :origin)) do
-      with %Ecto.Changeset{} = rs_changeset <- get_change(changeset, :route_specification),
-           origin <- get_change(rs_changeset, :origin),
-           false <- is_nil(origin) do
+    cargo
+    |> changeset(attrs)
+    |> set_created_version(current_version)
+  end
+
+  defp set_created_version(changeset, current_version) do
+    cond do
+      is_nil(current_version) ->
         changeset
-        |> put_change(:origin, origin)
-      else
-        _ ->
-          changeset
-          |> add_error(:origin, "must be supplied in route_specification")
-      end
-    else
-      changeset
+
+      !is_nil(get_field(changeset, :created_version)) ->
+        changeset
+
+      true ->
+        put_change(changeset, :created_version, current_version)
     end
   end
 end

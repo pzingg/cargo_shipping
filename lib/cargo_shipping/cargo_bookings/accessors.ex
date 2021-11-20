@@ -4,6 +4,12 @@ defmodule CargoShipping.CargoBookings.Accessors do
   """
   alias CargoShipping.VoyageService
 
+  # Cargo accessors
+
+  def cargo_created_version(cargo) do
+    Map.get(cargo, :created_version) || cargo.version
+  end
+
   # RouteSpecification accessors
 
   defdelegate debug_route_specification(route_specification, title),

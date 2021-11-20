@@ -5,7 +5,6 @@ defmodule CargoShipping.HandlingEventService do
   been received asynchronously, this module is responsible
   for creating a new handling event for the cargo in the report.
   """
-
   alias CargoShipping.ApplicationEvents.Producer
   alias CargoShipping.CargoBookings.HandlingEvent
   alias CargoShipping.Infra.Repo
@@ -32,7 +31,14 @@ defmodule CargoShipping.HandlingEventService do
   state of the handling event aggregate.
   """
   def register_handling_event(params) do
-    changeset = HandlingEvent.handling_report_changeset(params)
+    # Get handling_report_id if it exists
+    {handling_report_id, next_params} = Map.pop(params, :id, nil)
+    next_params = Map.put(next_params, :handling_report_id, handling_report_id)
+
+    changeset = HandlingEvent.handling_report_changeset(next_params)
+
+    # Logger.error("reigster_handling_event #{inspect(changeset.changes)}")
+
     create_and_publish_handling_event(changeset)
   end
 

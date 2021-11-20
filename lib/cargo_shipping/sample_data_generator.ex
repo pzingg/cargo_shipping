@@ -106,7 +106,6 @@ defmodule CargoShipping.SampleDataGenerator do
     {:ok, cargo_xyz} =
       %{
         tracking_id: "XYZ",
-        origin: "SESTO",
         route_specification: %{
           origin: "SESTO",
           destination: "AUMEL",
@@ -123,7 +122,6 @@ defmodule CargoShipping.SampleDataGenerator do
     {:ok, cargo_abc} =
       %{
         tracking_id: "ABC",
-        origin: "SESTO",
         route_specification: %{
           origin: "SESTO",
           destination: "FIHEL",
@@ -140,7 +138,6 @@ defmodule CargoShipping.SampleDataGenerator do
     {:ok, cargo_zyx} =
       %{
         tracking_id: "ZYX",
-        origin: "AUMEL",
         route_specification: %{
           origin: "AUMEL",
           destination: "SESTO",
@@ -158,7 +155,6 @@ defmodule CargoShipping.SampleDataGenerator do
     {:ok, cargo_cba} =
       %{
         tracking_id: "CBA",
-        origin: "FIHEL",
         route_specification: %{
           origin: "FIHEL",
           destination: "USCHI",
@@ -178,7 +174,6 @@ defmodule CargoShipping.SampleDataGenerator do
     {:ok, cargo_fgh} =
       %{
         tracking_id: "FGH",
-        origin: "SESTO",
         route_specification: %{
           origin: "CNHKG",
           destination: "FIHEL",
@@ -193,7 +188,6 @@ defmodule CargoShipping.SampleDataGenerator do
     {:ok, cargo_jkl} =
       %{
         tracking_id: "JKL",
-        origin: "DEHAM",
         route_specification: %{
           origin: "DEHAM",
           destination: "JPTYO",

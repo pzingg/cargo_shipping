@@ -13,10 +13,11 @@ defmodule CargoShipping.ReportsFixtures do
     {:ok, handling_report} =
       attrs
       |> Enum.into(%{
-        completed_at: ~U[2021-10-20 03:47:00Z],
+        tracking_id: cargo.tracking_id,
+        version: cargo.version,
         event_type: "RECEIVE",
-        location: cargo.origin,
-        tracking_id: cargo.tracking_id
+        location: cargo.route_specification.origin,
+        completed_at: ~U[2021-10-20 03:47:00Z]
       })
       |> CargoShipping.HandlingReportService.submit_report()
 

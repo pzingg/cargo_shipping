@@ -70,7 +70,6 @@ defmodule CargoShipping.MisdirectionTest do
     {:ok, cargo} =
       CargoBookingService.create_cargo(%{
         tracking_id: "TST442",
-        origin: "SESTO",
         route_specification: %{
           origin: "SESTO",
           destination: "CNHGH",

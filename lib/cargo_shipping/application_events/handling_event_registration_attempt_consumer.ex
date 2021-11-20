@@ -10,7 +10,7 @@ defmodule CargoShipping.ApplicationEvents.HandlingEventRegistrationAttemptConsum
   def handle_event(:handling_report_accepted, _config, event) do
     # Payload is handling report
     Logger.info(
-      "RegistrationAttemptConsumer [handling_report_accepted] #{event.data.tracking_id} #{event.data.event_type} at {event.data.location}"
+      "RegistrationAttemptConsumer [handling_report_accepted] #{event.data.tracking_id} v#{event.data.version} #{event.data.event_type} at {event.data.location}"
     )
 
     # Turn around and create a handling event.

@@ -25,7 +25,9 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
   @cast_fields [
     :cargo_id,
     :tracking_id,
+    :handling_report_id,
     :event_type,
+    :version,
     :voyage_id,
     :voyage_number,
     :location,
@@ -33,7 +35,7 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
     :registered_at
   ]
   @cargo_id_required_fields [:cargo_id, :event_type, :location, :completed_at]
-  @tracking_id_required_fields [:event_type, :location, :completed_at]
+  @tracking_id_required_fields [:tracking_id, :event_type, :location, :completed_at]
 
   defimpl String.Chars, for: CargoShippingSchemas.HandlingEvent do
     use Boundary, classify_to: CargoShipping
@@ -58,42 +60,26 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
 
   @doc false
   def cargo_changeset(cargo, attrs) do
-    set_cargo_id(cargo, attrs) |> cargo_id_changeset()
-  end
-
-  def cargo_id_changeset(attrs) do
-    %HandlingEvent{}
-    |> cast(attrs, @cast_fields)
-    |> validate_required(@cargo_id_required_fields)
-    |> validate_inclusion(:event_type, HandlingEvent.event_type_values())
-    |> validate_location()
-    |> validate_voyage_number_or_id()
-    |> validate_permissible_event_for_cargo()
-  end
-
-  def tracking_id_changeset(attrs) do
-    %HandlingEvent{}
-    |> cast(attrs, @cast_fields)
-    |> validate_required(@tracking_id_required_fields)
-    |> validate_inclusion(:event_type, HandlingEvent.event_type_values())
-    |> validate_location()
-    |> validate_voyage_number_or_id()
-    |> validate_permissible_event_for_cargo()
+    cargo
+    |> set_cargo_id(attrs)
+    |> changeset(@cargo_id_required_fields)
   end
 
   @doc """
   A changeset that looks up the cargo by tracking id and fails if
-  it cannot find the cargo.
+  it cannot find the cargo, or if the version number does not
+  match.
   """
-  def handling_report_changeset(attrs) do
-    case set_cargo_id_from_tracking_id(attrs) do
-      {:ok, event_attrs} ->
-        cargo_id_changeset(event_attrs)
+  def handling_report_changeset(attrs), do: changeset(attrs, @tracking_id_required_fields)
 
-      {:error, message} ->
-        tracking_id_changeset(attrs)
-        |> add_error(:tracking_id, message)
-    end
+  defp changeset(attrs, required_fields) do
+    %HandlingEvent{}
+    |> cast(attrs, @cast_fields)
+    |> validate_required(required_fields)
+    |> validate_inclusion(:event_type, HandlingEvent.event_type_values())
+    |> validate_location()
+    |> validate_voyage_number_or_id()
+    |> validate_cargo_fields()
   end
 
   def validate_location(changeset) do
@@ -155,21 +141,63 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
     end
   end
 
-  defp validate_permissible_event_for_cargo(changeset) do
-    case check_cargo_fields(changeset) do
-      {:error, message} ->
-        add_error(changeset, :cargo, message)
+  defp validate_cargo_fields(changeset) do
+    tracking_id = get_change(changeset, :tracking_id)
+    cargo_id = get_field(changeset, :cargo_id)
 
-      {:ok, cargo} ->
-        transport_status = cargo.delivery.transport_status
-        event_type = get_change(changeset, :event_type)
-
-        if is_nil(event_type) ||
-             permitted_event_for_transport_status?(event_type, transport_status) do
-          changeset
-        else
-          add_error(changeset, :event_type, "is not permitted for #{transport_status}")
+    case {is_nil(cargo_id), is_nil(tracking_id)} do
+      {false, _} ->
+        try do
+          cargo = CargoBookings.get_cargo!(cargo_id)
+          set_cargo_fields(changeset, cargo)
+        rescue
+          _ -> add_error(changeset, :cargo_id, "is invalid")
         end
+
+      {true, false} ->
+        try do
+          cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
+          set_cargo_fields(changeset, cargo)
+        rescue
+          _ ->
+            add_error(changeset, :tracking_id, "is invalid")
+        end
+
+      _ ->
+        add_error(changeset, :cargo_id, "can't be blank")
+    end
+  end
+
+  def set_cargo_fields(changeset, cargo) do
+    version = get_change(changeset, :version)
+
+    next_changeset =
+      if is_nil(version) || version == cargo.version do
+        changeset
+        |> put_change(:version, cargo.version)
+      else
+        changeset
+        |> add_error(:version, "should match current cargo version",
+          version: version,
+          cargo_version: cargo.version
+        )
+      end
+
+    next_changeset
+    |> put_change(:cargo_id, cargo.id)
+    |> put_change(:tracking_id, cargo.tracking_id)
+    |> validate_permissible_event_for_cargo(cargo)
+  end
+
+  defp validate_permissible_event_for_cargo(changeset, cargo) do
+    transport_status = cargo.delivery.transport_status
+    event_type = get_change(changeset, :event_type)
+
+    if is_nil(event_type) ||
+         permitted_event_for_transport_status?(event_type, transport_status) do
+      changeset
+    else
+      add_error(changeset, :event_type, "is not permitted for #{transport_status}")
     end
   end
 
@@ -197,54 +225,18 @@ defmodule CargoShipping.CargoBookings.HandlingEvent do
     end
   end
 
-  defp check_cargo_fields(changeset) do
-    cargo_id = get_field(changeset, :cargo_id)
-    cargo = get_field(changeset, :cargo)
-
-    case {is_nil(cargo), is_nil(cargo_id)} do
-      {false, _} ->
-        {:ok, cargo}
-
-      {true, true} ->
-        {:error, "can't be blank"}
-
-      {true, false} ->
-        case CargoBookings.get_cargo!(cargo_id) do
-          nil -> {:error, "is invalid"}
-          c -> {:ok, c}
-        end
-    end
-  end
-
   ## Utility functions
 
   def set_cargo_id(cargo, attrs) do
-    {cargo_id_key, tracking_id_key} =
+    cargo_id_key =
       if Utils.atom_keys?(attrs) do
-        {:cargo_id, :tracking_id}
+        :cargo_id
       else
-        {"cargo_id", "tracking_id"}
+        "cargo_id"
       end
 
     attrs
     |> Map.put(cargo_id_key, cargo.id)
-    |> Map.put(tracking_id_key, cargo.tracking_id)
-  end
-
-  defp set_cargo_id_from_tracking_id(attrs) do
-    tracking_id = Utils.get(attrs, :tracking_id)
-
-    if is_nil(tracking_id) do
-      {:error, "can't be blank"}
-    else
-      case CargoBookings.get_cargo_by_tracking_id!(tracking_id) do
-        nil ->
-          {:error, "is_invalid"}
-
-        cargo ->
-          {:ok, set_cargo_id(cargo, attrs)}
-      end
-    end
   end
 
   def debug_handling_event(handling_event) do

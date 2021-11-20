@@ -12,7 +12,8 @@ defmodule CargoShippingSchemas.Cargo do
   @timestamps_opts [type: :utc_datetime]
   schema "cargos" do
     field :tracking_id, :string
-    field :origin, :string
+    field :created_version, :integer, read_after_writes: true
+    field :version, :integer, read_after_writes: true
     embeds_one :route_specification, RouteSpecification, on_replace: :update
     embeds_one :itinerary, Itinerary, on_replace: :update
     embeds_one :delivery, Delivery, on_replace: :update

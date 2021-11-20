@@ -52,7 +52,7 @@ defmodule CargoShipping.CargoBookingService do
     # Because we need to pre-process the attributes, we must convert
     # the keys into atoms.
     attrs = Utils.atomize(raw_attrs)
-    route_specification = Map.fetch!(attrs, :route_specification)
+    route_specification = Map.get(attrs, :route_specification)
     itinerary = Map.get(attrs, :itinerary)
 
     recalculated_attrs =
@@ -298,6 +298,7 @@ defmodule CargoShipping.CargoBookingService do
       {:ok, cargo} ->
         publish_event(:cargo_booked, cargo)
         publish_event(:cargo_destination_updated, cargo)
+
         if Accessors.cargo_routed?(cargo) do
           publish_event(:cargo_itinerary_updated, cargo)
         end

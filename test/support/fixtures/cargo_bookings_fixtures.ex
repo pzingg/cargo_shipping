@@ -52,7 +52,6 @@ defmodule CargoShipping.CargoBookingsFixtures do
       attrs
       |> Enum.into(%{
         tracking_id: @tracking_id,
-        origin: "DEHAM",
         route_specification: route_specification_fixture(),
         itinerary: itinerary_fixture()
       })
@@ -76,7 +75,7 @@ defmodule CargoShipping.CargoBookingsFixtures do
     attrs =
       Enum.into(attrs, %{
         event_type: "RECEIVE",
-        location: cargo.origin,
+        location: cargo.route_specification.origin,
         completed_at: ~U[2015-01-24 00:00:00Z]
       })
 

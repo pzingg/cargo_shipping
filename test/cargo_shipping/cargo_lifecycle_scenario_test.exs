@@ -57,7 +57,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
     itinerary = select_prefered_itinerary(itineraries)
     refute itinerary.patch_uncompleted_leg?
 
-    {:ok, _cargo} = CargoBookingService.assign_cargo_to_route(cargo, itinerary)
+    assert {:ok, _cargo} = CargoBookingService.assign_cargo_to_route(cargo, itinerary)
 
     Logger.warn("Line 62, after routing")
 
@@ -96,7 +96,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :RECEIVE
     }
 
-    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -119,7 +119,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :LOAD
     }
 
-    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -149,7 +149,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     Logger.warn("Line 150: bad handling params will fail!")
 
-    {:error, changeset} = HandlingEventService.register_handling_event(handling_params)
+    assert {:error, changeset} = HandlingEventService.register_handling_event(handling_params)
     assert changeset.errors[:voyage_number] == {"is invalid", []}
     assert changeset.errors[:location] == {"is invalid", []}
 
@@ -163,7 +163,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :UNLOAD
     }
 
-    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -191,7 +191,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     Logger.warn("Line 192, rerouting")
 
-    {:ok, _cargo} = CargoBookingService.change_destination(cargo, from_shanghai)
+    assert {:ok, _cargo} = CargoBookingService.change_destination(cargo, from_shanghai)
 
     # Wait for EventBus
     Process.sleep(500)
@@ -230,7 +230,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
     refute itinerary.patch_uncompleted_leg?
 
-    {:ok, _cargo} = CargoBookingService.assign_cargo_to_route(cargo, itinerary)
+    assert {:ok, _cargo} = CargoBookingService.assign_cargo_to_route(cargo, itinerary)
 
     # Wait for EventBus
     Process.sleep(500)
@@ -259,7 +259,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :LOAD
     }
 
-    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -285,7 +285,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :UNLOAD
     }
 
-    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -311,7 +311,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :LOAD
     }
 
-    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -336,7 +336,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :UNLOAD
     }
 
-    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -360,7 +360,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :LOAD
     }
 
-    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -386,7 +386,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :UNLOAD
     }
 
-    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -411,12 +411,13 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :CLAIM
     }
 
-    {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    # TODO: Verify that :cargo_arrived event was received
+    # assert {:ok, pid} = TestConsumer.start()
+    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    # assert {:ok, _} = TestConsumer.await_topic(pid, :cargo_arrived)
 
     # Wait for event bus
     Process.sleep(500)
-
-    # TODO: Verify that :cargo_arrived event was received
 
     # Check current state - should be ok
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)

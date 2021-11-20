@@ -29,7 +29,6 @@ defmodule CargoShipping.CargoBookingsTest do
 
       valid_attrs = %{
         "tracking_id" => "TST042",
-        "origin" => "DEHAM",
         "route_specification" => %{
           "origin" => "DEHAM",
           "destination" => "AUMEL",
@@ -61,7 +60,7 @@ defmodule CargoShipping.CargoBookingsTest do
       assert {:ok, %Cargo{} = cargo} = CargoBookingService.create_cargo(valid_attrs)
       Process.sleep(100)
       cargo = CargoBookings.get_cargo!(cargo.id)
-      assert cargo.origin == "DEHAM"
+      assert cargo.route_specification.origin == "DEHAM"
       assert cargo.tracking_id == "TST042"
     end
 
@@ -75,7 +74,6 @@ defmodule CargoShipping.CargoBookingsTest do
       cargo = cargo_fixture()
 
       update_attrs = %{
-        "origin" => "CNSHA",
         "route_specification" => %{
           "origin" => "CNSHA",
           "destination" => "AUMEL",
@@ -99,7 +97,7 @@ defmodule CargoShipping.CargoBookingsTest do
       assert {:ok, %Cargo{} = cargo} = CargoBookings.update_cargo(cargo, update_attrs)
       Process.sleep(100)
       cargo = CargoBookings.get_cargo!(cargo.id)
-      assert cargo.origin == "CNSHA"
+      assert cargo.route_specification.origin == "CNSHA"
     end
 
     test "update_cargo/2 with invalid data returns error changeset" do

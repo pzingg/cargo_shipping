@@ -16,6 +16,7 @@ defmodule CargoShippingSchemas.HandlingReport do
   schema "handling_reports" do
     field :event_type, Ecto.Enum, values: HandlingEvent.event_type_values()
     field :tracking_id, :string
+    field :version, :integer
     field :voyage_number, :string
     field :location, :string
     field :completed_at, :utc_datetime

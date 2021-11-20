@@ -33,29 +33,29 @@ defmodule CargoShipping.Reports.HandlingReport do
   @doc false
   def changeset(attrs) do
     %HandlingReport{}
-    |> cast(attrs, [:event_type, :tracking_id, :voyage_number, :location, :completed_at])
+    |> cast(attrs, [:event_type, :tracking_id, :version, :voyage_number, :location, :completed_at])
     |> validate_required([:event_type, :completed_at])
     |> validate_inclusion(:event_type, HandlingEvent.event_type_values())
-    |> validate_tracking_id()
+    |> validate_tracking_id_and_version()
     |> validate_location()
     |> validate_voyage_number()
-    |> validate_tracking_id()
   end
 
-  def validate_tracking_id(changeset) do
+  def validate_tracking_id_and_version(changeset) do
     changeset
     |> validate_required([:tracking_id])
-    |> validate_cargo_exists?()
+    |> check_tracking_id_and_version()
   end
 
-  def validate_cargo_exists?(changeset) do
+  def check_tracking_id_and_version(changeset) do
     tracking_id = get_change(changeset, :tracking_id)
 
-    if CargoBookings.cargo_tracking_id_exists?(tracking_id) do
-      changeset
-    else
-      changeset
-      |> add_error(:tracking_id, "is invalid")
+    try do
+      cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
+      put_change(changeset, :version, cargo.version)
+    rescue
+      _ ->
+        add_error(changeset, :tracking_id, "is invalid")
     end
   end
 

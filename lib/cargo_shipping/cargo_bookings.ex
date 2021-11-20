@@ -78,7 +78,7 @@ defmodule CargoShipping.CargoBookings do
             handling_events:
               ^from(
                 he in HandlingEvent_,
-                order_by: he.completed_at
+                order_by: he.version
               )
           ]
 
@@ -97,7 +97,7 @@ defmodule CargoShipping.CargoBookings do
             handling_events:
               ^from(
                 he in HandlingEvent_,
-                order_by: he.completed_at
+                order_by: he.version
               )
           ]
       else
@@ -148,8 +148,35 @@ defmodule CargoShipping.CargoBookings do
 
   """
   def update_cargo(%Cargo_{} = cargo, attrs) do
-    Cargo.changeset(cargo, attrs)
-    |> Repo.update()
+    changeset = Cargo.version_changeset(cargo, attrs)
+
+    # A very bad workaround, using two updates in a single transaction,
+    #  * the first one for the bigserial `:version` field, and
+    #  * a second one for the changeset fields.
+    #
+    # The bigserial `:version` field should update correctly (it's supposed
+    # to have a DEFAULT that updates it with auto-incrementing values),
+    # but I cannot figure out how to have a changeset say "DEFAULT".
+    multi_result =
+      Ecto.Multi.new()
+      |> Ecto.Multi.update_all(:cargo_version, cargos_version_query(cargo.id), [])
+      |> Ecto.Multi.update(:cargo, changeset)
+      |> Repo.transaction()
+
+    case multi_result do
+      {:ok, %{cargo: cargo}} ->
+        {:ok, cargo}
+
+      _error ->
+        {:error, changeset}
+    end
+  end
+
+  # Use Ecto.Query `fragment` to manually update the :version field.
+  defp cargos_version_query(id) do
+    from c in Cargo_,
+      where: c.id == ^id,
+      update: [set: [version: fragment("nextval('cargos_version_seq')")]]
   end
 
   @doc """
@@ -210,7 +237,7 @@ defmodule CargoShipping.CargoBookings do
         left_join: c in Cargo_,
         on: c.id == he.cargo_id,
         select_merge: %{tracking_id: c.tracking_id},
-        order_by: [desc: he.completed_at]
+        order_by: [desc: he.version]
 
     Repo.all(query)
   end
@@ -226,7 +253,7 @@ defmodule CargoShipping.CargoBookings do
         on: c.id == he.cargo_id,
         select_merge: %{tracking_id: c.tracking_id},
         where: c.tracking_id == ^tracking_id,
-        order_by: [desc: he.completed_at]
+        order_by: [desc: he.version]
 
     Repo.all(query)
   end
