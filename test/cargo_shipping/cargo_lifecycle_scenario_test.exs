@@ -5,6 +5,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
 
   alias CargoShipping.{CargoBookings, CargoBookingService, HandlingEventService, VoyageService}
   alias CargoShipping.CargoBookings.{Accessors, Itinerary}
+  alias CargoShipping.ApplicationEvents.TestConsumer
 
   @tag hibernate_data: :all
   test "cargo undergoes lifecycle changes" do
@@ -96,7 +97,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :RECEIVE
     }
 
-    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _handling_event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -119,7 +120,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :LOAD
     }
 
-    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _handling_event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -163,7 +164,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :UNLOAD
     }
 
-    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _handling_event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -259,7 +260,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :LOAD
     }
 
-    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _handling_event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -285,7 +286,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :UNLOAD
     }
 
-    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _handling_event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -311,7 +312,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :LOAD
     }
 
-    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _handling_event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -336,7 +337,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :UNLOAD
     }
 
-    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _handling_event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -360,7 +361,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :LOAD
     }
 
-    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _handling_event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -386,7 +387,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :UNLOAD
     }
 
-    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, _handling_event} = HandlingEventService.register_handling_event(handling_params)
 
     # Wait for event bus
     Process.sleep(500)
@@ -411,13 +412,7 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
       event_type: :CLAIM
     }
 
-    # TODO: Verify that :cargo_arrived event was received
-    # assert {:ok, pid} = TestConsumer.start()
-    assert {:ok, _event} = HandlingEventService.register_handling_event(handling_params)
-    # assert {:ok, _} = TestConsumer.await_topic(pid, :cargo_arrived)
-
-    # Wait for event bus
-    Process.sleep(500)
+    _ = register_handling_event_and_wait(handling_params, :cargo_arrived)
 
     # Check current state - should be ok
     cargo = CargoBookings.get_cargo_by_tracking_id!(tracking_id)
@@ -429,6 +424,13 @@ defmodule CargoShipping.CargoLifecycleScenarioTest do
   end
 
   ## Utility stubs
+
+  defp register_handling_event_and_wait(handling_params, topic) do
+    assert {:ok, pid} = TestConsumer.start(topics: topic)
+    assert {:ok, handling_event} = HandlingEventService.register_handling_event(handling_params)
+    assert {:ok, topic_events} = TestConsumer.await_topic(pid, topic)
+    {handling_event, topic_events}
+  end
 
   defp select_prefered_itinerary(itineraries) when is_list(itineraries) do
     case List.first(itineraries) do
